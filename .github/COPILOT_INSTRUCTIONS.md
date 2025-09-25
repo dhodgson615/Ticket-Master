@@ -45,6 +45,7 @@ except ImportError:
 - **ALWAYS** commit small, focused changes with descriptive commit messages
 - **ALWAYS** update the README todo list when completing items
 - **ALWAYS** mark completed todo items with [x] and add implementation details
+- **CRITICAL REMINDER**: Every time you complete a todo item, you MUST update the README.md todo list and mark it as completed with [x] - this is essential for project tracking
 - **NEVER** commit compiled files, cache directories, or temporary files
 - **NEVER** force push to shared branches
 
