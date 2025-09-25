@@ -54,6 +54,7 @@ Run `make help` to see all available targets:
 - `make install` - Install Python dependencies only
 - `make test` - Run tests with coverage
 - `make lint` - Run linting checks
+- `make typecheck` - Run type checking with mypy
 - `make format` - Format code with black
 - `make clean` - Clean build artifacts and cache files
 - `make venv` - Create virtual environment
@@ -127,12 +128,17 @@ pytest tests/ -v
 
 ### Code Formatting
 ```bash
-black src/ main.py --line-length=120
+black src/ main.py --line-length=79
+```
+
+### Type Checking
+```bash
+mypy src/ main.py --strict
 ```
 
 ### Linting
 ```bash
-flake8 src/ main.py --max-line-length=120 --ignore=E203,W503,E402
+flake8 src/ main.py --max-line-length=79 --ignore=E203,W503,E402
 ```
 
 ## Architecture
