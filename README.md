@@ -1,5 +1,9 @@
 # Ticket-Master
 
+[![CI Pipeline](https://github.com/dhodgson615/Ticket-Master/actions/workflows/ci.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/dhodgson615/Ticket-Master/actions/workflows/codeql.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/codeql.yml)
+[![Dependency Updates](https://github.com/dhodgson615/Ticket-Master/actions/workflows/dependency-updates.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/dependency-updates.yml)
+
 A project that attempts to use AI to suggest GitHub issues with descriptions
 based on the contents of a Git repository
 
@@ -121,24 +125,58 @@ The current implementation can generate issues for:
 
 ## Development
 
-### Running Tests
+### CI/CD Pipeline
+
+This project includes comprehensive GitHub Actions workflows for:
+
+- **CI Pipeline** (`ci.yml`): Runs on all pushes and pull requests
+  - Multi-version Python testing (3.9, 3.10, 3.11, 3.12)
+  - Code formatting checks with Black
+  - Linting with flake8
+  - Type checking with mypy
+  - Test suite with coverage reporting
+  - Integration testing with example commands
+
+- **Security Analysis** (`codeql.yml`): Automated security scanning
+  - CodeQL analysis for security vulnerabilities
+  - Runs weekly and on main branch changes
+
+- **Dependency Updates** (`dependency-updates.yml`): Automated dependency management
+  - Weekly checks for outdated packages
+  - Automatic issue creation for available updates
+  - Dependency review for pull requests
+
+- **Release Management** (`release.yml`): Automated releases
+  - Triggered on version tags (v*)
+  - Full CI validation before release
+  - Automatic changelog generation
+  - GitHub release creation with assets
+
+### Running Tests Locally
 ```bash
-pytest tests/ -v
+# Run all tests with coverage
+make test
+
+# Run tests without coverage
+make test-fast
+
+# Run full CI pipeline locally
+make ci
 ```
 
-### Code Formatting
+### Code Quality
 ```bash
-black src/ main.py --line-length=79
-```
+# Format code
+make format
 
-### Type Checking
-```bash
-mypy src/ main.py --strict
-```
+# Check formatting
+make format-check
 
-### Linting
-```bash
-flake8 src/ main.py --max-line-length=79 --ignore=E203,W503,E402
+# Run linting
+make lint
+
+# Run type checking
+make typecheck
 ```
 
 ## Architecture
@@ -348,6 +386,61 @@ flake8 src/ main.py --max-line-length=79 --ignore=E203,W503,E402
 
 - [ ] Configuration management and customization
   - [x] Add a config.yaml file to specify default settings (default LLM,
+  - [ ] Implement LLM selection (Ollama, OpenAI, etc.)
+  - [ ] Implement automatic installation of LLMs from Ollama
+  - [x] Ensure code follows PEP 8 guidelines
+  - [x] Ensure code is well-documented with comments and docstrings
+
+- [ ] Add tests
+  - [x] Test Repository class
+  - [x] Test Issue class
+  - [x] Test main.py
+  - [ ] Test issue generation function
+  - [ ] Test GitHub issue creation function
+  - [ ] Test LLM selection
+  - [ ] Test automatic installation of LLMs from Ollama
+  - [x] Test command line arguments
+  - [x] Test error handling
+  - [ ] Test edge cases
+  - [ ] Test LLM installation
+  - [ ] Test GitHub API integration
+  - [ ] Test Ollama API integration
+  - [ ] Test performance
+  - [ ] Test security
+  - [ ] Ensure 100% code coverage
+
+- [ ] Add CI
+  - [x] Add GitHub Actions for running tests on every push
+  - [x] Ensure linting and formatting checks are included in CI
+  - [x] Add multi-version Python testing (3.9-3.12)
+  - [x] Add security scanning with CodeQL
+  - [x] Add dependency update automation
+  - [x] Add release automation with GitHub releases
+  - [x] Update README with CI status badges
+  - [ ] Update README with test coverage badge
+  - [x] Add Dependabot for dependency updates (via dependency-updates workflow)
+  - [x] Add code quality checks (via CodeQL and security scanning)
+
+- [ ] Add documentation
+  - [x] Add docstrings to all classes and functions
+  - [ ] Add usage examples to the README
+
+- [ ] Add more LLMs
+  - [ ] Add support for OpenAI's GPT-4
+  - [ ] Add support for other popular LLMs (e.g., Cohere, AI21, etc.)
+  - [ ] Add a configuration file to specify which LLM to use
+  - [ ] Add a command line argument to specify which LLM to use
+  - [ ] Add a function to list available LLMs
+  - [ ] Add a function to check if the specified LLM is installed
+  - [ ] Add a function to install the specified LLM if it is not installed
+
+- [ ] Add fallback mechanism
+  - [ ] If the specified LLM is not installed, fall back to a default LLM
+  - [ ] If the default LLM is not installed, prompt the user to install it
+  - [ ] If no LLMs are installed, exit with an error message
+
+- [ ] Add configuration file
+  - [x] Add a config.yaml file to specify default settings (e.g., default LLM,
         default number of issues to create, etc.)
   - [x] Add a function to read and parse the configuration file with validation
   - [x] Add a command line argument to specify a different configuration file

@@ -20,7 +20,9 @@ try:
         RateLimitExceededException,
     )
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
+    )
     from github import Github, Auth
     from github.GithubException import (
         GithubException,
@@ -156,7 +158,9 @@ class Issue:
             if self.labels:
                 # Validate labels exist in repository
                 repo_labels = [label.name for label in repo.get_labels()]
-                valid_labels = [label for label in self.labels if label in repo_labels]
+                valid_labels = [
+                    label for label in self.labels if label in repo_labels
+                ]
                 invalid_labels = [
                     label for label in self.labels if label not in repo_labels
                 ]
@@ -206,7 +210,9 @@ class Issue:
                 "created_at": created_issue.created_at.isoformat(),
                 "repository": repo_name,
                 "labels": [label.name for label in created_issue.get_labels()],
-                "assignees": [assignee.login for assignee in created_issue.assignees],
+                "assignees": [
+                    assignee.login for assignee in created_issue.assignees
+                ],
             }
 
             self.logger.info(
@@ -237,7 +243,9 @@ class Issue:
 
         # Check for empty or very short description
         if len(self.description) < 10:
-            warnings.append("Description is very short, consider adding more detail")
+            warnings.append(
+                "Description is very short, consider adding more detail"
+            )
 
         # Check for basic formatting
         if not any(char in self.description for char in ["\n", ".", "!", "?"]):
@@ -248,10 +256,13 @@ class Issue:
         # Check for placeholder text
         placeholders = ["TODO", "FIXME", "TBD", "XXX", "[placeholder]"]
         if any(
-            placeholder in self.title.upper() or placeholder in self.description.upper()
+            placeholder in self.title.upper()
+            or placeholder in self.description.upper()
             for placeholder in placeholders
         ):
-            warnings.append("Content contains placeholder text that should be replaced")
+            warnings.append(
+                "Content contains placeholder text that should be replaced"
+            )
 
         # Check labels
         if self.labels:
@@ -259,7 +270,9 @@ class Issue:
                 if not label.strip():
                     warnings.append("Empty label detected")
                 elif len(label) > 50:
-                    warnings.append(f"Label '{label}' is very long (>50 characters)")
+                    warnings.append(
+                        f"Label '{label}' is very long (>50 characters)"
+                    )
 
         return warnings
 
@@ -332,7 +345,9 @@ class Issue:
 
     def __str__(self) -> str:
         """String representation of the issue."""
-        return f"Issue(title='{self.title[:30]}...', labels={len(self.labels)})"
+        return (
+            f"Issue(title='{self.title[:30]}...', labels={len(self.labels)})"
+        )
 
     def __repr__(self) -> str:
         """Detailed string representation of the issue."""

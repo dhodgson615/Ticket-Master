@@ -18,7 +18,9 @@ try:
     import git
     from git import Repo, InvalidGitRepositoryError
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
+    )
     import git
     from git import Repo, InvalidGitRepositoryError
 
@@ -62,7 +64,9 @@ class Repository:
         try:
             self.repo = Repo(str(self.path))
         except InvalidGitRepositoryError as e:
-            raise RepositoryError(f"Invalid Git repository at {self.path}: {e}")
+            raise RepositoryError(
+                f"Invalid Git repository at {self.path}: {e}"
+            )
         except Exception as e:
             raise RepositoryError(f"Failed to initialize repository: {e}")
 
@@ -131,7 +135,9 @@ class Repository:
             if commit_hash:
                 commits = [self.repo.commit(commit_hash)]
             else:
-                commits = list(self.repo.iter_commits("HEAD", max_count=max_commits))
+                commits = list(
+                    self.repo.iter_commits("HEAD", max_count=max_commits)
+                )
 
             file_changes = {
                 "modified_files": {},
@@ -165,16 +171,18 @@ class Repository:
                                     "deletions": 0,
                                     "commits": [],
                                 }
-                            file_changes["modified_files"][file_path]["changes"] += 1
-                            file_changes["modified_files"][file_path]["insertions"] += (
-                                diff.insertions or 0
-                            )
-                            file_changes["modified_files"][file_path]["deletions"] += (
-                                diff.deletions or 0
-                            )
-                            file_changes["modified_files"][file_path]["commits"].append(
-                                commit.hexsha[:8]
-                            )
+                            file_changes["modified_files"][file_path][
+                                "changes"
+                            ] += 1
+                            file_changes["modified_files"][file_path][
+                                "insertions"
+                            ] += (diff.insertions or 0)
+                            file_changes["modified_files"][file_path][
+                                "deletions"
+                            ] += (diff.deletions or 0)
+                            file_changes["modified_files"][file_path][
+                                "commits"
+                            ].append(commit.hexsha[:8])
 
                         elif diff.change_type == "A":  # Added
                             if file_path not in file_changes["new_files"]:
@@ -204,7 +212,9 @@ class Repository:
                     file_changes["summary"]["total_deletions"] += stats.get(
                         "deletions", 0
                     )
-                    file_changes["summary"]["total_files"] += stats.get("files", 0)
+                    file_changes["summary"]["total_files"] += stats.get(
+                        "files", 0
+                    )
 
                 except Exception as commit_error:
                     self.logger.warning(
@@ -212,7 +222,9 @@ class Repository:
                     )
                     continue
 
-            self.logger.info(f"Analyzed file changes across {len(commits)} commits")
+            self.logger.info(
+                f"Analyzed file changes across {len(commits)} commits"
+            )
             return file_changes
 
         except Exception as e:
@@ -249,7 +261,9 @@ class Repository:
             if self.repo.remotes:
                 try:
                     origin = self.repo.remotes.origin
-                    info["remote_url"] = list(origin.urls)[0] if origin.urls else None
+                    info["remote_url"] = (
+                        list(origin.urls)[0] if origin.urls else None
+                    )
                 except AttributeError:
                     info["remote_url"] = None
             else:
@@ -303,7 +317,9 @@ class Repository:
                 return None
 
         except Exception as e:
-            raise RepositoryError(f"Failed to get file content for {file_path}: {e}")
+            raise RepositoryError(
+                f"Failed to get file content for {file_path}: {e}"
+            )
 
     def is_ignored(self, file_path: str) -> bool:
         """Check if a file path is ignored by .gitignore.
@@ -343,10 +359,14 @@ class Repository:
         """
         try:
             commits = []
-            for git_commit in self.repo.iter_commits(branch, max_count=max_count):
+            for git_commit in self.repo.iter_commits(
+                branch, max_count=max_count
+            ):
                 commits.append(Commit(git_commit))
 
-            self.logger.info(f"Retrieved {len(commits)} Commit objects from {branch}")
+            self.logger.info(
+                f"Retrieved {len(commits)} Commit objects from {branch}"
+            )
             return commits
 
         except Exception as e:
@@ -459,4 +479,6 @@ class Repository:
             if not self.repo.head.is_detached
             else "detached"
         )
-        return f"Repository(path='{self.path}', active_branch='{active_branch}')"
+        return (
+            f"Repository(path='{self.path}', active_branch='{active_branch}')"
+        )

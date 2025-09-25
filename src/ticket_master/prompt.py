@@ -19,7 +19,9 @@ from datetime import datetime
 try:
     import yaml
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"]
+    )
     import yaml
 
 
@@ -89,7 +91,9 @@ class PromptTemplate:
             try:
                 prompt_type = PromptType(prompt_type.lower())
             except ValueError:
-                raise PromptTemplateError(f"Invalid prompt type: {prompt_type}")
+                raise PromptTemplateError(
+                    f"Invalid prompt type: {prompt_type}"
+                )
 
         if not base_template or not base_template.strip():
             raise PromptTemplateError("Base template cannot be empty")
@@ -99,13 +103,17 @@ class PromptTemplate:
         self.base_template = base_template.strip()
         self.provider_variations = provider_variations or {}
         self.metadata = metadata or {}
-        self.logger = logging.getLogger(f"{self.__class__.__name__}.{self.name}")
+        self.logger = logging.getLogger(
+            f"{self.__class__.__name__}.{self.name}"
+        )
 
         # Add creation timestamp to metadata
         if "created_at" not in self.metadata:
             self.metadata["created_at"] = datetime.now().isoformat()
 
-    def render(self, variables: Dict[str, Any], provider: Optional[str] = None) -> str:
+    def render(
+        self, variables: Dict[str, Any], provider: Optional[str] = None
+    ) -> str:
         """Render the prompt template with given variables.
 
         Args:
@@ -123,7 +131,9 @@ class PromptTemplate:
             template = self.base_template
             if provider and provider in self.provider_variations:
                 template = self.provider_variations[provider]
-                self.logger.debug(f"Using {provider}-specific template variation")
+                self.logger.debug(
+                    f"Using {provider}-specific template variation"
+                )
 
             # Render the template
             rendered = template.format(**variables)
@@ -139,7 +149,9 @@ class PromptTemplate:
                 f"Missing required variable '{missing_var}' for template '{self.name}'"
             )
         except Exception as e:
-            raise PromptTemplateError(f"Failed to render template '{self.name}': {e}")
+            raise PromptTemplateError(
+                f"Failed to render template '{self.name}': {e}"
+            )
 
     def get_required_variables(self) -> List[str]:
         """Extract required variables from the template.
@@ -212,7 +224,9 @@ class PromptTemplate:
             raise PromptTemplateError("Provider template cannot be empty")
 
         self.provider_variations[provider.lower()] = template.strip()
-        self.logger.info(f"Added {provider} variation to template '{self.name}'")
+        self.logger.info(
+            f"Added {provider} variation to template '{self.name}'"
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert template to dictionary for serialization.
@@ -251,7 +265,9 @@ class PromptTemplate:
                 metadata=data.get("metadata"),
             )
         except KeyError as e:
-            raise PromptTemplateError(f"Missing required field in template data: {e}")
+            raise PromptTemplateError(
+                f"Missing required field in template data: {e}"
+            )
 
     def __str__(self) -> str:
         """String representation of the template."""
@@ -317,7 +333,10 @@ class Prompt:
         return self.templates.get(name)
 
     def render_template(
-        self, name: str, variables: Dict[str, Any], provider: Optional[str] = None
+        self,
+        name: str,
+        variables: Dict[str, Any],
+        provider: Optional[str] = None,
     ) -> str:
         """Render a specific template with variables.
 
@@ -339,7 +358,9 @@ class Prompt:
         provider = provider or self.default_provider
         return template.render(variables, provider)
 
-    def list_templates(self, prompt_type: Optional[PromptType] = None) -> List[str]:
+    def list_templates(
+        self, prompt_type: Optional[PromptType] = None
+    ) -> List[str]:
         """List available template names, optionally filtered by type.
 
         Args:
@@ -357,7 +378,9 @@ class Prompt:
             if template.prompt_type == prompt_type
         ]
 
-    def get_templates_by_type(self, prompt_type: PromptType) -> List[PromptTemplate]:
+    def get_templates_by_type(
+        self, prompt_type: PromptType
+    ) -> List[PromptTemplate]:
         """Get all templates of a specific type.
 
         Args:
@@ -372,7 +395,9 @@ class Prompt:
             if template.prompt_type == prompt_type
         ]
 
-    def validate_template(self, name: str, variables: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_template(
+        self, name: str, variables: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Validate variables for a specific template.
 
         Args:
@@ -427,7 +452,9 @@ class Prompt:
                 except (PromptError, PromptTemplateError) as e:
                     self.logger.warning(f"Failed to load template: {e}")
 
-            self.logger.info(f"Loaded {loaded_count} templates from {file_path}")
+            self.logger.info(
+                f"Loaded {loaded_count} templates from {file_path}"
+            )
             return loaded_count
 
         except (json.JSONDecodeError, yaml.YAMLError) as e:
@@ -455,7 +482,9 @@ class Prompt:
                 "template_count": len(self.templates),
                 "default_provider": self.default_provider,
             },
-            "templates": [template.to_dict() for template in self.templates.values()],
+            "templates": [
+                template.to_dict() for template in self.templates.values()
+            ],
         }
 
         try:
@@ -463,9 +492,13 @@ class Prompt:
                 if file_path.suffix.lower() == ".json":
                     json.dump(data, f, indent=2, ensure_ascii=False)
                 else:  # Default to YAML
-                    yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+                    yaml.dump(
+                        data, f, default_flow_style=False, allow_unicode=True
+                    )
 
-            self.logger.info(f"Saved {len(self.templates)} templates to {file_path}")
+            self.logger.info(
+                f"Saved {len(self.templates)} templates to {file_path}"
+            )
 
         except Exception as e:
             raise PromptError(f"Failed to save templates: {e}")

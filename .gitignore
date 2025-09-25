@@ -83,3 +83,9 @@ tmp/
 models/
 cache/
 .ollama/
+
+# Security scan reports
+bandit-report.json
+safety-report.json
+outdated.json
+current_changes.txt

@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for changelog generation
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: make install
+    
+    - name: Run full CI pipeline
+      run: make ci
+      continue-on-error: false  # Fail release if CI fails
+    
+    - name: Extract version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        if [ -f CHANGELOG.md ]; then
+          # Extract changes for this version from CHANGELOG.md
+          awk '/^## \['"${GITHUB_REF#refs/tags/v}"'\]/{flag=1;next}/^## \[/{flag=0}flag' CHANGELOG.md > current_changes.txt
+        else
+          # Generate simple changelog from recent commits
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD~1)..HEAD > current_changes.txt || echo "- Initial release" > current_changes.txt
+        fi
+        
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        cat current_changes.txt >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.VERSION }}
+        release_name: Release ${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## Changes in ${{ steps.get_version.outputs.VERSION }}
+          
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ## Installation
+          
+          ```bash
+          git clone https://github.com/dhodgson615/Ticket-Master.git
+          cd Ticket-Master
+          make setup
+          ```
+          
+          ## Usage
+          
+          ```bash
+          export GITHUB_TOKEN='your_token_here'
+          make run-example
+          ```
+        draft: false
+        prerelease: ${{ contains(steps.get_version.outputs.VERSION, '-') }}
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: build-and-release
+    if: success()
+    
+    steps:
+    - name: Create notification issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const version = context.ref.replace('refs/tags/', '');
+          
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Release ${version} Published`,
+            body: `🎉 **Release ${version} has been published!**
+            
+            ## What's New
+            
+            Check out the [release notes](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${version}) for details on what's included in this version.
+            
+            ## Installation
+            
+            \`\`\`bash
+            git clone https://github.com/${context.repo.owner}/${context.repo.repo}.git
+            cd ${context.repo.repo}
+            make setup
+            \`\`\`
+            
+            This issue was automatically created by the release workflow.`,
+            labels: ['release', 'announcement']
+          });
