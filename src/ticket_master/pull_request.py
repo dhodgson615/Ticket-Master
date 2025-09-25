@@ -17,7 +17,9 @@ except ImportError:
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
+    )
     from github import Github, PullRequest as GitHubPullRequest
     from github.GithubException import GithubException
 
@@ -68,7 +70,9 @@ class PullRequest:
             PullRequestError: If github_pr is invalid
         """
         if not hasattr(github_pr, "number"):
-            raise PullRequestError("github_pr must be a PyGithub PullRequest object")
+            raise PullRequestError(
+                "github_pr must be a PyGithub PullRequest object"
+            )
 
         self.github_pr = github_pr
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -135,7 +139,9 @@ class PullRequest:
             return commits
 
         except Exception as e:
-            raise PullRequestError(f"Failed to get commits for PR #{self.number}: {e}")
+            raise PullRequestError(
+                f"Failed to get commits for PR #{self.number}: {e}"
+            )
 
     def get_changed_files(self) -> List[Dict[str, Any]]:
         """Get files changed in this pull request.
@@ -156,7 +162,9 @@ class PullRequest:
                     "deletions": file.deletions,
                     "changes": file.changes,
                     "patch": file.patch,
-                    "previous_filename": getattr(file, "previous_filename", None),
+                    "previous_filename": getattr(
+                        file, "previous_filename", None
+                    ),
                 }
                 changed_files.append(file_info)
 
@@ -194,7 +202,9 @@ class PullRequest:
             return reviews
 
         except Exception as e:
-            raise PullRequestError(f"Failed to get reviews for PR #{self.number}: {e}")
+            raise PullRequestError(
+                f"Failed to get reviews for PR #{self.number}: {e}"
+            )
 
     def get_comments(self) -> List[Dict[str, Any]]:
         """Get comments for this pull request.
@@ -244,7 +254,9 @@ class PullRequest:
             return sorted(comments, key=lambda x: x["created_at"])
 
         except Exception as e:
-            raise PullRequestError(f"Failed to get comments for PR #{self.number}: {e}")
+            raise PullRequestError(
+                f"Failed to get comments for PR #{self.number}: {e}"
+            )
 
     def is_mergeable(self) -> bool:
         """Check if this pull request is mergeable.
@@ -285,7 +297,8 @@ class PullRequest:
 
             # Check if there are any approvals
             has_approval = any(
-                review["state"] == "APPROVED" for review in latest_reviews.values()
+                review["state"] == "APPROVED"
+                for review in latest_reviews.values()
             )
 
             return has_approval and not has_changes_requested
@@ -309,9 +322,15 @@ class PullRequest:
             "is_draft": self.is_draft,
             "merged": self.merged,
             "author": self.author,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "merged_at": self.merged_at.isoformat() if self.merged_at else None,
+            "created_at": (
+                self.created_at.isoformat() if self.created_at else None
+            ),
+            "updated_at": (
+                self.updated_at.isoformat() if self.updated_at else None
+            ),
+            "merged_at": (
+                self.merged_at.isoformat() if self.merged_at else None
+            ),
             "source_branch": self.source_branch,
             "target_branch": self.target_branch,
             "commits_count": self.commits_count,

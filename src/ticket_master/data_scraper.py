@@ -23,7 +23,9 @@ except ImportError:
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
+    )
     from git import Repo, InvalidGitRepositoryError
 
 from .repository import Repository, RepositoryError
@@ -69,7 +71,9 @@ class DataScraper:
         """
         self.repo_path = Path(repo_path).resolve()
         if not self.repo_path.exists():
-            raise DataScraperError(f"Repository path does not exist: {self.repo_path}")
+            raise DataScraperError(
+                f"Repository path does not exist: {self.repo_path}"
+            )
 
         try:
             self.repository = Repository(str(self.repo_path))
@@ -89,7 +93,9 @@ class DataScraper:
                 with self.cache_db:
                     self.cache_db.create_tables()
             except DatabaseError as e:
-                self.logger.warning(f"Failed to initialize cache database: {e}")
+                self.logger.warning(
+                    f"Failed to initialize cache database: {e}"
+                )
                 self.use_cache = False
 
     def scrape_all(self, max_commits: int = 100) -> Dict[str, Any]:
@@ -140,7 +146,9 @@ class DataScraper:
             # Cache the result
             self._store_in_cache(cache_key, analysis_result)
 
-            self.logger.info(f"Completed repository analysis in {analysis_time:.2f}s")
+            self.logger.info(
+                f"Completed repository analysis in {analysis_time:.2f}s"
+            )
             return analysis_result
 
         except Exception as e:
@@ -181,7 +189,9 @@ class DataScraper:
         """
         try:
             commits = self.repository.get_commit_history(max_count=max_commits)
-            file_changes = self.repository.get_file_changes(max_commits=max_commits)
+            file_changes = self.repository.get_file_changes(
+                max_commits=max_commits
+            )
 
             # Analyze commit patterns
             commit_analysis = self._analyze_commits(commits)
@@ -223,7 +233,9 @@ class DataScraper:
             }
 
             for item in self.repo_path.rglob("*"):
-                if self.repository.is_ignored(str(item.relative_to(self.repo_path))):
+                if self.repository.is_ignored(
+                    str(item.relative_to(self.repo_path))
+                ):
                     continue
 
                 if item.is_file():
@@ -265,7 +277,9 @@ class DataScraper:
                         structure["empty_directories"].append(rel_path)
 
             # Sort large files by size
-            structure["large_files"].sort(key=lambda x: x["size"], reverse=True)
+            structure["large_files"].sort(
+                key=lambda x: x["size"], reverse=True
+            )
 
             return structure
 
@@ -336,7 +350,9 @@ class DataScraper:
                             "total_lines": 0,
                         }
 
-                    analysis["programming_languages"][lang]["files"].append(rel_path)
+                    analysis["programming_languages"][lang]["files"].append(
+                        rel_path
+                    )
 
                     # Count lines if reasonable file size
                     if item.stat().st_size < 10 * 1024 * 1024:  # <10MB
@@ -352,10 +368,20 @@ class DataScraper:
                             pass
 
                 # Special file detection
-                if file_name in ["readme.md", "readme.txt", "readme.rst", "readme"]:
+                if file_name in [
+                    "readme.md",
+                    "readme.txt",
+                    "readme.rst",
+                    "readme",
+                ]:
                     analysis["readme_info"] = self._analyze_readme(item)
 
-                elif file_name in ["license", "license.txt", "license.md", "copying"]:
+                elif file_name in [
+                    "license",
+                    "license.txt",
+                    "license.md",
+                    "copying",
+                ]:
                     analysis["license_info"] = self._analyze_license(item)
 
                 elif any(
@@ -387,7 +413,10 @@ class DataScraper:
                 ]:
                     analysis["configuration_files"].append(rel_path)
 
-                elif file_ext in [".md", ".rst", ".txt"] and "readme" not in file_name:
+                elif (
+                    file_ext in [".md", ".rst", ".txt"]
+                    and "readme" not in file_name
+                ):
                     analysis["documentation_files"].append(rel_path)
 
             return analysis
@@ -464,7 +493,9 @@ class DataScraper:
                 "commit_frequency": self._analyze_commit_frequency(commits),
                 "time_patterns": self._analyze_time_patterns(commits),
                 "file_hotspots": self._analyze_file_hotspots(commits),
-                "contributor_activity": self._analyze_contributor_activity(commits),
+                "contributor_activity": self._analyze_contributor_activity(
+                    commits
+                ),
             }
 
             return patterns
@@ -506,7 +537,10 @@ class DataScraper:
         try:
             with self.cache_db:
                 self.cache_db.cache_repository_data(
-                    str(self.repo_path), cache_key, data, self.cache_expiry_hours
+                    str(self.repo_path),
+                    cache_key,
+                    data,
+                    self.cache_expiry_hours,
                 )
         except DatabaseError as e:
             self.logger.warning(f"Failed to cache data: {e}")
@@ -559,13 +593,18 @@ class DataScraper:
             remotes = []
             for remote in self.repository.repo.remotes:
                 remotes.append(
-                    {"name": remote.name, "url": next(iter(remote.urls), "unknown")}
+                    {
+                        "name": remote.name,
+                        "url": next(iter(remote.urls), "unknown"),
+                    }
                 )
             return remotes
         except Exception:
             return []
 
-    def _analyze_commits(self, commits: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _analyze_commits(
+        self, commits: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Analyze commit patterns and statistics."""
         if not commits:
             return {}
@@ -581,7 +620,9 @@ class DataScraper:
             "commit_size_stats": self._analyze_commit_sizes(commits),
         }
 
-    def _analyze_contributors(self, commits: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _analyze_contributors(
+        self, commits: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Analyze contributor patterns."""
         contributors = {}
         for commit in commits:
@@ -602,7 +643,9 @@ class DataScraper:
         return {
             "total_contributors": len(contributors),
             "top_contributors": sorted(
-                contributors.items(), key=lambda x: x[1]["commits"], reverse=True
+                contributors.items(),
+                key=lambda x: x[1]["commits"],
+                reverse=True,
             )[:5],
             "contributor_details": contributors,
         }
@@ -687,13 +730,18 @@ class DataScraper:
             )
             if workflows:
                 ci_configs.append(
-                    {"type": "github_actions", "files": [f.name for f in workflows]}
+                    {
+                        "type": "github_actions",
+                        "files": [f.name for f in workflows],
+                    }
                 )
 
         # GitLab CI
         gitlab_ci = self.repo_path / ".gitlab-ci.yml"
         if gitlab_ci.exists():
-            ci_configs.append({"type": "gitlab_ci", "files": [".gitlab-ci.yml"]})
+            ci_configs.append(
+                {"type": "gitlab_ci", "files": [".gitlab-ci.yml"]}
+            )
 
         # Travis CI
         travis_ci = self.repo_path / ".travis.yml"
@@ -738,7 +786,9 @@ class DataScraper:
     def _analyze_readme(self, readme_path: Path) -> Dict[str, Any]:
         """Analyze README file content."""
         try:
-            with open(readme_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(
+                readme_path, "r", encoding="utf-8", errors="ignore"
+            ) as f:
                 content = f.read()
 
             return {
@@ -754,7 +804,9 @@ class DataScraper:
     def _analyze_license(self, license_path: Path) -> Dict[str, Any]:
         """Analyze license file."""
         try:
-            with open(license_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(
+                license_path, "r", encoding="utf-8", errors="ignore"
+            ) as f:
                 content = f.read()
 
             # Simple license detection
@@ -786,7 +838,9 @@ class DataScraper:
         ]
         return (max(dates) - min(dates)).days
 
-    def _analyze_commit_sizes(self, commits: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _analyze_commit_sizes(
+        self, commits: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Analyze commit size statistics."""
         # This would analyze insertions/deletions if available
         return {"placeholder": "commit_size_analysis"}
@@ -829,11 +883,15 @@ class DataScraper:
         """Analyze commit frequency patterns."""
         return {"placeholder": "commit_frequency_analysis"}
 
-    def _analyze_time_patterns(self, commits: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _analyze_time_patterns(
+        self, commits: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Analyze time-based commit patterns."""
         return {"placeholder": "time_pattern_analysis"}
 
-    def _analyze_file_hotspots(self, commits: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _analyze_file_hotspots(
+        self, commits: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Analyze which files are modified most frequently."""
         return {"placeholder": "file_hotspot_analysis"}
 

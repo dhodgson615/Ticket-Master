@@ -64,7 +64,9 @@ class PipelineStep:
         llm: LLM,
         prompt_template: Union[str, PromptTemplate],
         stage: Union[PipeStage, str] = PipeStage.INTERMEDIATE,
-        validator: Optional[Callable[[str, Dict[str, Any]], Dict[str, Any]]] = None,
+        validator: Optional[
+            Callable[[str, Dict[str, Any]], Dict[str, Any]]
+        ] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize a pipeline step.
@@ -95,7 +97,9 @@ class PipelineStep:
         self.stage = stage
         self.validator = validator
         self.metadata = metadata or {}
-        self.logger = logging.getLogger(f"{self.__class__.__name__}.{self.name}")
+        self.logger = logging.getLogger(
+            f"{self.__class__.__name__}.{self.name}"
+        )
 
     def execute(
         self,
@@ -145,7 +149,9 @@ class PipelineStep:
             validation_result = None
             if self.validator:
                 try:
-                    validation_result = self.validator(response["response"], variables)
+                    validation_result = self.validator(
+                        response["response"], variables
+                    )
                 except Exception as e:
                     self.logger.warning(
                         f"Validation failed for step '{self.name}': {e}"
@@ -240,9 +246,13 @@ class Pipe:
             "created_at": datetime.now().isoformat(),
             "input_llm": str(input_llm),
             "output_llm": str(output_llm),
-            "intermediate_llm": str(intermediate_llm) if intermediate_llm else None,
+            "intermediate_llm": (
+                str(intermediate_llm) if intermediate_llm else None
+            ),
         }
-        self.logger = logging.getLogger(f"{self.__class__.__name__}.{self.name}")
+        self.logger = logging.getLogger(
+            f"{self.__class__.__name__}.{self.name}"
+        )
 
     def add_step(
         self,
@@ -250,7 +260,9 @@ class Pipe:
         llm: Optional[LLM] = None,
         prompt_template: Union[str, PromptTemplate] = None,
         stage: Union[PipeStage, str] = PipeStage.INTERMEDIATE,
-        validator: Optional[Callable[[str, Dict[str, Any]], Dict[str, Any]]] = None,
+        validator: Optional[
+            Callable[[str, Dict[str, Any]], Dict[str, Any]]
+        ] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> "Pipe":
         """Add a step to the pipeline.
@@ -283,7 +295,9 @@ class Pipe:
             else:
                 llm = self.intermediate_llm or self.input_llm
 
-        step = PipelineStep(name, llm, prompt_template, stage, validator, metadata)
+        step = PipelineStep(
+            name, llm, prompt_template, stage, validator, metadata
+        )
         self.steps.append(step)
 
         self.logger.info(f"Added step '{name}' at stage {stage}")
@@ -346,19 +360,24 @@ class Pipe:
                 if step_result["success"]:
                     # Add step output to variables for next step
                     step_output_key = f"{step.name}_output"
-                    current_variables[step_output_key] = step_result["response"]
+                    current_variables[step_output_key] = step_result[
+                        "response"
+                    ]
 
                     # For output stage, also set as final output
                     if step.stage == PipeStage.OUTPUT:
-                        current_variables["final_output"] = step_result["response"]
+                        current_variables["final_output"] = step_result[
+                            "response"
+                        ]
 
                     # Validate intermediate results if enabled
-                    if validate_intermediate and step.stage == PipeStage.INTERMEDIATE:
+                    if (
+                        validate_intermediate
+                        and step.stage == PipeStage.INTERMEDIATE
+                    ):
                         validation = step_result.get("validation")
                         if validation and not validation.get("is_valid", True):
-                            error_msg = (
-                                f"Intermediate validation failed for step '{step.name}'"
-                            )
+                            error_msg = f"Intermediate validation failed for step '{step.name}'"
                             self.logger.warning(error_msg)
 
                             if stop_on_error:
@@ -441,7 +460,9 @@ class Pipe:
             validation["warnings"].append("No output steps defined")
 
         if output_steps > 1:
-            validation["warnings"].append("Multiple output steps may cause conflicts")
+            validation["warnings"].append(
+                "Multiple output steps may cause conflicts"
+            )
 
         # Check LLM availability
         llms_to_check = [self.input_llm, self.output_llm]
@@ -454,7 +475,9 @@ class Pipe:
                 unavailable_llms.append(str(llm))
 
         if unavailable_llms:
-            validation["warnings"].append(f"LLMs not available: {unavailable_llms}")
+            validation["warnings"].append(
+                f"LLMs not available: {unavailable_llms}"
+            )
 
         return validation
 
@@ -538,4 +561,7 @@ class Pipe:
             stage = step.stage.value
             stages[stage] = stages.get(stage, 0) + 1
 
-        return f"Pipe(name='{self.name}', steps={len(self.steps)}, " f"stages={stages})"
+        return (
+            f"Pipe(name='{self.name}', steps={len(self.steps)}, "
+            f"stages={stages})"
+        )

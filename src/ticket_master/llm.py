@@ -20,7 +20,9 @@ from datetime import datetime
 try:
     import requests
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests>=2.31.0"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "requests>=2.31.0"]
+    )
     import requests
 
 
@@ -132,7 +134,12 @@ class OllamaBackend(LLMBackend):
             LLMProviderError: If generation fails
         """
         try:
-            payload = {"model": self.model, "prompt": prompt, "stream": False, **kwargs}
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False,
+                **kwargs,
+            }
 
             response = requests.post(
                 f"{self.base_url}/api/generate",
@@ -175,7 +182,8 @@ class OllamaBackend(LLMBackend):
 
             models = response.json().get("models", [])
             current_model = next(
-                (model for model in models if model["name"] == self.model), None
+                (model for model in models if model["name"] == self.model),
+                None,
             )
 
             if current_model:
@@ -186,7 +194,11 @@ class OllamaBackend(LLMBackend):
                     "provider": "ollama",
                 }
 
-            return {"name": self.model, "provider": "ollama", "status": "not_found"}
+            return {
+                "name": self.model,
+                "provider": "ollama",
+                "status": "not_found",
+            }
 
         except requests.RequestException as e:
             self.logger.warning(f"Failed to get model info: {e}")
@@ -236,7 +248,11 @@ class OpenAIBackend(LLMBackend):
         Returns:
             Dictionary containing model information
         """
-        return {"name": self.model, "provider": "openai", "status": "not_implemented"}
+        return {
+            "name": self.model,
+            "provider": "openai",
+            "status": "not_implemented",
+        }
 
 
 class LLM:
@@ -289,7 +305,9 @@ class LLM:
                 fallback_provider = fallback_config.get("provider")
                 if fallback_provider:
                     try:
-                        fallback_provider = LLMProvider(fallback_provider.lower())
+                        fallback_provider = LLMProvider(
+                            fallback_provider.lower()
+                        )
                         fallback_backend = self._create_backend(
                             fallback_provider, fallback_config
                         )
@@ -327,7 +345,9 @@ class LLM:
         elif provider == LLMProvider.OPENAI:
             return OpenAIBackend(config)
         else:
-            raise LLMError(f"Backend not implemented for provider: {provider.value}")
+            raise LLMError(
+                f"Backend not implemented for provider: {provider.value}"
+            )
 
     def generate(
         self,
@@ -370,7 +390,9 @@ class LLM:
                     # Validate response if requested
                     validation_result = None
                     if validate_response:
-                        validation_result = self._validate_response(response, prompt)
+                        validation_result = self._validate_response(
+                            response, prompt
+                        )
 
                     result = {
                         "response": response,
@@ -405,7 +427,9 @@ class LLM:
                     if attempt < max_retries - 1:
                         time.sleep(2**attempt)  # Exponential backoff
 
-            self.logger.error(f"All attempts failed for {backend.__class__.__name__}")
+            self.logger.error(
+                f"All attempts failed for {backend.__class__.__name__}"
+            )
 
         # If we get here, all backends failed
         raise LLMError(f"All LLM backends failed. Last error: {last_error}")
@@ -441,7 +465,9 @@ class LLM:
             validation["checks"]["repetition_ratio"] = repetition_ratio
 
             if repetition_ratio < 0.3:  # Very repetitive
-                validation["issues"].append("Response appears to be repetitive")
+                validation["issues"].append(
+                    "Response appears to be repetitive"
+                )
                 validation["quality_score"] *= 0.5
 
         # Check for common error patterns
@@ -457,7 +483,9 @@ class LLM:
 
         response_lower = response.lower()
         found_patterns = [
-            pattern for pattern in error_patterns if pattern.lower() in response_lower
+            pattern
+            for pattern in error_patterns
+            if pattern.lower() in response_lower
         ]
 
         if found_patterns:

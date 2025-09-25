@@ -16,7 +16,9 @@ except ImportError:
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
+    )
     from git import Head as GitHead, RemoteReference
 
 from .commit import Commit
@@ -44,7 +46,9 @@ class Branch:
         logger: Logger instance for this class
     """
 
-    def __init__(self, git_branch, repo_obj=None, is_active: bool = False) -> None:
+    def __init__(
+        self, git_branch, repo_obj=None, is_active: bool = False
+    ) -> None:
         """Initialize Branch from a GitPython branch object.
 
         Args:
@@ -111,7 +115,9 @@ class Branch:
             return commits
 
         except Exception as e:
-            raise BranchError(f"Failed to get commits for branch {self.name}: {e}")
+            raise BranchError(
+                f"Failed to get commits for branch {self.name}: {e}"
+            )
 
     def get_ahead_behind_info(self, base_branch: "Branch") -> Dict[str, int]:
         """Get ahead/behind commit count compared to another branch.
@@ -126,7 +132,9 @@ class Branch:
             BranchError: If unable to calculate ahead/behind info
         """
         if not self.repo_obj:
-            raise BranchError("Repository object required for ahead/behind calculation")
+            raise BranchError(
+                "Repository object required for ahead/behind calculation"
+            )
 
         try:
             # Get the commits that are in this branch but not in base_branch (ahead)
@@ -169,12 +177,16 @@ class Branch:
             BranchError: If unable to determine merge status
         """
         if not self.repo_obj:
-            raise BranchError("Repository object required for merge status check")
+            raise BranchError(
+                "Repository object required for merge status check"
+            )
 
         try:
             # Check if there are any commits in this branch that are not in target_branch
             unique_commits = list(
-                self.repo_obj.iter_commits(f"{target_branch.name}..{self.name}")
+                self.repo_obj.iter_commits(
+                    f"{target_branch.name}..{self.name}"
+                )
             )
 
             # If no unique commits, this branch is merged
@@ -201,7 +213,9 @@ class Branch:
             return None
 
         except Exception as e:
-            self.logger.warning(f"Could not get tracking branch for {self.name}: {e}")
+            self.logger.warning(
+                f"Could not get tracking branch for {self.name}: {e}"
+            )
             return None
 
     def to_dict(self) -> Dict[str, Any]:
@@ -230,7 +244,9 @@ class Branch:
     def __str__(self) -> str:
         """String representation of the branch."""
         prefix = "* " if self.is_active else "  "
-        remote_info = f" (remote: {self.remote_name})" if self.is_remote else ""
+        remote_info = (
+            f" (remote: {self.remote_name})" if self.is_remote else ""
+        )
         return f"{prefix}{self.name}{remote_info}"
 
     def __repr__(self) -> str:

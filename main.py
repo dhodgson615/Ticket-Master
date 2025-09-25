@@ -21,7 +21,9 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 try:
     import yaml
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"]
+    )
     import yaml
 
 from ticket_master import Repository, Issue, __version__
@@ -75,7 +77,12 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         },
         "repository": {
             "max_commits": 50,
-            "ignore_patterns": [".git", "__pycache__", "*.pyc", "node_modules"],
+            "ignore_patterns": [
+                ".git",
+                "__pycache__",
+                "*.pyc",
+                "node_modules",
+            ],
         },
         "issue_generation": {"max_issues": 5, "min_description_length": 50},
         "llm": {
@@ -115,7 +122,9 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     return default_config
 
 
-def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]:
+def analyze_repository(
+    repo_path: str, config: Dict[str, Any]
+) -> Dict[str, Any]:
     """Analyze repository and prepare data for issue generation.
 
     Args:
@@ -137,7 +146,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
 
         # Get repository information
         repo_info = repo.get_repository_info()
-        logger.info(f"Repository: {repo_info['name']} ({repo_info['active_branch']})")
+        logger.info(
+            f"Repository: {repo_info['name']} ({repo_info['active_branch']})"
+        )
 
         # Get commit history
         max_commits = config["repository"]["max_commits"]
@@ -159,7 +170,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
                 "files_modified": len(file_changes["modified_files"]),
                 "files_added": len(file_changes["new_files"]),
                 "files_deleted": len(file_changes["deleted_files"]),
-                "total_insertions": file_changes["summary"]["total_insertions"],
+                "total_insertions": file_changes["summary"][
+                    "total_insertions"
+                ],
                 "total_deletions": file_changes["summary"]["total_deletions"],
             },
         }
@@ -297,7 +310,10 @@ This issue was automatically generated based on repository analysis.""",
 
 
 def create_issues_on_github(
-    issues: List[Issue], repo_name: str, config: Dict[str, Any], dry_run: bool = True
+    issues: List[Issue],
+    repo_name: str,
+    config: Dict[str, Any],
+    dry_run: bool = True,
 ) -> List[Dict[str, Any]]:
     """Create issues on GitHub.
 
@@ -331,7 +347,9 @@ def create_issues_on_github(
                 f"GitHub authentication failed: {connection_test['error']}"
             )
 
-        logger.info(f"Connected to GitHub as: {connection_test['user']['login']}")
+        logger.info(
+            f"Connected to GitHub as: {connection_test['user']['login']}"
+        )
         logger.info(
             f"Rate limit remaining: {connection_test['rate_limit']['core']['remaining']}"
         )
@@ -345,7 +363,9 @@ def create_issues_on_github(
             # Validate issue content
             warnings = issue.validate_content()
             if warnings:
-                logger.warning(f"Issue {i} validation warnings: {'; '.join(warnings)}")
+                logger.warning(
+                    f"Issue {i} validation warnings: {'; '.join(warnings)}"
+                )
 
             if dry_run:
                 result = {
@@ -368,7 +388,9 @@ def create_issues_on_github(
                     "created": True,
                     "validation_warnings": warnings,
                 }
-                logger.info(f"Created issue #{issue_info['number']}: {issue.title}")
+                logger.info(
+                    f"Created issue #{issue_info['number']}: {issue.title}"
+                )
 
             results.append(result)
 
@@ -414,7 +436,9 @@ def print_results_summary(
     # Issues summary
     print(f"\nIssues processed: {len(results)}")
 
-    successful = [r for r in results if r.get("created") or r.get("would_create")]
+    successful = [
+        r for r in results if r.get("created") or r.get("would_create")
+    ]
     failed = [r for r in results if r.get("error")]
     dry_run = any(r.get("dry_run") for r in results)
 
@@ -429,7 +453,11 @@ def print_results_summary(
     # List issues
     print("\nIssue Details:")
     for result in results:
-        status = "✓" if (result.get("created") or result.get("would_create")) else "✗"
+        status = (
+            "✓"
+            if (result.get("created") or result.get("would_create"))
+            else "✗"
+        )
         title = (
             result["title"][:60] + "..."
             if len(result["title"]) > 60
@@ -476,7 +504,9 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
     )
 
     # Required arguments
-    parser.add_argument("repository_path", help="Path to the Git repository to analyze")
+    parser.add_argument(
+        "repository_path", help="Path to the Git repository to analyze"
+    )
 
     parser.add_argument(
         "github_repo", help='GitHub repository name in format "owner/repo"'
@@ -551,7 +581,9 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         issues = generate_sample_issues(analysis, config)
 
         if not issues:
-            logger.warning("No issues were generated based on repository analysis")
+            logger.warning(
+                "No issues were generated based on repository analysis"
+            )
             return 0
 
         # Create issues on GitHub

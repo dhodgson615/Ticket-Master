@@ -16,7 +16,9 @@ try:
     from github import Github, Auth
     from github.GithubException import BadCredentialsException
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
+    )
     from github import Github, Auth
     from github.GithubException import BadCredentialsException
 
@@ -66,7 +68,8 @@ class Authentication:
 
         if not token:
             raise GitHubAuthError(
-                "GitHub token not provided. Set GITHUB_TOKEN environment variable " "or pass token parameter."
+                "GitHub token not provided. Set GITHUB_TOKEN environment variable "
+                "or pass token parameter."
             )
 
         return token
@@ -176,8 +179,12 @@ class Authentication:
             "public_repos": user.public_repos,
             "followers": user.followers,
             "following": user.following,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
-            "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+            "created_at": (
+                user.created_at.isoformat() if user.created_at else None
+            ),
+            "updated_at": (
+                user.updated_at.isoformat() if user.updated_at else None
+            ),
         }
 
     def __str__(self) -> str:

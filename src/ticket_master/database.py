@@ -132,9 +132,7 @@ class Database(ABC):
 
     def __str__(self) -> str:
         """String representation of the database."""
-        return (
-            f"{self.__class__.__name__}(connection_string='{self.connection_string}')"
-        )
+        return f"{self.__class__.__name__}(connection_string='{self.connection_string}')"
 
     def __repr__(self) -> str:
         """Developer representation of the database."""
@@ -182,7 +180,9 @@ class UserDatabase(Database):
         """
         try:
             self._connection = sqlite3.connect(str(self.db_path))
-            self._connection.row_factory = sqlite3.Row  # Enable column access by name
+            self._connection.row_factory = (
+                sqlite3.Row
+            )  # Enable column access by name
             self.logger.info(f"Connected to user database: {self.db_path}")
         except sqlite3.Error as e:
             raise ConnectionError(f"Failed to connect to user database: {e}")
@@ -339,7 +339,8 @@ class UserDatabase(Database):
         """
         try:
             results = self.execute_query(
-                "SELECT value FROM user_preferences WHERE key = :key", {"key": key}
+                "SELECT value FROM user_preferences WHERE key = :key",
+                {"key": key},
             )
             return results[0]["value"] if results else default
         except DatabaseError:
@@ -480,7 +481,9 @@ class ServerDatabase(Database):
             DatabaseError: If query execution fails
         """
         # Placeholder implementation
-        self.logger.warning("ServerDatabase query execution is not implemented")
+        self.logger.warning(
+            "ServerDatabase query execution is not implemented"
+        )
         return []
 
     def execute_command(
@@ -499,7 +502,9 @@ class ServerDatabase(Database):
             DatabaseError: If command execution fails
         """
         # Placeholder implementation
-        self.logger.warning("ServerDatabase command execution is not implemented")
+        self.logger.warning(
+            "ServerDatabase command execution is not implemented"
+        )
         return 0
 
     def create_tables(self) -> None:
