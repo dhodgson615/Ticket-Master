@@ -1,0 +1,20 @@
+# Core dependencies
+requests>=2.31.0
+PyYAML>=6.0.1
+GitPython>=3.1.40
+
+# GitHub API
+PyGithub>=1.59.1
+
+# Command line interface
+argparse>=1.4.0
+
+# Development dependencies
+black>=23.9.1
+flake8>=6.1.0
+pytest>=7.4.2
+pytest-cov>=4.1.0
+
+# Optional LLM dependencies
+# ollama-python>=0.1.0  # Uncomment when implementing Ollama integration
+# openai>=0.28.0        # Uncomment when implementing OpenAI integration
