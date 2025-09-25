@@ -74,10 +74,14 @@ Thumbs.db
 config.yaml
 config.yml
 .env.local
+.env
 logs/
 temp/
 tmp/
 *.log
+
+# Docker
+docker-compose.override.yml
 
 # LLM models and cache
 models/

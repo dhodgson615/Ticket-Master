@@ -1,7 +1,7 @@
 # Makefile for Ticket-Master project
 # AI-powered GitHub issue generator
 
-.PHONY: help install setup test lint format format-check clean dev-install venv
+.PHONY: help install setup test lint format format-check clean dev-install venv docker docker-build docker-run docker-dev docker-shell docker-clean
 
 # Default target
 .DEFAULT_GOAL := help
@@ -22,6 +22,12 @@ MAIN_FILE := main.py
 # Virtual environment
 VENV_DIR := venv
 VENV_ACTIVATE := $(VENV_DIR)/bin/activate
+
+# Docker configuration
+DOCKER_IMAGE := ticket-master
+DOCKER_TAG := latest
+DOCKER_CONTAINER := ticket-master
+COMPOSE_FILE := docker-compose.yml
 
 help: ## Show this help message
 	@echo "Ticket-Master - AI-powered GitHub issue generator"
@@ -131,6 +137,44 @@ all: clean setup check ## Clean, setup, and run all checks
 # Development shortcuts
 dev: setup ## Setup development environment
 	@echo "Development environment ready!"
+
+# Docker targets
+docker-build: ## Build Docker image
+	@echo "Building Docker image..."
+	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	@echo "Docker image built successfully!"
+
+docker-run: docker-build ## Build and run Docker container (shows help by default)
+	@echo "Running Docker container..."
+	docker run --rm --name $(DOCKER_CONTAINER) $(DOCKER_IMAGE):$(DOCKER_TAG)
+
+docker-shell: docker-build ## Build and run Docker container with interactive shell
+	@echo "Starting Docker container with shell..."
+	docker run -it --rm --name $(DOCKER_CONTAINER) \
+		-e GITHUB_TOKEN="$$GITHUB_TOKEN" \
+		-v "$(PWD):/workspace:ro" \
+		$(DOCKER_IMAGE):$(DOCKER_TAG) /bin/bash
+
+docker-dev: ## Start development environment with Docker Compose
+	@echo "Starting development environment with Docker Compose..."
+	@if [ -z "$$GITHUB_TOKEN" ]; then \
+		echo "Warning: GITHUB_TOKEN environment variable is not set!"; \
+		echo "Set it with: export GITHUB_TOKEN='your_token_here'"; \
+	fi
+	docker compose -f $(COMPOSE_FILE) up -d ticket-master-dev
+	@echo "Development container started. Use 'docker compose exec ticket-master-dev bash' to access."
+
+docker-stop: ## Stop Docker Compose services
+	@echo "Stopping Docker Compose services..."
+	docker compose -f $(COMPOSE_FILE) down
+
+docker-clean: ## Clean Docker images and containers
+	@echo "Cleaning Docker resources..."
+	-docker compose -f $(COMPOSE_FILE) down --volumes --remove-orphans
+	-docker rmi $(DOCKER_IMAGE):$(DOCKER_TAG) 2>/dev/null || true
+	@echo "Docker cleanup completed!"
+
+docker: docker-build ## Alias for docker-build
 
 ci: install format-check lint typecheck test ## CI pipeline: install, format-check, lint, typecheck, test
 	@echo "CI pipeline completed successfully!"
