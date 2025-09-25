@@ -39,6 +39,7 @@ except ImportError:
 - **ALWAYS** test error conditions and edge cases
 - **ALWAYS** use pytest for test framework
 - **ALWAYS** mock external API calls in tests
+- **CRITICAL RULE**: Every Python file MUST have a corresponding test file (e.g., `file.py` requires `test_file.py`)
 - **NEVER** skip testing for "simple" functions
 
 ### Git and Version Control
