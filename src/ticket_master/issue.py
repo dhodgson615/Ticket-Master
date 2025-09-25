@@ -14,11 +14,19 @@ from typing import Dict, List, Optional, Any
 # Import with fallback installation
 try:
     from github import Github, Auth
-    from github.GithubException import GithubException, BadCredentialsException, RateLimitExceededException
+    from github.GithubException import (
+        GithubException,
+        BadCredentialsException,
+        RateLimitExceededException,
+    )
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"])
     from github import Github, Auth
-    from github.GithubException import GithubException, BadCredentialsException, RateLimitExceededException
+    from github.GithubException import (
+        GithubException,
+        BadCredentialsException,
+        RateLimitExceededException,
+    )
 
 
 class IssueError(Exception):
@@ -82,7 +90,9 @@ class Issue:
 
         # Validate title length (GitHub limit is 256 characters)
         if len(self.title) > 256:
-            self.logger.warning(f"Title length ({len(self.title)}) exceeds GitHub limit (256)")
+            self.logger.warning(
+                f"Title length ({len(self.title)}) exceeds GitHub limit (256)"
+            )
             self.title = self.title[:253] + "..."
 
         self.logger.info(f"Created issue: {self.title[:50]}...")
@@ -105,7 +115,8 @@ class Issue:
 
         if not token:
             raise GitHubAuthError(
-                "GitHub token not provided. Set GITHUB_TOKEN environment variable " "or pass token parameter."
+                "GitHub token not provided. Set GITHUB_TOKEN environment variable "
+                "or pass token parameter."
             )
 
         try:
@@ -124,7 +135,9 @@ class Issue:
         except Exception as e:
             raise GitHubAuthError(f"Failed to authenticate with GitHub: {e}")
 
-    def create_on_github(self, repo_name: str, token: Optional[str] = None) -> Dict[str, Any]:
+    def create_on_github(
+        self, repo_name: str, token: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Create the issue on GitHub.
 
         Args:
@@ -150,10 +163,14 @@ class Issue:
                 # Validate labels exist in repository
                 repo_labels = [label.name for label in repo.get_labels()]
                 valid_labels = [label for label in self.labels if label in repo_labels]
-                invalid_labels = [label for label in self.labels if label not in repo_labels]
+                invalid_labels = [
+                    label for label in self.labels if label not in repo_labels
+                ]
 
                 if invalid_labels:
-                    self.logger.warning(f"Invalid labels will be skipped: {invalid_labels}")
+                    self.logger.warning(
+                        f"Invalid labels will be skipped: {invalid_labels}"
+                    )
 
                 if valid_labels:
                     issue_kwargs["labels"] = valid_labels
@@ -176,7 +193,9 @@ class Issue:
                     if milestone_obj:
                         issue_kwargs["milestone"] = milestone_obj
                     else:
-                        self.logger.warning(f"Milestone '{self.milestone}' not found in repository")
+                        self.logger.warning(
+                            f"Milestone '{self.milestone}' not found in repository"
+                        )
                 except Exception as e:
                     self.logger.warning(f"Error setting milestone: {e}")
 
@@ -196,7 +215,9 @@ class Issue:
                 "assignees": [assignee.login for assignee in created_issue.assignees],
             }
 
-            self.logger.info(f"Successfully created issue #{created_issue.number}: {self.title}")
+            self.logger.info(
+                f"Successfully created issue #{created_issue.number}: {self.title}"
+            )
             return issue_info
 
         except RateLimitExceededException as e:
@@ -216,7 +237,9 @@ class Issue:
 
         # Check title length
         if len(self.title) > 256:
-            warnings.append(f"Title length ({len(self.title)}) exceeds GitHub limit (256)")
+            warnings.append(
+                f"Title length ({len(self.title)}) exceeds GitHub limit (256)"
+            )
 
         # Check for empty or very short description
         if len(self.description) < 10:
@@ -224,12 +247,15 @@ class Issue:
 
         # Check for basic formatting
         if not any(char in self.description for char in ["\n", ".", "!", "?"]):
-            warnings.append("Description appears to be a single sentence without punctuation")
+            warnings.append(
+                "Description appears to be a single sentence without punctuation"
+            )
 
         # Check for placeholder text
         placeholders = ["TODO", "FIXME", "TBD", "XXX", "[placeholder]"]
         if any(
-            placeholder in self.title.upper() or placeholder in self.description.upper() for placeholder in placeholders
+            placeholder in self.title.upper() or placeholder in self.description.upper()
+            for placeholder in placeholders
         ):
             warnings.append("Content contains placeholder text that should be replaced")
 
