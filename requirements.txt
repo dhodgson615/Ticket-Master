@@ -22,4 +22,4 @@ types-requests>=2.32.0
 
 # Optional LLM dependencies
 # ollama-python>=0.1.0  # Uncomment when implementing Ollama integration
-# openai>=0.28.0        # Uncomment when implementing OpenAI integration
+openai>=1.0.0        # OpenAI integration completed - using requests directly for better control
