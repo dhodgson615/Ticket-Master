@@ -6,7 +6,7 @@ including branch operations, last activity tracking, and representation.
 """
 
 import unittest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock
 
 from src.ticket_master.branch import Branch, BranchError
 
