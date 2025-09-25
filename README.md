@@ -14,8 +14,8 @@ based on the contents of a Git repository
   - [ ] Make an Issue class that takes in a title and description and has
         methods to create the issue on GitHub using the GitHub API
   - [ ] Make a main.py file that uses argparse to take in command line
-        arguments for the path to the Git repository and the number of issues to
-        create
+        arguments for the path to the Git repository and the number of issues
+        to create
   - [ ] Make a function that uses Ollama's API to generate issue titles and
         descriptions based on the commit history and file changes
   - [ ] Make a function that uses the GitHub API to create the issues on GitHub
@@ -223,3 +223,43 @@ based on the contents of a Git repository
         user-hosted LLM
   - [ ] Test the tool with a variety of user-hosted LLMs to ensure
         compatibility
+
+- [ ] Determine software stack
+  - [ ] Choose a web framework (e.g., Flask, Django, etc.)
+  - [ ] Choose a database (e.g., SQLite, PostgreSQL, etc.)
+  - [ ] Choose an ORM (e.g., SQLAlchemy, Django ORM, etc.)
+  - [ ] Choose a front-end framework (e.g., React, Vue, etc.)
+  - [ ] Choose a testing framework (e.g., pytest, unittest, etc.)
+  - [ ] Choose a CI/CD platform (e.g., GitHub Actions, Travis CI, etc.)
+  - [ ] Choose a code quality tool (e.g., CodeClimate, SonarQube, etc.)
+  - [ ] Choose a deployment platform (e.g., Heroku, AWS, etc.)
+
+- [ ] Create project roadmap
+  - [ ] Define project milestones and deadlines
+  - [ ] Prioritize features and tasks
+  - [ ] Allocate resources and assign tasks to team members
+  - [ ] Monitor progress and adjust the roadmap as needed
+  - [ ] Communicate the roadmap to all stakeholders
+
+- [ ] Determine software architecture
+  - [ ] Define the overall structure and organization of the codebase
+  - [ ] Identify key components and their interactions
+  - [ ] Choose design patterns and best practices to follow
+  - [ ] Ensure scalability, maintainability, and extensibility of the
+        architecture
+  - [ ] Document the architecture for future reference
+
+- [ ] Set up development environment
+  - [ ] Create a virtual environment for the project
+  - [ ] Install all required packages and dependencies
+  - [ ] Set up version control using Git
+  - [ ] Configure code formatting and linting tools
+  - [ ] Set up pre-commit hooks to enforce code quality standards
+
+- [ ] Perform initial research
+  - [ ] Research available LLMs and their capabilities
+  - [ ] Research GitHub API and its capabilities
+  - [ ] Research best practices for issue generation and management
+  - [ ] Research existing tools and solutions in the market
+  - [ ] Identify potential challenges and risks
+
