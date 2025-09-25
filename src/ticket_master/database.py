@@ -73,7 +73,9 @@ class Database(ABC):
         pass
 
     @abstractmethod
-    def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def execute_query(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Execute a database query.
 
         Args:
@@ -89,7 +91,9 @@ class Database(ABC):
         pass
 
     @abstractmethod
-    def execute_command(self, command: str, params: Optional[Dict[str, Any]] = None) -> int:
+    def execute_command(
+        self, command: str, params: Optional[Dict[str, Any]] = None
+    ) -> int:
         """Execute a database command (INSERT, UPDATE, DELETE).
 
         Args:
@@ -128,13 +132,13 @@ class Database(ABC):
 
     def __str__(self) -> str:
         """String representation of the database."""
-        return f"{self.__class__.__name__}(connection_string='{self.connection_string}')"
+        return (
+            f"{self.__class__.__name__}(connection_string='{self.connection_string}')"
+        )
 
     def __repr__(self) -> str:
         """Developer representation of the database."""
-        return (
-            f"{self.__class__.__name__}(connection_string='{self.connection_string}', connected={self.is_connected()})"
-        )
+        return f"{self.__class__.__name__}(connection_string='{self.connection_string}', connected={self.is_connected()})"
 
 
 class UserDatabase(Database):
@@ -193,7 +197,9 @@ class UserDatabase(Database):
             except sqlite3.Error as e:
                 self.logger.warning(f"Error closing database connection: {e}")
 
-    def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def execute_query(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Execute a SELECT query on the SQLite database.
 
         Args:
@@ -226,7 +232,9 @@ class UserDatabase(Database):
         except sqlite3.Error as e:
             raise DatabaseError(f"Query execution failed: {e}")
 
-    def execute_command(self, command: str, params: Optional[Dict[str, Any]] = None) -> int:
+    def execute_command(
+        self, command: str, params: Optional[Dict[str, Any]] = None
+    ) -> int:
         """Execute a command (INSERT, UPDATE, DELETE) on the SQLite database.
 
         Args:
@@ -317,7 +325,9 @@ class UserDatabase(Database):
                 self.logger.error(f"Failed to create table: {e}")
                 raise
 
-    def get_user_preference(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get_user_preference(
+        self, key: str, default: Optional[str] = None
+    ) -> Optional[str]:
         """Get user preference value.
 
         Args:
@@ -328,7 +338,9 @@ class UserDatabase(Database):
             Preference value or default
         """
         try:
-            results = self.execute_query("SELECT value FROM user_preferences WHERE key = :key", {"key": key})
+            results = self.execute_query(
+                "SELECT value FROM user_preferences WHERE key = :key", {"key": key}
+            )
             return results[0]["value"] if results else default
         except DatabaseError:
             return default
@@ -349,7 +361,11 @@ class UserDatabase(Database):
         )
 
     def cache_repository_data(
-        self, repo_path: str, cache_key: str, data: Dict[str, Any], expires_in_hours: int = 24
+        self,
+        repo_path: str,
+        cache_key: str,
+        data: Dict[str, Any],
+        expires_in_hours: int = 24,
     ) -> None:
         """Cache repository analysis data.
 
@@ -367,10 +383,16 @@ class UserDatabase(Database):
             """.format(
                 expires_in_hours
             ),
-            {"repo_path": repo_path, "cache_key": cache_key, "cache_data": json.dumps(data)},
+            {
+                "repo_path": repo_path,
+                "cache_key": cache_key,
+                "cache_data": json.dumps(data),
+            },
         )
 
-    def get_cached_repository_data(self, repo_path: str, cache_key: str) -> Optional[Dict[str, Any]]:
+    def get_cached_repository_data(
+        self, repo_path: str, cache_key: str
+    ) -> Optional[Dict[str, Any]]:
         """Get cached repository data if not expired.
 
         Args:
@@ -442,7 +464,9 @@ class ServerDatabase(Database):
             self._connection = None
             self.logger.info("Disconnected from server database")
 
-    def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def execute_query(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Execute a SELECT query on the server database.
 
         Args:
@@ -459,7 +483,9 @@ class ServerDatabase(Database):
         self.logger.warning("ServerDatabase query execution is not implemented")
         return []
 
-    def execute_command(self, command: str, params: Optional[Dict[str, Any]] = None) -> int:
+    def execute_command(
+        self, command: str, params: Optional[Dict[str, Any]] = None
+    ) -> int:
         """Execute a command on the server database.
 
         Args:

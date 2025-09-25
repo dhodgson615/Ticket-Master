@@ -12,6 +12,9 @@ __description__ = "AI-powered GitHub issue generator"
 from .repository import Repository
 from .issue import Issue
 from .auth import Authentication, AuthenticationError, GitHubAuthError
+from .commit import Commit
+from .branch import Branch
+from .pull_request import PullRequest
 from .database import Database, UserDatabase, ServerDatabase
 from .llm import LLM, LLMProvider, LLMBackend
 from .prompt import Prompt, PromptTemplate, PromptType
@@ -24,6 +27,9 @@ __all__ = [
     "Authentication",
     "AuthenticationError",
     "GitHubAuthError",
+    "Commit",
+    "Branch",
+    "PullRequest",
     "Database",
     "UserDatabase",
     "ServerDatabase",

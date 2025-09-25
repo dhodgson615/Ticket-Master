@@ -38,7 +38,10 @@ def setup_logging(level: str = "INFO") -> None:
     numeric_level = getattr(logging, level.upper(), logging.INFO)
 
     # Create formatter
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     # Setup console handler
     console_handler = logging.StreamHandler(sys.stdout)
@@ -70,7 +73,10 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
             "token": os.getenv("GITHUB_TOKEN"),
             "default_labels": ["enhancement", "automated"],
         },
-        "repository": {"max_commits": 50, "ignore_patterns": [".git", "__pycache__", "*.pyc", "node_modules"]},
+        "repository": {
+            "max_commits": 50,
+            "ignore_patterns": [".git", "__pycache__", "*.pyc", "node_modules"],
+        },
         "issue_generation": {"max_issues": 5, "min_description_length": 50},
         "llm": {
             "provider": "ollama",  # Future implementation
@@ -89,7 +95,11 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
                 """Recursively merge dictionaries."""
                 result = default.copy()
                 for key, value in user.items():
-                    if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                    if (
+                        key in result
+                        and isinstance(result[key], dict)
+                        and isinstance(value, dict)
+                    ):
                         result[key] = merge_dicts(result[key], value)
                     else:
                         result[key] = value
@@ -98,7 +108,9 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
             return merge_dicts(default_config, user_config)
 
         except Exception as e:
-            logging.getLogger(__name__).warning(f"Failed to load config from {config_path}: {e}")
+            logging.getLogger(__name__).warning(
+                f"Failed to load config from {config_path}: {e}"
+            )
 
     return default_config
 
@@ -134,7 +146,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
 
         # Get file changes
         file_changes = repo.get_file_changes(max_commits=max_commits)
-        logger.info(f"Analyzed changes across {file_changes['summary']['total_files']} files")
+        logger.info(
+            f"Analyzed changes across {file_changes['summary']['total_files']} files"
+        )
 
         return {
             "repository_info": repo_info,
@@ -154,7 +168,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
         raise RepositoryError(f"Repository analysis failed: {e}")
 
 
-def generate_sample_issues(analysis: Dict[str, Any], config: Dict[str, Any]) -> List[Issue]:
+def generate_sample_issues(
+    analysis: Dict[str, Any], config: Dict[str, Any]
+) -> List[Issue]:
     """Generate sample issues based on repository analysis.
 
     Note: This is a placeholder implementation. In the future, this will use
@@ -208,7 +224,11 @@ This issue was automatically generated based on repository analysis.""",
         )
 
     # Issue 2: Code review for high-activity files
-    high_activity_files = {file: info for file, info in file_changes["modified_files"].items() if info["changes"] > 3}
+    high_activity_files = {
+        file: info
+        for file, info in file_changes["modified_files"].items()
+        if info["changes"] > 3
+    }
 
     if high_activity_files:
         issues.append(
@@ -307,10 +327,14 @@ def create_issues_on_github(
         connection_test = test_github_connection(config["github"]["token"])
 
         if not connection_test["authenticated"]:
-            raise GitHubAuthError(f"GitHub authentication failed: {connection_test['error']}")
+            raise GitHubAuthError(
+                f"GitHub authentication failed: {connection_test['error']}"
+            )
 
         logger.info(f"Connected to GitHub as: {connection_test['user']['login']}")
-        logger.info(f"Rate limit remaining: {connection_test['rate_limit']['core']['remaining']}")
+        logger.info(
+            f"Rate limit remaining: {connection_test['rate_limit']['core']['remaining']}"
+        )
 
     except Exception as e:
         raise GitHubAuthError(f"Failed to connect to GitHub: {e}")
@@ -334,7 +358,9 @@ def create_issues_on_github(
                 logger.info(f"[DRY RUN] Would create issue {i}: {issue.title}")
             else:
                 # Actually create the issue
-                issue_info = issue.create_on_github(repo_name, config["github"]["token"])
+                issue_info = issue.create_on_github(
+                    repo_name, config["github"]["token"]
+                )
                 result = {
                     "issue_number": issue_info["number"],
                     "title": issue_info["title"],
@@ -347,14 +373,21 @@ def create_issues_on_github(
             results.append(result)
 
         except Exception as e:
-            error_result = {"issue_number": i, "title": issue.title, "error": str(e), "created": False}
+            error_result = {
+                "issue_number": i,
+                "title": issue.title,
+                "error": str(e),
+                "created": False,
+            }
             results.append(error_result)
             logger.error(f"Failed to create issue {i}: {e}")
 
     return results
 
 
-def print_results_summary(results: List[Dict[str, Any]], analysis: Dict[str, Any]) -> None:
+def print_results_summary(
+    results: List[Dict[str, Any]], analysis: Dict[str, Any]
+) -> None:
     """Print summary of results to console.
 
     Args:
@@ -374,7 +407,9 @@ def print_results_summary(results: List[Dict[str, Any]], analysis: Dict[str, Any
     print(f"Commits analyzed: {summary['commit_count']}")
     print(f"Files modified: {summary['files_modified']}")
     print(f"Files added: {summary['files_added']}")
-    print(f"Total changes: +{summary['total_insertions']}/-{summary['total_deletions']} lines")
+    print(
+        f"Total changes: +{summary['total_insertions']}/-{summary['total_deletions']} lines"
+    )
 
     # Issues summary
     print(f"\nIssues processed: {len(results)}")
@@ -395,7 +430,11 @@ def print_results_summary(results: List[Dict[str, Any]], analysis: Dict[str, Any
     print("\nIssue Details:")
     for result in results:
         status = "✓" if (result.get("created") or result.get("would_create")) else "✗"
-        title = result["title"][:60] + "..." if len(result["title"]) > 60 else result["title"]
+        title = (
+            result["title"][:60] + "..."
+            if len(result["title"]) > 60
+            else result["title"]
+        )
 
         if result.get("url"):
             print(f"  {status} #{result['issue_number']}: {title}")
@@ -439,12 +478,18 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
     # Required arguments
     parser.add_argument("repository_path", help="Path to the Git repository to analyze")
 
-    parser.add_argument("github_repo", help='GitHub repository name in format "owner/repo"')
+    parser.add_argument(
+        "github_repo", help='GitHub repository name in format "owner/repo"'
+    )
 
     # Optional arguments
     parser.add_argument("--config", help="Path to configuration YAML file")
 
-    parser.add_argument("--max-issues", type=int, help="Maximum number of issues to generate (overrides config)")
+    parser.add_argument(
+        "--max-issues",
+        type=int,
+        help="Maximum number of issues to generate (overrides config)",
+    )
 
     parser.add_argument(
         "--dry-run",
@@ -459,7 +504,9 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         help="Set the logging level",
     )
 
-    parser.add_argument("--version", action="version", version=f"Ticket-Master {__version__}")
+    parser.add_argument(
+        "--version", action="version", version=f"Ticket-Master {__version__}"
+    )
 
     args = parser.parse_args()
 
@@ -479,7 +526,9 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
 
         # Validate required configuration
         if not config["github"]["token"]:
-            logger.error("GitHub token not found. Set GITHUB_TOKEN environment variable or add to config file.")
+            logger.error(
+                "GitHub token not found. Set GITHUB_TOKEN environment variable or add to config file."
+            )
             return 1
 
         # Validate repository path
@@ -507,7 +556,9 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
 
         # Create issues on GitHub
         logger.info(f"Processing {len(issues)} issues...")
-        results = create_issues_on_github(issues, args.github_repo, config, args.dry_run)
+        results = create_issues_on_github(
+            issues, args.github_repo, config, args.dry_run
+        )
 
         # Print summary
         print_results_summary(results, analysis)
