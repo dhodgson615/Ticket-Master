@@ -1,0 +1,98 @@
+# Ticket-Master Configuration File
+# Copy this file to config.yaml and customize as needed
+
+# GitHub Configuration
+github:
+  # GitHub Personal Access Token
+  # Can also be set via GITHUB_TOKEN environment variable
+  token: null
+  
+  # Default labels to apply to generated issues
+  default_labels:
+    - "enhancement"
+    - "automated"
+    - "ai-generated"
+
+# Repository Analysis Configuration
+repository:
+  # Maximum number of commits to analyze
+  max_commits: 50
+  
+  # Patterns to ignore during analysis
+  ignore_patterns:
+    - ".git"
+    - "__pycache__"
+    - "*.pyc"
+    - "node_modules"
+    - "dist"
+    - "build"
+    - ".env"
+    - "*.log"
+
+# Issue Generation Configuration
+issue_generation:
+  # Maximum number of issues to generate per run
+  max_issues: 5
+  
+  # Minimum length for issue descriptions
+  min_description_length: 50
+  
+  # Issue templates (placeholder for future implementation)
+  templates:
+    - name: "documentation"
+      priority: "high"
+    - name: "testing"
+      priority: "medium"
+    - name: "refactoring"
+      priority: "low"
+
+# LLM Configuration (placeholder for future implementation)
+llm:
+  # Primary LLM provider (ollama, openai, etc.)
+  provider: "ollama"
+  
+  # Model to use for issue generation
+  model: "llama2"
+  
+  # Temperature for text generation (0.0 = deterministic, 1.0 = creative)
+  temperature: 0.7
+  
+  # Maximum tokens for generated content
+  max_tokens: 1000
+  
+  # Ollama-specific configuration
+  ollama:
+    base_url: "http://localhost:11434"
+    timeout: 30
+  
+  # OpenAI-specific configuration
+  openai:
+    api_key: null  # Set via OPENAI_API_KEY environment variable
+    organization: null
+
+# Logging Configuration
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  level: "INFO"
+  
+  # Log to file (null to disable file logging)
+  file: null
+  
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Advanced Configuration
+advanced:
+  # Enable caching of analysis results
+  enable_caching: true
+  
+  # Cache directory
+  cache_dir: ".ticket_master_cache"
+  
+  # Maximum age of cached data in hours
+  cache_max_age: 24
+  
+  # Parallel processing settings
+  parallel:
+    enabled: false
+    max_workers: 4
