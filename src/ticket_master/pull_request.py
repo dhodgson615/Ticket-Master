@@ -7,11 +7,12 @@ GitHub pull requests in an object-oriented way.
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 # Import with fallback installation
 try:
-    from github import Github, PullRequest as GitHubPullRequest
+    from github import Github
+    from github import PullRequest as GitHubPullRequest
     from github.GithubException import GithubException
 except ImportError:
     import subprocess
@@ -23,8 +24,8 @@ except ImportError:
     from github import Github, PullRequest as GitHubPullRequest
     from github.GithubException import GithubException
 
-from .commit import Commit
 from .branch import Branch
+from .commit import Commit
 
 
 class PullRequestError(Exception):

@@ -5,18 +5,20 @@ This module provides comprehensive tests for the newly implemented classes
 to ensure they work correctly and integrate properly with the existing codebase.
 """
 
-import unittest
-import tempfile
-import shutil
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
 import json
+import shutil
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
-from src.ticket_master.database import Database, UserDatabase, ServerDatabase, DatabaseError
-from src.ticket_master.llm import LLM, LLMProvider, LLMError, OllamaBackend
-from src.ticket_master.prompt import Prompt, PromptTemplate, PromptType, PromptError
-from src.ticket_master.pipe import Pipe, PipelineStep, PipeStage, PipeError
 from src.ticket_master.data_scraper import DataScraper, DataScraperError
+from src.ticket_master.database import (Database, DatabaseError,
+                                        ServerDatabase, UserDatabase)
+from src.ticket_master.llm import LLM, LLMError, LLMProvider, OllamaBackend
+from src.ticket_master.pipe import Pipe, PipeError, PipelineStep, PipeStage
+from src.ticket_master.prompt import (Prompt, PromptError, PromptTemplate,
+                                      PromptType)
 
 
 class TestUserDatabase(unittest.TestCase):

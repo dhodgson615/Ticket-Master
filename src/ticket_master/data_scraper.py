@@ -6,14 +6,14 @@ all information from a repository to build detailed Repository objects
 with enhanced metadata, analysis capabilities, and caching support.
 """
 
+import json
 import logging
 import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
-from datetime import datetime
-import json
 import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 # Import with fallback installation
 try:
@@ -28,8 +28,8 @@ except ImportError:
     )
     from git import Repo, InvalidGitRepositoryError
 
+from .database import DatabaseError, UserDatabase
 from .repository import Repository, RepositoryError
-from .database import UserDatabase, DatabaseError
 
 
 class DataScraperError(Exception):

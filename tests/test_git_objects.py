@@ -5,20 +5,21 @@ This module provides comprehensive tests for the newly implemented Git object cl
 to ensure they work correctly and integrate properly with the existing codebase.
 """
 
-import pytest
-import tempfile
-import shutil
 import os
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
-
+import shutil
 # Add src to path for imports
 import sys
+import tempfile
+from datetime import datetime
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.commit import Commit, CommitError
 from ticket_master.branch import Branch, BranchError
+from ticket_master.commit import Commit, CommitError
 from ticket_master.pull_request import PullRequest, PullRequestError
 from ticket_master.repository import Repository, RepositoryError
 

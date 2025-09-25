@@ -7,11 +7,12 @@ Git commits in an object-oriented way.
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 # Import with fallback installation
 try:
-    from git import Commit as GitCommit, NULL_TREE
+    from git import NULL_TREE
+    from git import Commit as GitCommit
 except ImportError:
     import subprocess
     import sys
@@ -19,7 +20,8 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
-    from git import Commit as GitCommit, NULL_TREE
+    from git import NULL_TREE
+    from git import Commit as GitCommit
 
 
 class CommitError(Exception):

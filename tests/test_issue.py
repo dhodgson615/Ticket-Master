@@ -2,16 +2,17 @@
 Tests for the Issue class.
 """
 
-import pytest
 import os
-from unittest.mock import patch, MagicMock
-from pathlib import Path
-
 # Add src to path for imports
 import sys
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.issue import Issue, IssueError, GitHubAuthError
+from ticket_master.issue import GitHubAuthError, Issue, IssueError
 from ticket_master.issue import test_github_connection as connection_test
 
 

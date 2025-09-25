@@ -7,11 +7,12 @@ Git branches in an object-oriented way.
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 # Import with fallback installation
 try:
-    from git import Head as GitHead, RemoteReference
+    from git import Head as GitHead
+    from git import RemoteReference
 except ImportError:
     import subprocess
     import sys

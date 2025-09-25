@@ -9,10 +9,10 @@ using AI analysis of Git repository contents.
 import argparse
 import logging
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -26,9 +26,9 @@ except ImportError:
     )
     import yaml
 
-from ticket_master import Repository, Issue, __version__
+from ticket_master import Issue, Repository, __version__
+from ticket_master.issue import GitHubAuthError, IssueError
 from ticket_master.repository import RepositoryError
-from ticket_master.issue import IssueError, GitHubAuthError
 
 
 def setup_logging(level: str = "INFO") -> None:

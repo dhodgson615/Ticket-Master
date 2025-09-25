@@ -9,14 +9,14 @@ issue generation.
 import logging
 import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Import with fallback installation
 try:
     import git
-    from git import Repo, InvalidGitRepositoryError
+    from git import InvalidGitRepositoryError, Repo
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
@@ -24,9 +24,8 @@ except ImportError:
     import git
     from git import Repo, InvalidGitRepositoryError
 
-
-from .commit import Commit
 from .branch import Branch
+from .commit import Commit
 
 
 class RepositoryError(Exception):

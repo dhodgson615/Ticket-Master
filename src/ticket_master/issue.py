@@ -9,16 +9,14 @@ import logging
 import os
 import subprocess
 import sys
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 # Import with fallback installation
 try:
-    from github import Github, Auth
-    from github.GithubException import (
-        GithubException,
-        BadCredentialsException,
-        RateLimitExceededException,
-    )
+    from github import Auth, Github
+    from github.GithubException import (BadCredentialsException,
+                                        GithubException,
+                                        RateLimitExceededException)
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
@@ -30,7 +28,8 @@ except ImportError:
         RateLimitExceededException,
     )
 
-from .auth import Authentication, GitHubAuthError as AuthGitHubAuthError
+from .auth import Authentication
+from .auth import GitHubAuthError as AuthGitHubAuthError
 
 
 class IssueError(Exception):

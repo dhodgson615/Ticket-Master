@@ -2,15 +2,16 @@
 Tests for the Repository class.
 """
 
-import pytest
-import tempfile
-import shutil
 import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-
+import shutil
 # Add src to path for imports
 import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from ticket_master.repository import Repository, RepositoryError

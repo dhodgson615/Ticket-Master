@@ -6,12 +6,12 @@ both local user data and server data operations with proper connection managemen
 error handling, and security considerations.
 """
 
+import json
 import logging
+import sqlite3
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-import json
-import sqlite3
+from typing import Any, Dict, List, Optional
 
 # Import with fallback installation - placeholder
 # (yaml not needed in current implementation)
