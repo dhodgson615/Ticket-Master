@@ -7,6 +7,7 @@ using AI analysis of Git repository contents.
 """
 
 import argparse
+import json
 import logging
 import os
 import subprocess
@@ -29,6 +30,8 @@ except ImportError:
 from ticket_master import Issue, Repository, __version__
 from ticket_master.issue import GitHubAuthError, IssueError
 from ticket_master.repository import RepositoryError
+from ticket_master.llm import LLM, LLMError, LLMProvider
+from ticket_master.prompt import Prompt
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -86,9 +89,11 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         },
         "issue_generation": {"max_issues": 5, "min_description_length": 50},
         "llm": {
-            "provider": "ollama",  # Future implementation
-            "model": "llama2",  # Future implementation
-            "temperature": 0.7,  # Future implementation
+            "provider": "ollama",
+            "model": "llama3.2",
+            "host": "localhost",
+            "port": 11434,
+            "temperature": 0.7,
         },
     }
 
@@ -181,13 +186,168 @@ def analyze_repository(
         raise RepositoryError(f"Repository analysis failed: {e}")
 
 
+def generate_issues_with_llm(
+    analysis: Dict[str, Any], config: Dict[str, Any]
+) -> List[Issue]:
+    """Generate issues using LLM based on repository analysis.
+
+    Args:
+        analysis: Repository analysis results
+        config: Configuration dictionary
+
+    Returns:
+        List of generated Issue objects
+    """
+    logger = logging.getLogger(__name__)
+    issues = []
+
+    try:
+        # Initialize LLM
+        llm_config = config["llm"].copy()
+        provider = llm_config.pop("provider", "ollama")
+        
+        logger.info(f"Initializing LLM with provider: {provider}")
+        llm = LLM(provider, llm_config)
+
+        # Check if LLM is available
+        if not llm.is_available():
+            logger.warning(f"LLM provider {provider} is not available, falling back to sample generation")
+            return generate_sample_issues(analysis, config)
+
+        # Initialize prompt manager
+        prompt_manager = Prompt(default_provider=provider)
+        
+        # For now, create a simple prompt since we need to understand the structure better
+        # TODO: Replace with proper prompt template usage
+        prompt = f"""You are an expert software development assistant. Based on the following repository analysis, generate {max_issues} high-quality GitHub issues.
+
+Repository Information:
+- Name: {analysis['repository_info']['name']}
+- Branch: {analysis['repository_info']['active_branch']}
+- Commits analyzed: {analysis['analysis_summary']['commit_count']}
+- Files modified: {analysis['analysis_summary']['files_modified']}
+- Files added: {analysis['analysis_summary']['files_added']}
+- Total changes: +{analysis['analysis_summary']['total_insertions']}/-{analysis['analysis_summary']['total_deletions']} lines
+
+Recent Commits:
+{chr(10).join(f"- {commit['short_hash']}: {commit['summary']}" for commit in analysis['commits'][:5])}
+
+Generate {max_issues} actionable GitHub issues in JSON format. Each issue should have:
+- title: Clear, specific title
+- description: Detailed description with context
+- labels: Relevant labels (include {config['github']['default_labels']})
+
+Respond with valid JSON only:
+[
+  {{
+    "title": "Issue title",
+    "description": "Detailed description",
+    "labels": ["label1", "label2"]
+  }}
+]"""
+
+        logger.info("Generating issues using LLM...")
+        
+        # Generate response using LLM
+        llm_response = llm.generate(
+            prompt,
+            temperature=llm_config.get("temperature", 0.7),
+            max_tokens=llm_config.get("max_tokens", 2000)
+        )
+
+        if not llm_response or not llm_response.get("response"):
+            logger.warning("LLM generated empty response, falling back to sample generation")
+            return generate_sample_issues(analysis, config)
+
+        # Parse the LLM response to extract issues
+        generated_text = llm_response["response"]
+        logger.debug(f"LLM generated response: {generated_text}")
+
+        # Try to parse the response as JSON first
+        parsed_issues = []
+        try:
+            # Clean the response - remove any markdown formatting
+            cleaned_response = generated_text.strip()
+            if cleaned_response.startswith('```json'):
+                cleaned_response = cleaned_response[7:]
+            if cleaned_response.endswith('```'):
+                cleaned_response = cleaned_response[:-3]
+            cleaned_response = cleaned_response.strip()
+            
+            # Try to parse as JSON
+            parsed_issues = json.loads(cleaned_response)
+            
+            # Ensure it's a list
+            if not isinstance(parsed_issues, list):
+                parsed_issues = [parsed_issues] if parsed_issues else []
+                
+        except json.JSONDecodeError:
+            # If JSON parsing fails, try to extract issues from text
+            logger.warning("Failed to parse as JSON, attempting text extraction")
+            parsed_issues = []
+        
+        if not parsed_issues:
+            logger.warning("Failed to parse LLM response, falling back to sample generation")
+            return generate_sample_issues(analysis, config)
+
+        # Convert parsed data to Issue objects
+        default_labels = config["github"]["default_labels"]
+        
+        for issue_data in parsed_issues[:max_issues]:
+            try:
+                # Ensure minimum required fields
+                title = issue_data.get("title", "").strip()
+                description = issue_data.get("description", "").strip()
+                
+                if not title or not description:
+                    logger.warning(f"Skipping incomplete issue: {issue_data}")
+                    continue
+
+                # Combine default labels with LLM-suggested labels
+                issue_labels = default_labels.copy()
+                suggested_labels = issue_data.get("labels", [])
+                if isinstance(suggested_labels, list):
+                    issue_labels.extend(suggested_labels)
+                
+                issue = Issue(
+                    title=title,
+                    description=description,
+                    labels=issue_labels,
+                    assignees=issue_data.get("assignees", [])
+                )
+                
+                issues.append(issue)
+                logger.info(f"Created issue: {title}")
+                
+            except Exception as e:
+                logger.error(f"Error creating issue from LLM data: {e}")
+                continue
+
+        if not issues:
+            logger.warning("No valid issues were generated from LLM response")
+            return generate_sample_issues(analysis, config)
+
+        logger.info(f"Successfully generated {len(issues)} issues using LLM")
+        return issues
+
+    except LLMError as e:
+        logger.error(f"LLM error: {e}")
+        logger.info("Falling back to sample issue generation")
+        return generate_sample_issues(analysis, config)
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in LLM issue generation: {e}")
+        logger.info("Falling back to sample issue generation")
+        return generate_sample_issues(analysis, config)
+
+
 def generate_sample_issues(
     analysis: Dict[str, Any], config: Dict[str, Any]
 ) -> List[Issue]:
     """Generate sample issues based on repository analysis.
 
-    Note: This is a placeholder implementation. In the future, this will use
-    LLM integration to generate intelligent issue suggestions.
+    This is a fallback implementation that generates basic issues based on
+    repository patterns when LLM is not available.
 
     Args:
         analysis: Repository analysis results
@@ -577,8 +737,8 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         analysis = analyze_repository(str(repo_path), config)
 
         # Generate issues
-        logger.info("Generating issues...")
-        issues = generate_sample_issues(analysis, config)
+        logger.info("Generating issues using AI...")
+        issues = generate_issues_with_llm(analysis, config)
 
         if not issues:
             logger.warning(
