@@ -68,7 +68,7 @@ class PromptTemplate:
         prompt_type: Union[PromptType, str],
         base_template: str,
         provider_variations: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize a prompt template.
 
@@ -105,11 +105,7 @@ class PromptTemplate:
         if "created_at" not in self.metadata:
             self.metadata["created_at"] = datetime.now().isoformat()
 
-    def render(
-        self,
-        variables: Dict[str, Any],
-        provider: Optional[str] = None
-    ) -> str:
+    def render(self, variables: Dict[str, Any], provider: Optional[str] = None) -> str:
         """Render the prompt template with given variables.
 
         Args:
@@ -131,7 +127,7 @@ class PromptTemplate:
 
             # Render the template
             rendered = template.format(**variables)
-            
+
             self.logger.debug(f"Successfully rendered template '{self.name}' for provider '{provider}'")
             return rendered
 
@@ -148,16 +144,16 @@ class PromptTemplate:
             List of required variable names
         """
         required_vars = set()
-        
+
         # Check base template
         template_vars = self._extract_variables(self.base_template)
         required_vars.update(template_vars)
-        
+
         # Check provider variations
         for variation in self.provider_variations.values():
             variation_vars = self._extract_variables(variation)
             required_vars.update(variation_vars)
-        
+
         return sorted(list(required_vars))
 
     def _extract_variables(self, template: str) -> List[str]:
@@ -170,8 +166,9 @@ class PromptTemplate:
             List of variable names found in the template
         """
         import re
+
         # Find all {variable_name} patterns
-        pattern = r'\{([^}]+)\}'
+        pattern = r"\{([^}]+)\}"
         matches = re.findall(pattern, template)
         return [match.strip() for match in matches]
 
@@ -194,7 +191,7 @@ class PromptTemplate:
             "required_variables": required_vars,
             "provided_variables": list(provided_vars),
             "missing_variables": list(missing_vars),
-            "extra_variables": list(extra_vars)
+            "extra_variables": list(extra_vars),
         }
 
     def add_provider_variation(self, provider: str, template: str) -> None:
@@ -206,7 +203,7 @@ class PromptTemplate:
         """
         if not provider or not provider.strip():
             raise PromptTemplateError("Provider name cannot be empty")
-        
+
         if not template or not template.strip():
             raise PromptTemplateError("Provider template cannot be empty")
 
@@ -225,7 +222,7 @@ class PromptTemplate:
             "base_template": self.base_template,
             "provider_variations": self.provider_variations,
             "metadata": self.metadata,
-            "required_variables": self.get_required_variables()
+            "required_variables": self.get_required_variables(),
         }
 
     @classmethod
@@ -247,7 +244,7 @@ class PromptTemplate:
                 prompt_type=data["prompt_type"],
                 base_template=data["base_template"],
                 provider_variations=data.get("provider_variations"),
-                metadata=data.get("metadata")
+                metadata=data.get("metadata"),
             )
         except KeyError as e:
             raise PromptTemplateError(f"Missing required field in template data: {e}")
@@ -313,12 +310,7 @@ class Prompt:
         """
         return self.templates.get(name)
 
-    def render_template(
-        self,
-        name: str,
-        variables: Dict[str, Any],
-        provider: Optional[str] = None
-    ) -> str:
+    def render_template(self, name: str, variables: Dict[str, Any], provider: Optional[str] = None) -> str:
         """Render a specific template with variables.
 
         Args:
@@ -351,10 +343,7 @@ class Prompt:
         if prompt_type is None:
             return list(self.templates.keys())
 
-        return [
-            name for name, template in self.templates.items()
-            if template.prompt_type == prompt_type
-        ]
+        return [name for name, template in self.templates.items() if template.prompt_type == prompt_type]
 
     def get_templates_by_type(self, prompt_type: PromptType) -> List[PromptTemplate]:
         """Get all templates of a specific type.
@@ -365,10 +354,7 @@ class Prompt:
         Returns:
             List of PromptTemplate instances
         """
-        return [
-            template for template in self.templates.values()
-            if template.prompt_type == prompt_type
-        ]
+        return [template for template in self.templates.values() if template.prompt_type == prompt_type]
 
     def validate_template(self, name: str, variables: Dict[str, Any]) -> Dict[str, Any]:
         """Validate variables for a specific template.
@@ -402,13 +388,13 @@ class Prompt:
             PromptError: If file cannot be loaded or contains invalid data
         """
         file_path = Path(file_path)
-        
+
         if not file_path.exists():
             raise PromptError(f"Template file not found: {file_path}")
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                if file_path.suffix.lower() == '.json':
+            with open(file_path, "r", encoding="utf-8") as f:
+                if file_path.suffix.lower() == ".json":
                     data = json.load(f)
                 else:  # Assume YAML
                     data = yaml.safe_load(f)
@@ -443,7 +429,7 @@ class Prompt:
             PromptError: If file cannot be saved
         """
         file_path = Path(file_path)
-        
+
         # Ensure parent directory exists
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -451,14 +437,14 @@ class Prompt:
             "metadata": {
                 "created_at": datetime.now().isoformat(),
                 "template_count": len(self.templates),
-                "default_provider": self.default_provider
+                "default_provider": self.default_provider,
             },
-            "templates": [template.to_dict() for template in self.templates.values()]
+            "templates": [template.to_dict() for template in self.templates.values()],
         }
 
         try:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                if file_path.suffix.lower() == '.json':
+            with open(file_path, "w", encoding="utf-8") as f:
+                if file_path.suffix.lower() == ".json":
                     json.dump(data, f, indent=2, ensure_ascii=False)
                 else:  # Default to YAML
                     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
@@ -470,7 +456,7 @@ class Prompt:
 
     def create_builtin_templates(self) -> None:
         """Create a set of built-in templates for common use cases."""
-        
+
         # Issue generation template
         issue_gen_template = PromptTemplate(
             name="basic_issue_generation",
@@ -556,13 +542,13 @@ TITLE: [Concise, actionable title]
 DESCRIPTION: [Comprehensive description with rationale and acceptance criteria]
 LABELS: [Appropriate labels like 'documentation', 'enhancement', 'bug', etc.]
 
-Generate the issues:"""
+Generate the issues:""",
             },
             metadata={
                 "description": "Basic template for generating GitHub issues from repository analysis",
                 "version": "1.0",
-                "category": "issue_generation"
-            }
+                "category": "issue_generation",
+            },
         )
 
         # Issue description template
@@ -609,8 +595,8 @@ Create a well-structured issue description with:
 - **Acceptance Criteria**: Definition of done
 - **Additional Notes**: Any relevant context
 
-**Issue Description**:"""
-            }
+**Issue Description**:""",
+            },
         )
 
         # Code analysis template
@@ -632,10 +618,7 @@ Please analyze:
 4. Testing needs
 
 Analysis:""",
-            metadata={
-                "description": "Template for analyzing code changes and diffs",
-                "version": "1.0"
-            }
+            metadata={"description": "Template for analyzing code changes and diffs", "version": "1.0"},
         )
 
         # Add templates to container

@@ -7,21 +7,14 @@ error handling, and security considerations.
 """
 
 import logging
-import subprocess
-import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 import json
 import sqlite3
-from datetime import datetime
 
-# Import with fallback installation
-try:
-    import yaml
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"])
-    import yaml
+# Import with fallback installation - placeholder
+# (yaml not needed in current implementation)
 
 
 class DatabaseError(Exception):
@@ -139,7 +132,9 @@ class Database(ABC):
 
     def __repr__(self) -> str:
         """Developer representation of the database."""
-        return f"{self.__class__.__name__}(connection_string='{self.connection_string}', connected={self.is_connected()})"
+        return (
+            f"{self.__class__.__name__}(connection_string='{self.connection_string}', connected={self.is_connected()})"
+        )
 
 
 class UserDatabase(Database):
@@ -311,7 +306,7 @@ class UserDatabase(Database):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 status TEXT DEFAULT 'draft'
             )
-            """
+            """,
         ]
 
         for table_sql in tables:
@@ -333,10 +328,7 @@ class UserDatabase(Database):
             Preference value or default
         """
         try:
-            results = self.execute_query(
-                "SELECT value FROM user_preferences WHERE key = :key",
-                {"key": key}
-            )
+            results = self.execute_query("SELECT value FROM user_preferences WHERE key = :key", {"key": key})
             return results[0]["value"] if results else default
         except DatabaseError:
             return default
@@ -353,11 +345,12 @@ class UserDatabase(Database):
             INSERT OR REPLACE INTO user_preferences (key, value, updated_at)
             VALUES (:key, :value, CURRENT_TIMESTAMP)
             """,
-            {"key": key, "value": value}
+            {"key": key, "value": value},
         )
 
-    def cache_repository_data(self, repo_path: str, cache_key: str, data: Dict[str, Any],
-                             expires_in_hours: int = 24) -> None:
+    def cache_repository_data(
+        self, repo_path: str, cache_key: str, data: Dict[str, Any], expires_in_hours: int = 24
+    ) -> None:
         """Cache repository analysis data.
 
         Args:
@@ -371,12 +364,10 @@ class UserDatabase(Database):
             INSERT OR REPLACE INTO repository_cache 
             (repo_path, cache_key, cache_data, created_at, expires_at)
             VALUES (:repo_path, :cache_key, :cache_data, CURRENT_TIMESTAMP, datetime('now', '+{} hours'))
-            """.format(expires_in_hours),
-            {
-                "repo_path": repo_path,
-                "cache_key": cache_key,
-                "cache_data": json.dumps(data)
-            }
+            """.format(
+                expires_in_hours
+            ),
+            {"repo_path": repo_path, "cache_key": cache_key, "cache_data": json.dumps(data)},
         )
 
     def get_cached_repository_data(self, repo_path: str, cache_key: str) -> Optional[Dict[str, Any]]:
@@ -396,7 +387,7 @@ class UserDatabase(Database):
                 WHERE repo_path = :repo_path AND cache_key = :cache_key AND 
                 (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 """,
-                {"repo_path": repo_path, "cache_key": cache_key}
+                {"repo_path": repo_path, "cache_key": cache_key},
             )
 
             if results:

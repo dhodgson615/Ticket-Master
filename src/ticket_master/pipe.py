@@ -11,10 +11,9 @@ import time
 from typing import Dict, List, Optional, Any, Callable, Union
 from enum import Enum
 from datetime import datetime
-import json
 
-from .llm import LLM, LLMError
-from .prompt import Prompt, PromptTemplate, PromptType
+from .llm import LLM
+from .prompt import Prompt, PromptTemplate
 
 
 class PipeError(Exception):
@@ -66,7 +65,7 @@ class PipelineStep:
         prompt_template: Union[str, PromptTemplate],
         stage: Union[PipeStage, str] = PipeStage.INTERMEDIATE,
         validator: Optional[Callable[[str, Dict[str, Any]], Dict[str, Any]]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize a pipeline step.
 
@@ -99,10 +98,7 @@ class PipelineStep:
         self.logger = logging.getLogger(f"{self.__class__.__name__}.{self.name}")
 
     def execute(
-        self,
-        variables: Dict[str, Any],
-        prompt_manager: Optional[Prompt] = None,
-        **llm_kwargs
+        self, variables: Dict[str, Any], prompt_manager: Optional[Prompt] = None, **llm_kwargs
     ) -> Dict[str, Any]:
         """Execute this pipeline step.
 
@@ -124,7 +120,7 @@ class PipelineStep:
             if isinstance(self.prompt_template, str):
                 if not prompt_manager:
                     raise PipeExecutionError(f"Prompt manager required for template '{self.prompt_template}'")
-                
+
                 template = prompt_manager.get_template(self.prompt_template)
                 if not template:
                     raise PipeExecutionError(f"Template '{self.prompt_template}' not found")
@@ -157,7 +153,7 @@ class PipelineStep:
                 "llm_metadata": response["metadata"],
                 "validation": validation_result,
                 "execution_time": execution_time,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
             self.logger.info(f"Successfully executed step '{self.name}' in {execution_time:.2f}s")
@@ -169,8 +165,8 @@ class PipelineStep:
                 "stage": self.stage.value,
                 "success": False,
                 "error": str(e),
-                "execution_time": time.time() - start_time if 'start_time' in locals() else 0,
-                "timestamp": datetime.now().isoformat()
+                "execution_time": time.time() - start_time if "start_time" in locals() else 0,
+                "timestamp": datetime.now().isoformat(),
             }
             self.logger.error(f"Step '{self.name}' failed: {e}")
             raise PipeExecutionError(f"Step '{self.name}' failed: {e}") from e
@@ -204,7 +200,7 @@ class Pipe:
         input_llm: LLM,
         output_llm: LLM,
         intermediate_llm: Optional[LLM] = None,
-        prompt_manager: Optional[Prompt] = None
+        prompt_manager: Optional[Prompt] = None,
     ) -> None:
         """Initialize the pipeline.
 
@@ -231,7 +227,7 @@ class Pipe:
             "created_at": datetime.now().isoformat(),
             "input_llm": str(input_llm),
             "output_llm": str(output_llm),
-            "intermediate_llm": str(intermediate_llm) if intermediate_llm else None
+            "intermediate_llm": str(intermediate_llm) if intermediate_llm else None,
         }
         self.logger = logging.getLogger(f"{self.__class__.__name__}.{self.name}")
 
@@ -242,7 +238,7 @@ class Pipe:
         prompt_template: Union[str, PromptTemplate] = None,
         stage: Union[PipeStage, str] = PipeStage.INTERMEDIATE,
         validator: Optional[Callable[[str, Dict[str, Any]], Dict[str, Any]]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> "Pipe":
         """Add a step to the pipeline.
 
@@ -264,7 +260,7 @@ class Pipe:
         if llm is None:
             if isinstance(stage, str):
                 stage = PipeStage(stage.lower())
-            
+
             if stage == PipeStage.INPUT:
                 llm = self.input_llm
             elif stage == PipeStage.OUTPUT:
@@ -276,7 +272,7 @@ class Pipe:
 
         step = PipelineStep(name, llm, prompt_template, stage, validator, metadata)
         self.steps.append(step)
-        
+
         self.logger.info(f"Added step '{name}' at stage {stage}")
         return self
 
@@ -285,7 +281,7 @@ class Pipe:
         initial_variables: Dict[str, Any],
         stop_on_error: bool = True,
         validate_intermediate: bool = True,
-        **llm_kwargs
+        **llm_kwargs,
     ) -> Dict[str, Any]:
         """Execute the complete pipeline.
 
@@ -311,18 +307,18 @@ class Pipe:
             "steps": [],
             "variables": initial_variables.copy(),
             "errors": [],
-            "start_time": datetime.now().isoformat()
+            "start_time": datetime.now().isoformat(),
         }
 
         self.logger.info(f"Starting pipeline '{self.name}' with {len(self.steps)} steps")
 
         # Execute steps in order
         current_variables = initial_variables.copy()
-        
+
         for i, step in enumerate(self.steps):
             try:
                 self.logger.debug(f"Executing step {i+1}/{len(self.steps)}: {step.name}")
-                
+
                 # Execute step
                 step_result = step.execute(current_variables, self.prompt_manager, **llm_kwargs)
                 pipeline_result["steps"].append(step_result)
@@ -332,7 +328,7 @@ class Pipe:
                     # Add step output to variables for next step
                     step_output_key = f"{step.name}_output"
                     current_variables[step_output_key] = step_result["response"]
-                    
+
                     # For output stage, also set as final output
                     if step.stage == PipeStage.OUTPUT:
                         current_variables["final_output"] = step_result["response"]
@@ -343,7 +339,7 @@ class Pipe:
                         if validation and not validation.get("is_valid", True):
                             error_msg = f"Intermediate validation failed for step '{step.name}'"
                             self.logger.warning(error_msg)
-                            
+
                             if stop_on_error:
                                 raise PipeExecutionError(error_msg)
                             else:
@@ -353,7 +349,7 @@ class Pipe:
                     # Step failed
                     error_msg = f"Step '{step.name}' failed"
                     pipeline_result["errors"].append(error_msg)
-                    
+
                     if stop_on_error:
                         pipeline_result["success"] = False
                         break
@@ -362,7 +358,7 @@ class Pipe:
                 error_msg = f"Pipeline step '{step.name}' failed: {e}"
                 pipeline_result["errors"].append(error_msg)
                 self.logger.error(error_msg)
-                
+
                 if stop_on_error:
                     pipeline_result["success"] = False
                     break
@@ -371,13 +367,15 @@ class Pipe:
         pipeline_result["variables"] = current_variables
         pipeline_result["execution_time"] = time.time() - start_time
         pipeline_result["end_time"] = datetime.now().isoformat()
-        
+
         # Pipeline succeeds if no errors or if we're not stopping on errors
         if not stop_on_error:
             pipeline_result["success"] = all(step.get("success", False) for step in pipeline_result["steps"])
 
         if pipeline_result["success"]:
-            self.logger.info(f"Pipeline '{self.name}' completed successfully in {pipeline_result['execution_time']:.2f}s")
+            self.logger.info(
+                f"Pipeline '{self.name}' completed successfully in {pipeline_result['execution_time']:.2f}s"
+            )
         else:
             self.logger.error(f"Pipeline '{self.name}' failed with {len(pipeline_result['errors'])} errors")
 
@@ -389,13 +387,7 @@ class Pipe:
         Returns:
             Dictionary containing validation results
         """
-        validation = {
-            "is_valid": True,
-            "issues": [],
-            "warnings": [],
-            "step_count": len(self.steps),
-            "stages": {}
-        }
+        validation = {"is_valid": True, "issues": [], "warnings": [], "step_count": len(self.steps), "stages": {}}
 
         # Count steps by stage
         for stage in PipeStage:
@@ -410,13 +402,13 @@ class Pipe:
         # Check for input/output balance
         input_steps = validation["stages"].get("input", 0)
         output_steps = validation["stages"].get("output", 0)
-        
+
         if input_steps == 0:
             validation["warnings"].append("No input steps defined")
-        
+
         if output_steps == 0:
             validation["warnings"].append("No output steps defined")
-        
+
         if output_steps > 1:
             validation["warnings"].append("Multiple output steps may cause conflicts")
 
@@ -489,14 +481,15 @@ class Pipe:
                     "name": step.name,
                     "stage": step.stage.value,
                     "prompt_template": (
-                        step.prompt_template.name if isinstance(step.prompt_template, PromptTemplate)
+                        step.prompt_template.name
+                        if isinstance(step.prompt_template, PromptTemplate)
                         else step.prompt_template
                     ),
-                    "metadata": step.metadata
+                    "metadata": step.metadata,
                 }
                 for step in self.steps
             ],
-            "validation": self.validate_pipeline()
+            "validation": self.validate_pipeline(),
         }
 
     def __len__(self) -> int:
@@ -513,8 +506,5 @@ class Pipe:
         for step in self.steps:
             stage = step.stage.value
             stages[stage] = stages.get(stage, 0) + 1
-        
-        return (
-            f"Pipe(name='{self.name}', steps={len(self.steps)}, "
-            f"stages={stages})"
-        )
+
+        return f"Pipe(name='{self.name}', steps={len(self.steps)}, " f"stages={stages})"

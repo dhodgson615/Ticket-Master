@@ -132,18 +132,9 @@ class OllamaBackend(LLMBackend):
             LLMProviderError: If generation fails
         """
         try:
-            payload = {
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False,
-                **kwargs
-            }
+            payload = {"model": self.model, "prompt": prompt, "stream": False, **kwargs}
 
-            response = requests.post(
-                f"{self.base_url}/api/generate",
-                json=payload,
-                timeout=kwargs.get("timeout", 60)
-            )
+            response = requests.post(f"{self.base_url}/api/generate", json=payload, timeout=kwargs.get("timeout", 60))
             response.raise_for_status()
 
             result = response.json()
@@ -179,17 +170,14 @@ class OllamaBackend(LLMBackend):
             response.raise_for_status()
 
             models = response.json().get("models", [])
-            current_model = next(
-                (model for model in models if model["name"] == self.model),
-                None
-            )
+            current_model = next((model for model in models if model["name"] == self.model), None)
 
             if current_model:
                 return {
                     "name": current_model["name"],
                     "size": current_model.get("size", "unknown"),
                     "modified_at": current_model.get("modified_at", "unknown"),
-                    "provider": "ollama"
+                    "provider": "ollama",
                 }
 
             return {"name": self.model, "provider": "ollama", "status": "not_found"}
@@ -264,7 +252,7 @@ class LLM:
         self,
         provider: Union[LLMProvider, str],
         config: Dict[str, Any],
-        fallback_configs: Optional[List[Dict[str, Any]]] = None
+        fallback_configs: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
         """Initialize the LLM with provider and configuration.
 
@@ -287,7 +275,7 @@ class LLM:
 
         # Initialize primary backend
         self.backend = self._create_backend(provider, config)
-        
+
         # Initialize fallback backends
         self.fallback_backends: List[LLMBackend] = []
         if fallback_configs:
@@ -306,7 +294,7 @@ class LLM:
             "provider": self.provider.value,
             "model": config.get("model", "unknown"),
             "initialized_at": datetime.now().isoformat(),
-            "fallback_count": len(self.fallback_backends)
+            "fallback_count": len(self.fallback_backends),
         }
 
     def _create_backend(self, provider: LLMProvider, config: Dict[str, Any]) -> LLMBackend:
@@ -330,12 +318,7 @@ class LLM:
             raise LLMError(f"Backend not implemented for provider: {provider.value}")
 
     def generate(
-        self,
-        prompt: str,
-        max_retries: int = 3,
-        use_fallback: bool = True,
-        validate_response: bool = True,
-        **kwargs
+        self, prompt: str, max_retries: int = 3, use_fallback: bool = True, validate_response: bool = True, **kwargs
     ) -> Dict[str, Any]:
         """Generate text using the LLM with fallback and validation.
 
@@ -357,10 +340,10 @@ class LLM:
             backends_to_try.extend(self.fallback_backends)
 
         last_error = None
-        
+
         for backend_index, backend in enumerate(backends_to_try):
             is_primary = backend_index == 0
-            
+
             for attempt in range(max_retries):
                 try:
                     start_time = time.time()
@@ -382,9 +365,9 @@ class LLM:
                             "generation_time": generation_time,
                             "prompt_length": len(prompt),
                             "response_length": len(response),
-                            "timestamp": datetime.now().isoformat()
+                            "timestamp": datetime.now().isoformat(),
                         },
-                        "validation": validation_result
+                        "validation": validation_result,
                     }
 
                     self.logger.info(
@@ -396,12 +379,11 @@ class LLM:
                 except LLMProviderError as e:
                     last_error = e
                     self.logger.warning(
-                        f"Attempt {attempt + 1}/{max_retries} failed for "
-                        f"{backend.__class__.__name__}: {e}"
+                        f"Attempt {attempt + 1}/{max_retries} failed for " f"{backend.__class__.__name__}: {e}"
                     )
-                    
+
                     if attempt < max_retries - 1:
-                        time.sleep(2 ** attempt)  # Exponential backoff
+                        time.sleep(2**attempt)  # Exponential backoff
 
             self.logger.error(f"All attempts failed for {backend.__class__.__name__}")
 
@@ -418,12 +400,7 @@ class LLM:
         Returns:
             Dictionary containing validation results
         """
-        validation = {
-            "is_valid": True,
-            "issues": [],
-            "quality_score": 1.0,
-            "checks": {}
-        }
+        validation = {"is_valid": True, "issues": [], "quality_score": 1.0, "checks": {}}
 
         # Check if response is empty or too short
         if not response or len(response.strip()) < 10:
@@ -437,20 +414,25 @@ class LLM:
             unique_words = set(words)
             repetition_ratio = len(unique_words) / len(words)
             validation["checks"]["repetition_ratio"] = repetition_ratio
-            
+
             if repetition_ratio < 0.3:  # Very repetitive
                 validation["issues"].append("Response appears to be repetitive")
                 validation["quality_score"] *= 0.5
 
         # Check for common error patterns
         error_patterns = [
-            "I cannot", "I'm sorry", "I don't have", "As an AI",
-            "I apologize", "I'm not able to", "I can't help"
+            "I cannot",
+            "I'm sorry",
+            "I don't have",
+            "As an AI",
+            "I apologize",
+            "I'm not able to",
+            "I can't help",
         ]
-        
+
         response_lower = response.lower()
         found_patterns = [pattern for pattern in error_patterns if pattern.lower() in response_lower]
-        
+
         if found_patterns:
             validation["issues"].append(f"Response contains error patterns: {found_patterns}")
             validation["quality_score"] *= 0.7
@@ -476,24 +458,28 @@ class LLM:
             List of dictionaries containing backend information
         """
         backends_info = []
-        
+
         # Check primary backend
-        backends_info.append({
-            "name": self.backend.__class__.__name__,
-            "is_primary": True,
-            "is_available": self.backend.is_available(),
-            "model_info": self.backend.get_model_info()
-        })
-        
+        backends_info.append(
+            {
+                "name": self.backend.__class__.__name__,
+                "is_primary": True,
+                "is_available": self.backend.is_available(),
+                "model_info": self.backend.get_model_info(),
+            }
+        )
+
         # Check fallback backends
         for backend in self.fallback_backends:
-            backends_info.append({
-                "name": backend.__class__.__name__,
-                "is_primary": False,
-                "is_available": backend.is_available(),
-                "model_info": backend.get_model_info()
-            })
-        
+            backends_info.append(
+                {
+                    "name": backend.__class__.__name__,
+                    "is_primary": False,
+                    "is_available": backend.is_available(),
+                    "model_info": backend.get_model_info(),
+                }
+            )
+
         return backends_info
 
     def get_metadata(self) -> Dict[str, Any]:

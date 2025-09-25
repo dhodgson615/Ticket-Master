@@ -18,20 +18,20 @@ from .pipe import Pipe, PipelineStep, PipeStage
 from .data_scraper import DataScraper
 
 __all__ = [
-    "Repository", 
-    "Issue", 
-    "Database", 
-    "UserDatabase", 
+    "Repository",
+    "Issue",
+    "Database",
+    "UserDatabase",
     "ServerDatabase",
-    "LLM", 
-    "LLMProvider", 
+    "LLM",
+    "LLMProvider",
     "LLMBackend",
-    "Prompt", 
-    "PromptTemplate", 
+    "Prompt",
+    "PromptTemplate",
     "PromptType",
-    "Pipe", 
-    "PipelineStep", 
+    "Pipe",
+    "PipelineStep",
     "PipeStage",
     "DataScraper",
-    "__version__"
+    "__version__",
 ]
