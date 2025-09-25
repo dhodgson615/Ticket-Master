@@ -11,5 +11,27 @@ __description__ = "AI-powered GitHub issue generator"
 
 from .repository import Repository
 from .issue import Issue
+from .database import Database, UserDatabase, ServerDatabase
+from .llm import LLM, LLMProvider, LLMBackend
+from .prompt import Prompt, PromptTemplate, PromptType
+from .pipe import Pipe, PipelineStep, PipeStage
+from .data_scraper import DataScraper
 
-__all__ = ["Repository", "Issue", "__version__"]
+__all__ = [
+    "Repository", 
+    "Issue", 
+    "Database", 
+    "UserDatabase", 
+    "ServerDatabase",
+    "LLM", 
+    "LLMProvider", 
+    "LLMBackend",
+    "Prompt", 
+    "PromptTemplate", 
+    "PromptType",
+    "Pipe", 
+    "PipelineStep", 
+    "PipeStage",
+    "DataScraper",
+    "__version__"
+]
