@@ -5,6 +5,26 @@ based on the contents of a Git repository
 
 ## Installation
 
+### Quick Setup (Recommended)
+
+1. Clone the repository:
+```bash
+git clone https://github.com/dhodgson615/Ticket-Master.git
+cd Ticket-Master
+```
+
+2. One-command setup (installs dependencies and creates config):
+```bash
+make setup
+```
+
+3. Set up your GitHub token:
+```bash
+export GITHUB_TOKEN="your_github_personal_access_token"
+```
+
+### Manual Installation
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/dhodgson615/Ticket-Master.git
@@ -16,10 +36,28 @@ cd Ticket-Master
 pip install -r requirements.txt
 ```
 
-3. Set up your GitHub token:
+3. Copy configuration file:
+```bash
+cp config.yaml.example config.yaml
+```
+
+4. Set up your GitHub token:
 ```bash
 export GITHUB_TOKEN="your_github_personal_access_token"
 ```
+
+### Available Make Targets
+
+Run `make help` to see all available targets:
+
+- `make setup` - One-command setup: install dependencies and copy config
+- `make install` - Install Python dependencies only
+- `make test` - Run tests with coverage
+- `make lint` - Run linting checks
+- `make format` - Format code with black
+- `make clean` - Clean build artifacts and cache files
+- `make venv` - Create virtual environment
+- `make help` - Show all available targets
 
 ## Usage
 
