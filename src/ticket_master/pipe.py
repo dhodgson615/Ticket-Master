@@ -98,7 +98,10 @@ class PipelineStep:
         self.logger = logging.getLogger(f"{self.__class__.__name__}.{self.name}")
 
     def execute(
-        self, variables: Dict[str, Any], prompt_manager: Optional[Prompt] = None, **llm_kwargs
+        self,
+        variables: Dict[str, Any],
+        prompt_manager: Optional[Prompt] = None,
+        **llm_kwargs,
     ) -> Dict[str, Any]:
         """Execute this pipeline step.
 
@@ -119,11 +122,15 @@ class PipelineStep:
             # Resolve prompt template
             if isinstance(self.prompt_template, str):
                 if not prompt_manager:
-                    raise PipeExecutionError(f"Prompt manager required for template '{self.prompt_template}'")
+                    raise PipeExecutionError(
+                        f"Prompt manager required for template '{self.prompt_template}'"
+                    )
 
                 template = prompt_manager.get_template(self.prompt_template)
                 if not template:
-                    raise PipeExecutionError(f"Template '{self.prompt_template}' not found")
+                    raise PipeExecutionError(
+                        f"Template '{self.prompt_template}' not found"
+                    )
             else:
                 template = self.prompt_template
 
@@ -140,7 +147,9 @@ class PipelineStep:
                 try:
                     validation_result = self.validator(response["response"], variables)
                 except Exception as e:
-                    self.logger.warning(f"Validation failed for step '{self.name}': {e}")
+                    self.logger.warning(
+                        f"Validation failed for step '{self.name}': {e}"
+                    )
                     validation_result = {"is_valid": False, "error": str(e)}
 
             execution_time = time.time() - start_time
@@ -156,7 +165,9 @@ class PipelineStep:
                 "timestamp": datetime.now().isoformat(),
             }
 
-            self.logger.info(f"Successfully executed step '{self.name}' in {execution_time:.2f}s")
+            self.logger.info(
+                f"Successfully executed step '{self.name}' in {execution_time:.2f}s"
+            )
             return result
 
         except Exception as e:
@@ -165,7 +176,9 @@ class PipelineStep:
                 "stage": self.stage.value,
                 "success": False,
                 "error": str(e),
-                "execution_time": time.time() - start_time if "start_time" in locals() else 0,
+                "execution_time": (
+                    time.time() - start_time if "start_time" in locals() else 0
+                ),
                 "timestamp": datetime.now().isoformat(),
             }
             self.logger.error(f"Step '{self.name}' failed: {e}")
@@ -310,17 +323,23 @@ class Pipe:
             "start_time": datetime.now().isoformat(),
         }
 
-        self.logger.info(f"Starting pipeline '{self.name}' with {len(self.steps)} steps")
+        self.logger.info(
+            f"Starting pipeline '{self.name}' with {len(self.steps)} steps"
+        )
 
         # Execute steps in order
         current_variables = initial_variables.copy()
 
         for i, step in enumerate(self.steps):
             try:
-                self.logger.debug(f"Executing step {i+1}/{len(self.steps)}: {step.name}")
+                self.logger.debug(
+                    f"Executing step {i+1}/{len(self.steps)}: {step.name}"
+                )
 
                 # Execute step
-                step_result = step.execute(current_variables, self.prompt_manager, **llm_kwargs)
+                step_result = step.execute(
+                    current_variables, self.prompt_manager, **llm_kwargs
+                )
                 pipeline_result["steps"].append(step_result)
 
                 # Update variables with step output
@@ -337,7 +356,9 @@ class Pipe:
                     if validate_intermediate and step.stage == PipeStage.INTERMEDIATE:
                         validation = step_result.get("validation")
                         if validation and not validation.get("is_valid", True):
-                            error_msg = f"Intermediate validation failed for step '{step.name}'"
+                            error_msg = (
+                                f"Intermediate validation failed for step '{step.name}'"
+                            )
                             self.logger.warning(error_msg)
 
                             if stop_on_error:
@@ -370,14 +391,18 @@ class Pipe:
 
         # Pipeline succeeds if no errors or if we're not stopping on errors
         if not stop_on_error:
-            pipeline_result["success"] = all(step.get("success", False) for step in pipeline_result["steps"])
+            pipeline_result["success"] = all(
+                step.get("success", False) for step in pipeline_result["steps"]
+            )
 
         if pipeline_result["success"]:
             self.logger.info(
                 f"Pipeline '{self.name}' completed successfully in {pipeline_result['execution_time']:.2f}s"
             )
         else:
-            self.logger.error(f"Pipeline '{self.name}' failed with {len(pipeline_result['errors'])} errors")
+            self.logger.error(
+                f"Pipeline '{self.name}' failed with {len(pipeline_result['errors'])} errors"
+            )
 
         return pipeline_result
 
@@ -387,7 +412,13 @@ class Pipe:
         Returns:
             Dictionary containing validation results
         """
-        validation = {"is_valid": True, "issues": [], "warnings": [], "step_count": len(self.steps), "stages": {}}
+        validation = {
+            "is_valid": True,
+            "issues": [],
+            "warnings": [],
+            "step_count": len(self.steps),
+            "stages": {},
+        }
 
         # Count steps by stage
         for stage in PipeStage:

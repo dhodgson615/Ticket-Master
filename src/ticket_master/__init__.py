@@ -11,6 +11,9 @@ __description__ = "AI-powered GitHub issue generator"
 
 from .repository import Repository
 from .issue import Issue
+from .commit import Commit
+from .branch import Branch
+from .pull_request import PullRequest
 from .database import Database, UserDatabase, ServerDatabase
 from .llm import LLM, LLMProvider, LLMBackend
 from .prompt import Prompt, PromptTemplate, PromptType
@@ -20,6 +23,9 @@ from .data_scraper import DataScraper
 __all__ = [
     "Repository",
     "Issue",
+    "Commit",
+    "Branch",
+    "PullRequest",
     "Database",
     "UserDatabase",
     "ServerDatabase",

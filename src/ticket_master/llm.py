@@ -134,7 +134,11 @@ class OllamaBackend(LLMBackend):
         try:
             payload = {"model": self.model, "prompt": prompt, "stream": False, **kwargs}
 
-            response = requests.post(f"{self.base_url}/api/generate", json=payload, timeout=kwargs.get("timeout", 60))
+            response = requests.post(
+                f"{self.base_url}/api/generate",
+                json=payload,
+                timeout=kwargs.get("timeout", 60),
+            )
             response.raise_for_status()
 
             result = response.json()
@@ -170,7 +174,9 @@ class OllamaBackend(LLMBackend):
             response.raise_for_status()
 
             models = response.json().get("models", [])
-            current_model = next((model for model in models if model["name"] == self.model), None)
+            current_model = next(
+                (model for model in models if model["name"] == self.model), None
+            )
 
             if current_model:
                 return {
@@ -284,10 +290,14 @@ class LLM:
                 if fallback_provider:
                     try:
                         fallback_provider = LLMProvider(fallback_provider.lower())
-                        fallback_backend = self._create_backend(fallback_provider, fallback_config)
+                        fallback_backend = self._create_backend(
+                            fallback_provider, fallback_config
+                        )
                         self.fallback_backends.append(fallback_backend)
                     except (ValueError, LLMError) as e:
-                        self.logger.warning(f"Failed to initialize fallback backend: {e}")
+                        self.logger.warning(
+                            f"Failed to initialize fallback backend: {e}"
+                        )
 
         # Store metadata
         self.metadata = {
@@ -297,7 +307,9 @@ class LLM:
             "fallback_count": len(self.fallback_backends),
         }
 
-    def _create_backend(self, provider: LLMProvider, config: Dict[str, Any]) -> LLMBackend:
+    def _create_backend(
+        self, provider: LLMProvider, config: Dict[str, Any]
+    ) -> LLMBackend:
         """Create appropriate backend instance for the provider.
 
         Args:
@@ -318,7 +330,12 @@ class LLM:
             raise LLMError(f"Backend not implemented for provider: {provider.value}")
 
     def generate(
-        self, prompt: str, max_retries: int = 3, use_fallback: bool = True, validate_response: bool = True, **kwargs
+        self,
+        prompt: str,
+        max_retries: int = 3,
+        use_fallback: bool = True,
+        validate_response: bool = True,
+        **kwargs,
     ) -> Dict[str, Any]:
         """Generate text using the LLM with fallback and validation.
 
@@ -358,7 +375,9 @@ class LLM:
                     result = {
                         "response": response,
                         "metadata": {
-                            "provider": backend.__class__.__name__.replace("Backend", "").lower(),
+                            "provider": backend.__class__.__name__.replace(
+                                "Backend", ""
+                            ).lower(),
                             "model": getattr(backend, "model", "unknown"),
                             "attempt": attempt + 1,
                             "is_primary": is_primary,
@@ -379,7 +398,8 @@ class LLM:
                 except LLMProviderError as e:
                     last_error = e
                     self.logger.warning(
-                        f"Attempt {attempt + 1}/{max_retries} failed for " f"{backend.__class__.__name__}: {e}"
+                        f"Attempt {attempt + 1}/{max_retries} failed for "
+                        f"{backend.__class__.__name__}: {e}"
                     )
 
                     if attempt < max_retries - 1:
@@ -400,7 +420,12 @@ class LLM:
         Returns:
             Dictionary containing validation results
         """
-        validation = {"is_valid": True, "issues": [], "quality_score": 1.0, "checks": {}}
+        validation = {
+            "is_valid": True,
+            "issues": [],
+            "quality_score": 1.0,
+            "checks": {},
+        }
 
         # Check if response is empty or too short
         if not response or len(response.strip()) < 10:
@@ -431,10 +456,14 @@ class LLM:
         ]
 
         response_lower = response.lower()
-        found_patterns = [pattern for pattern in error_patterns if pattern.lower() in response_lower]
+        found_patterns = [
+            pattern for pattern in error_patterns if pattern.lower() in response_lower
+        ]
 
         if found_patterns:
-            validation["issues"].append(f"Response contains error patterns: {found_patterns}")
+            validation["issues"].append(
+                f"Response contains error patterns: {found_patterns}"
+            )
             validation["quality_score"] *= 0.7
 
         validation["checks"]["length"] = len(response)

@@ -128,12 +128,16 @@ class PromptTemplate:
             # Render the template
             rendered = template.format(**variables)
 
-            self.logger.debug(f"Successfully rendered template '{self.name}' for provider '{provider}'")
+            self.logger.debug(
+                f"Successfully rendered template '{self.name}' for provider '{provider}'"
+            )
             return rendered
 
         except KeyError as e:
             missing_var = str(e).strip("'\"")
-            raise PromptTemplateError(f"Missing required variable '{missing_var}' for template '{self.name}'")
+            raise PromptTemplateError(
+                f"Missing required variable '{missing_var}' for template '{self.name}'"
+            )
         except Exception as e:
             raise PromptTemplateError(f"Failed to render template '{self.name}': {e}")
 
@@ -297,7 +301,9 @@ class Prompt:
             raise PromptError(f"Template '{template.name}' already exists")
 
         self.templates[template.name] = template
-        self.logger.info(f"Added template '{template.name}' of type {template.prompt_type.value}")
+        self.logger.info(
+            f"Added template '{template.name}' of type {template.prompt_type.value}"
+        )
 
     def get_template(self, name: str) -> Optional[PromptTemplate]:
         """Get a template by name.
@@ -310,7 +316,9 @@ class Prompt:
         """
         return self.templates.get(name)
 
-    def render_template(self, name: str, variables: Dict[str, Any], provider: Optional[str] = None) -> str:
+    def render_template(
+        self, name: str, variables: Dict[str, Any], provider: Optional[str] = None
+    ) -> str:
         """Render a specific template with variables.
 
         Args:
@@ -343,7 +351,11 @@ class Prompt:
         if prompt_type is None:
             return list(self.templates.keys())
 
-        return [name for name, template in self.templates.items() if template.prompt_type == prompt_type]
+        return [
+            name
+            for name, template in self.templates.items()
+            if template.prompt_type == prompt_type
+        ]
 
     def get_templates_by_type(self, prompt_type: PromptType) -> List[PromptTemplate]:
         """Get all templates of a specific type.
@@ -354,7 +366,11 @@ class Prompt:
         Returns:
             List of PromptTemplate instances
         """
-        return [template for template in self.templates.values() if template.prompt_type == prompt_type]
+        return [
+            template
+            for template in self.templates.values()
+            if template.prompt_type == prompt_type
+        ]
 
     def validate_template(self, name: str, variables: Dict[str, Any]) -> Dict[str, Any]:
         """Validate variables for a specific template.
@@ -618,7 +634,10 @@ Please analyze:
 4. Testing needs
 
 Analysis:""",
-            metadata={"description": "Template for analyzing code changes and diffs", "version": "1.0"},
+            metadata={
+                "description": "Template for analyzing code changes and diffs",
+                "version": "1.0",
+            },
         )
 
         # Add templates to container
