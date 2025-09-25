@@ -50,18 +50,98 @@ cp config.yaml.example config.yaml
 export GITHUB_TOKEN="your_github_personal_access_token"
 ```
 
+### Docker Setup (Alternative)
+
+You can also run Ticket-Master using Docker, which eliminates the need to manage Python dependencies locally.
+
+#### Prerequisites
+- Docker installed on your system
+- Docker Compose (optional, for development)
+
+#### Quick Docker Usage
+
+1. Clone the repository:
+```bash
+git clone https://github.com/dhodgson615/Ticket-Master.git
+cd Ticket-Master
+```
+
+2. Build and run with Docker:
+```bash
+# Build Docker image
+make docker-build
+
+# Run with help (shows usage)
+make docker-run
+
+# Run with interactive shell
+make docker-shell
+
+# Example: Analyze current directory
+docker run --rm -e GITHUB_TOKEN="your_token" \
+    -v "$(pwd):/workspace:ro" \
+    ticket-master:latest \
+    python main.py /workspace owner/repo --dry-run
+```
+
+#### Docker Compose for Development
+
+1. Create environment file:
+```bash
+cp .env.example .env
+# Edit .env and set your GITHUB_TOKEN
+```
+
+2. Start development environment:
+```bash
+make docker-dev
+
+# Access the container
+docker compose exec ticket-master-dev bash
+
+# Run the application inside container
+python main.py /workspace owner/repo --dry-run
+```
+
+#### Docker Make Targets
+
+- `make docker` or `make docker-build` - Build Docker image
+- `make docker-run` - Build and run container (shows help)
+- `make docker-shell` - Run container with interactive shell
+- `make docker-dev` - Start development environment with Docker Compose
+- `make docker-stop` - Stop Docker Compose services
+- `make docker-clean` - Clean Docker images and containers
+
 ### Available Make Targets
 
 Run `make help` to see all available targets:
 
+**Setup and Installation:**
 - `make setup` - One-command setup: install dependencies and copy config
 - `make install` - Install Python dependencies only
+- `make venv` - Create virtual environment
+- `make config` - Copy example configuration file
+
+**Development:**
+- `make dev` - Setup development environment
 - `make test` - Run tests with coverage
+- `make test-fast` - Run tests without coverage
 - `make lint` - Run linting checks
 - `make typecheck` - Run type checking with mypy
 - `make format` - Format code with black
+- `make format-check` - Check if code needs formatting
+- `make check` - Run all checks (format, lint, typecheck, test)
+
+**Docker:**
+- `make docker` or `make docker-build` - Build Docker image
+- `make docker-run` - Build and run container (shows help)
+- `make docker-shell` - Run container with interactive shell
+- `make docker-dev` - Start development environment with Docker Compose
+- `make docker-stop` - Stop Docker Compose services
+- `make docker-clean` - Clean Docker images and containers
+
+**Utility:**
 - `make clean` - Clean build artifacts and cache files
-- `make venv` - Create virtual environment
 - `make help` - Show all available targets
 
 ## Usage

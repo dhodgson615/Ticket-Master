@@ -1,0 +1,49 @@
+# Docker Compose for Ticket-Master
+# AI-powered GitHub issue generator
+
+services:
+  ticket-master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticket-master
+    environment:
+      # GitHub token should be set via .env file or environment variable
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      # Mount current directory for development
+      - .:/app
+      # Mount host's git config for authentication (optional)
+      - ~/.gitconfig:/home/appuser/.gitconfig:ro
+      # Mount repository to analyze (example)
+      - ${REPO_PATH:-./}:/workspace:ro
+    working_dir: /app
+    # Override default command for interactive use
+    command: ["tail", "-f", "/dev/null"]
+    # For interactive development
+    stdin_open: true
+    tty: true
+
+  # Development service with volume mounting for live reload
+  ticket-master-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticket-master-dev
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./main.py:/app/main.py
+      - ./config.yaml:/app/config.yaml
+      - ./Makefile:/app/Makefile
+      # Mount repository to analyze
+      - ${REPO_PATH:-./}:/workspace:ro
+    working_dir: /app
+    command: ["tail", "-f", "/dev/null"]
+    stdin_open: true
+    tty: true
