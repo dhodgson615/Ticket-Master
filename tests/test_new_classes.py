@@ -1,8 +1,9 @@
 """
-Test module for new classes: Database, LLM, Prompt, Pipe, and DataScraper.
+Test module for remaining new classes not yet covered by dedicated test files.
 
-This module provides comprehensive tests for the newly implemented classes
-to ensure they work correctly and integrate properly with the existing codebase.
+This module provides comprehensive tests for classes that don't yet have
+their own dedicated test files. As the project grows, tests should be moved
+to dedicated files following the pattern: file.py -> test_file.py
 """
 
 import json
