@@ -16,7 +16,9 @@ except ImportError:
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
+    )
     from git import Commit as GitCommit, NULL_TREE
 
 
@@ -65,7 +67,10 @@ class Commit:
         # Extract basic commit information
         self.hash = git_commit.hexsha
         self.short_hash = git_commit.hexsha[:8]
-        self.author = {"name": git_commit.author.name, "email": git_commit.author.email}
+        self.author = {
+            "name": git_commit.author.name,
+            "email": git_commit.author.email,
+        }
         self.committer = {
             "name": git_commit.committer.name,
             "email": git_commit.committer.email,

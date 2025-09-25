@@ -1,5 +1,9 @@
 # Ticket-Master
 
+[![CI Pipeline](https://github.com/dhodgson615/Ticket-Master/actions/workflows/ci.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/dhodgson615/Ticket-Master/actions/workflows/codeql.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/codeql.yml)
+[![Dependency Updates](https://github.com/dhodgson615/Ticket-Master/actions/workflows/dependency-updates.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/dependency-updates.yml)
+
 A project that attempts to use AI to suggest GitHub issues with descriptions
 based on the contents of a Git repository
 
@@ -121,24 +125,58 @@ The current implementation can generate issues for:
 
 ## Development
 
-### Running Tests
+### CI/CD Pipeline
+
+This project includes comprehensive GitHub Actions workflows for:
+
+- **CI Pipeline** (`ci.yml`): Runs on all pushes and pull requests
+  - Multi-version Python testing (3.9, 3.10, 3.11, 3.12)
+  - Code formatting checks with Black
+  - Linting with flake8
+  - Type checking with mypy
+  - Test suite with coverage reporting
+  - Integration testing with example commands
+
+- **Security Analysis** (`codeql.yml`): Automated security scanning
+  - CodeQL analysis for security vulnerabilities
+  - Runs weekly and on main branch changes
+
+- **Dependency Updates** (`dependency-updates.yml`): Automated dependency management
+  - Weekly checks for outdated packages
+  - Automatic issue creation for available updates
+  - Dependency review for pull requests
+
+- **Release Management** (`release.yml`): Automated releases
+  - Triggered on version tags (v*)
+  - Full CI validation before release
+  - Automatic changelog generation
+  - GitHub release creation with assets
+
+### Running Tests Locally
 ```bash
-pytest tests/ -v
+# Run all tests with coverage
+make test
+
+# Run tests without coverage
+make test-fast
+
+# Run full CI pipeline locally
+make ci
 ```
 
-### Code Formatting
+### Code Quality
 ```bash
-black src/ main.py --line-length=79
-```
+# Format code
+make format
 
-### Type Checking
-```bash
-mypy src/ main.py --strict
-```
+# Check formatting
+make format-check
 
-### Linting
-```bash
-flake8 src/ main.py --max-line-length=79 --ignore=E203,W503,E402
+# Run linting
+make lint
+
+# Run type checking
+make typecheck
 ```
 
 ## Architecture
@@ -191,12 +229,16 @@ flake8 src/ main.py --max-line-length=79 --ignore=E203,W503,E402
   - [ ] Ensure 100% code coverage
 
 - [ ] Add CI
-  - [ ] Add GitHub Actions for running tests on every push
-  - [ ] Ensure linting and formatting checks are included in CI
+  - [x] Add GitHub Actions for running tests on every push
+  - [x] Ensure linting and formatting checks are included in CI
+  - [x] Add multi-version Python testing (3.9-3.12)
+  - [x] Add security scanning with CodeQL
+  - [x] Add dependency update automation
+  - [x] Add release automation with GitHub releases
+  - [x] Update README with CI status badges
   - [ ] Update README with test coverage badge
-  - [ ] Update README with CI status badge
-  - [ ] Add Dependabot for dependency updates
-  - [ ] Add code quality checks (e.g., using CodeClimate or SonarQube)
+  - [x] Add Dependabot for dependency updates (via dependency-updates workflow)
+  - [x] Add code quality checks (via CodeQL and security scanning)
 
 - [ ] Add documentation
   - [x] Add docstrings to all classes and functions
