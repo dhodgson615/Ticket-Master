@@ -11,7 +11,8 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.issue import Issue, IssueError, GitHubAuthError, test_github_connection
+from ticket_master.issue import Issue, IssueError, GitHubAuthError
+from ticket_master.issue import test_github_connection as connection_test
 
 
 class TestIssue:
@@ -371,7 +372,7 @@ class TestGitHubConnection:
         mock_github.get_rate_limit.return_value = mock_rate_limit
         mock_create_client.return_value = mock_github
         
-        result = test_github_connection("test_token")
+        result = connection_test("test_token")
         
         assert result['authenticated'] == True
         assert result['user']['login'] == "test_user"
@@ -382,16 +383,16 @@ class TestGitHubConnection:
         """Test failed GitHub connection test."""
         mock_create_client.side_effect = GitHubAuthError("Connection failed")
         
-        result = test_github_connection("bad_token")
+        result = connection_test("bad_token")
         
         assert result['authenticated'] == False
         assert "Connection failed" in result['error']
 
 
-def test_github_connection():
+def test_basic_import():
     """Test that the function exists and can be imported."""
     # This is just a basic import test
-    assert test_github_connection is not None
+    assert connection_test is not None
 
 
 if __name__ == '__main__':
