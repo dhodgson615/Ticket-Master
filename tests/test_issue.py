@@ -208,7 +208,7 @@ class TestIssueGitHubIntegration:
     """Test GitHub integration functionality."""
     
     @patch.dict(os.environ, {'GITHUB_TOKEN': 'test_token'})
-    @patch('ticket_master.issue.Github')
+    @patch('ticket_master.auth.Github')
     def test_create_github_client_with_env_token(self, mock_github_class):
         """Test creating GitHub client with environment token."""
         mock_github = MagicMock()
@@ -223,7 +223,7 @@ class TestIssueGitHubIntegration:
         mock_github_class.assert_called_once()
         mock_github.get_user.assert_called_once()
     
-    @patch('ticket_master.issue.Github')
+    @patch('ticket_master.auth.Github')
     def test_create_github_client_with_explicit_token(self, mock_github_class):
         """Test creating GitHub client with explicit token."""
         mock_github = MagicMock()
@@ -245,7 +245,7 @@ class TestIssueGitHubIntegration:
             
             assert "GitHub token not provided" in str(exc_info.value)
     
-    @patch('ticket_master.issue.Github')
+    @patch('ticket_master.auth.Github')
     def test_create_github_client_bad_credentials(self, mock_github_class):
         """Test creating GitHub client with bad credentials."""
         from github.GithubException import BadCredentialsException
@@ -349,43 +349,44 @@ class TestIssueErrorHandling:
 class TestGitHubConnection:
     """Test GitHub connection testing functionality."""
     
-    @patch('ticket_master.issue.Issue.create_github_client')
-    def test_test_github_connection_success(self, mock_create_client):
+    @patch('ticket_master.auth.Authentication.test_connection')
+    def test_test_github_connection_success(self, mock_test_connection):
         """Test successful GitHub connection test."""
-        mock_github = MagicMock()
-        mock_user = MagicMock()
-        mock_rate_limit = MagicMock()
-        mock_core = MagicMock()
-        
-        mock_user.login = "test_user"
-        mock_user.name = "Test User"
-        mock_user.email = "test@example.com"
-        mock_user.public_repos = 10
-        mock_user.followers = 5
-        
-        mock_core.limit = 5000
-        mock_core.remaining = 4999
-        mock_core.reset.isoformat.return_value = "2023-01-01T01:00:00"
-        mock_rate_limit.core = mock_core
-        
-        mock_github.get_user.return_value = mock_user
-        mock_github.get_rate_limit.return_value = mock_rate_limit
-        mock_create_client.return_value = mock_github
+        mock_test_connection.return_value = {
+            'authenticated': True,
+            'user': {
+                'login': 'test_user',
+                'name': 'Test User',
+                'email': 'test@example.com',
+                'public_repos': 10,
+                'followers': 5,
+            },
+            'rate_limit': {
+                'core': {
+                    'limit': 5000,
+                    'remaining': 4999,
+                    'reset': '2023-01-01T01:00:00',
+                }
+            },
+        }
         
         result = connection_test("test_token")
         
-        assert result['authenticated'] == True
+        assert result['authenticated'] is True
         assert result['user']['login'] == "test_user"
         assert result['rate_limit']['core']['remaining'] == 4999
     
-    @patch('ticket_master.issue.Issue.create_github_client')
-    def test_test_github_connection_failure(self, mock_create_client):
+    @patch('ticket_master.auth.Authentication.test_connection')
+    def test_test_github_connection_failure(self, mock_test_connection):
         """Test failed GitHub connection test."""
-        mock_create_client.side_effect = GitHubAuthError("Connection failed")
+        mock_test_connection.return_value = {
+            'authenticated': False,
+            'error': 'Connection failed'
+        }
         
         result = connection_test("bad_token")
         
-        assert result['authenticated'] == False
+        assert result['authenticated'] is False
         assert "Connection failed" in result['error']
 
 
