@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from ticket_master.commit import Commit, CommitError
 from ticket_master.branch import Branch, BranchError
 from ticket_master.pull_request import PullRequest, PullRequestError
+from ticket_master.repository import Repository, RepositoryError
 
 
 class TestCommit:
@@ -443,6 +444,106 @@ class TestPullRequest:
         
         pr3 = PullRequest(mock_github_pr2)
         assert pr1 != pr3
+
+
+class TestRepositoryIntegration:
+    """Test cases for Repository integration with Git object classes."""
+    
+    @pytest.fixture
+    def temp_git_repo(self):
+        """Create a temporary Git repository for testing."""
+        temp_dir = tempfile.mkdtemp()
+        repo_path = Path(temp_dir) / "test_repo"
+        repo_path.mkdir()
+        
+        # Initialize git repo
+        os.system(f"cd {repo_path} && git init")
+        os.system(f"cd {repo_path} && git config user.email 'test@example.com'")
+        os.system(f"cd {repo_path} && git config user.name 'Test User'")
+        
+        # Create initial commit
+        test_file = repo_path / "README.md"
+        test_file.write_text("# Test Repository")
+        os.system(f"cd {repo_path} && git add README.md")
+        os.system(f"cd {repo_path} && git commit -m 'Initial commit'")
+        
+        # Create a feature branch
+        os.system(f"cd {repo_path} && git checkout -b feature/test")
+        test_file2 = repo_path / "test.txt"
+        test_file2.write_text("Test content")
+        os.system(f"cd {repo_path} && git add test.txt")
+        os.system(f"cd {repo_path} && git commit -m 'Add test file'")
+        os.system(f"cd {repo_path} && git checkout master")
+        
+        yield str(repo_path)
+        
+        # Cleanup
+        shutil.rmtree(temp_dir)
+    
+    def test_repository_get_commits(self, temp_git_repo):
+        """Test Repository.get_commits() returns Commit objects."""
+        repo = Repository(temp_git_repo)
+        commits = repo.get_commits(max_count=10)
+        
+        assert isinstance(commits, list)
+        assert len(commits) > 0
+        assert all(isinstance(commit, Commit) for commit in commits)
+        
+        # Test first commit
+        first_commit = commits[0]
+        assert hasattr(first_commit, 'hash')
+        assert hasattr(first_commit, 'message')
+        assert hasattr(first_commit, 'author')
+    
+    def test_repository_get_branches(self, temp_git_repo):
+        """Test Repository.get_branches() returns Branch objects."""
+        repo = Repository(temp_git_repo)
+        branches = repo.get_branches()
+        
+        assert isinstance(branches, list)
+        assert len(branches) >= 2  # main and feature/test
+        assert all(isinstance(branch, Branch) for branch in branches)
+        
+        # Check that we have master branch (default in older Git versions)
+        branch_names = [branch.name for branch in branches]
+        assert "master" in branch_names
+        assert "feature/test" in branch_names
+        
+        # Check that one branch is active
+        active_branches = [branch for branch in branches if branch.is_active]
+        assert len(active_branches) == 1
+    
+    def test_repository_get_commit(self, temp_git_repo):
+        """Test Repository.get_commit() returns specific Commit object."""
+        repo = Repository(temp_git_repo)
+        commits = repo.get_commits(max_count=1)
+        first_commit_hash = commits[0].hash
+        
+        # Get the same commit by hash
+        commit = repo.get_commit(first_commit_hash)
+        assert isinstance(commit, Commit)
+        assert commit.hash == first_commit_hash
+    
+    def test_repository_get_branch(self, temp_git_repo):
+        """Test Repository.get_branch() returns specific Branch object."""
+        repo = Repository(temp_git_repo)
+        
+        # Get master branch (default in older Git versions)
+        master_branch = repo.get_branch("master")
+        assert isinstance(master_branch, Branch)
+        assert master_branch.name == "master"
+        
+        # Get feature branch
+        feature_branch = repo.get_branch("feature/test")
+        assert isinstance(feature_branch, Branch)
+        assert feature_branch.name == "feature/test"
+    
+    def test_repository_get_branch_not_found(self, temp_git_repo):
+        """Test Repository.get_branch() raises error for non-existent branch."""
+        repo = Repository(temp_git_repo)
+        
+        with pytest.raises(RepositoryError):
+            repo.get_branch("non-existent-branch")
 
 
 if __name__ == "__main__":

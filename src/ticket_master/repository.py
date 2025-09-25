@@ -23,6 +23,10 @@ except ImportError:
     from git import Repo, InvalidGitRepositoryError
 
 
+from .commit import Commit
+from .branch import Branch
+
+
 class RepositoryError(Exception):
     """Custom exception for repository-related errors."""
 
@@ -321,6 +325,128 @@ class Repository:
             return result.returncode == 0
         except Exception:
             return False
+
+    def get_commits(
+        self, max_count: int = 50, branch: str = "HEAD"
+    ) -> List[Commit]:
+        """Get commit objects from the repository.
+
+        Args:
+            max_count: Maximum number of commits to retrieve
+            branch: Branch name or reference to get commits from
+
+        Returns:
+            List of Commit objects
+
+        Raises:
+            RepositoryError: If unable to retrieve commits
+        """
+        try:
+            commits = []
+            for git_commit in self.repo.iter_commits(branch, max_count=max_count):
+                commits.append(Commit(git_commit))
+
+            self.logger.info(f"Retrieved {len(commits)} Commit objects from {branch}")
+            return commits
+
+        except Exception as e:
+            raise RepositoryError(f"Failed to get commits: {e}")
+
+    def get_branches(self, include_remote: bool = False) -> List[Branch]:
+        """Get branch objects from the repository.
+
+        Args:
+            include_remote: Whether to include remote branches
+
+        Returns:
+            List of Branch objects
+
+        Raises:
+            RepositoryError: If unable to retrieve branches
+        """
+        try:
+            branches = []
+            active_branch_name = (
+                self.repo.active_branch.name
+                if not self.repo.head.is_detached
+                else None
+            )
+
+            # Add local branches
+            for git_branch in self.repo.branches:
+                is_active = git_branch.name == active_branch_name
+                branches.append(Branch(git_branch, self.repo, is_active))
+
+            # Add remote branches if requested
+            if include_remote:
+                for remote in self.repo.remotes:
+                    for git_branch in remote.refs:
+                        branches.append(Branch(git_branch, self.repo, False))
+
+            self.logger.info(
+                f"Retrieved {len(branches)} Branch objects "
+                f"({'with' if include_remote else 'without'} remotes)"
+            )
+            return branches
+
+        except Exception as e:
+            raise RepositoryError(f"Failed to get branches: {e}")
+
+    def get_commit(self, commit_hash: str) -> Commit:
+        """Get a specific commit object by hash.
+
+        Args:
+            commit_hash: Commit SHA, branch name, or tag name
+
+        Returns:
+            Commit object
+
+        Raises:
+            RepositoryError: If commit not found or unable to retrieve
+        """
+        try:
+            git_commit = self.repo.commit(commit_hash)
+            return Commit(git_commit)
+
+        except Exception as e:
+            raise RepositoryError(f"Failed to get commit {commit_hash}: {e}")
+
+    def get_branch(self, branch_name: str) -> Branch:
+        """Get a specific branch object by name.
+
+        Args:
+            branch_name: Name of the branch to retrieve
+
+        Returns:
+            Branch object
+
+        Raises:
+            RepositoryError: If branch not found or unable to retrieve
+        """
+        try:
+            # Try local branch first
+            for git_branch in self.repo.branches:
+                if git_branch.name == branch_name:
+                    active_branch_name = (
+                        self.repo.active_branch.name
+                        if not self.repo.head.is_detached
+                        else None
+                    )
+                    is_active = git_branch.name == active_branch_name
+                    return Branch(git_branch, self.repo, is_active)
+
+            # Try remote branches
+            for remote in self.repo.remotes:
+                for git_branch in remote.refs:
+                    if git_branch.name == branch_name:
+                        return Branch(git_branch, self.repo, False)
+
+            raise RepositoryError(f"Branch '{branch_name}' not found")
+
+        except RepositoryError:
+            raise
+        except Exception as e:
+            raise RepositoryError(f"Failed to get branch {branch_name}: {e}")
 
     def __str__(self) -> str:
         """String representation of the repository."""
