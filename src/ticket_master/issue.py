@@ -20,6 +20,8 @@ except ImportError:
     from github import Github, Auth
     from github.GithubException import GithubException, BadCredentialsException, RateLimitExceededException
 
+from .auth import Authentication, GitHubAuthError as AuthGitHubAuthError
+
 
 class IssueError(Exception):
     """Custom exception for issue-related errors."""
@@ -100,29 +102,12 @@ class Issue:
         Raises:
             GitHubAuthError: If authentication fails or token is missing
         """
-        if not token:
-            token = os.getenv("GITHUB_TOKEN")
-
-        if not token:
-            raise GitHubAuthError(
-                "GitHub token not provided. Set GITHUB_TOKEN environment variable " "or pass token parameter."
-            )
-
         try:
-            auth = Auth.Token(token)
-            github_client = Github(auth=auth)
-
-            # Test authentication by getting user info
-            user = github_client.get_user()
-            logger = logging.getLogger(cls.__name__)
-            logger.info(f"Authenticated as GitHub user: {user.login}")
-
-            return github_client
-
-        except BadCredentialsException as e:
-            raise GitHubAuthError(f"Invalid GitHub credentials: {e}")
-        except Exception as e:
-            raise GitHubAuthError(f"Failed to authenticate with GitHub: {e}")
+            auth = Authentication(token)
+            return auth.create_client()
+        except AuthGitHubAuthError as e:
+            # Re-raise as the expected GitHubAuthError for backward compatibility
+            raise GitHubAuthError(str(e))
 
     def create_on_github(self, repo_name: str, token: Optional[str] = None) -> Dict[str, Any]:
         """Create the issue on GitHub.
@@ -335,29 +320,7 @@ def test_github_connection(token: Optional[str] = None) -> Dict[str, Any]:
         GitHubAuthError: If authentication fails
     """
     try:
-        github_client = Issue.create_github_client(token)
-        user = github_client.get_user()
-
-        # Get rate limit information
-        rate_limit = github_client.get_rate_limit()
-
-        return {
-            "authenticated": True,
-            "user": {
-                "login": user.login,
-                "name": user.name,
-                "email": user.email,
-                "public_repos": user.public_repos,
-                "followers": user.followers,
-            },
-            "rate_limit": {
-                "core": {
-                    "limit": rate_limit.core.limit,
-                    "remaining": rate_limit.core.remaining,
-                    "reset": rate_limit.core.reset.isoformat(),
-                }
-            },
-        }
-
+        auth = Authentication(token)
+        return auth.test_connection()
     except Exception as e:
         return {"authenticated": False, "error": str(e)}

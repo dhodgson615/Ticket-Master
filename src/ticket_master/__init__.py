@@ -11,6 +11,7 @@ __description__ = "AI-powered GitHub issue generator"
 
 from .repository import Repository
 from .issue import Issue
+from .auth import Authentication, AuthenticationError, GitHubAuthError
 from .database import Database, UserDatabase, ServerDatabase
 from .llm import LLM, LLMProvider, LLMBackend
 from .prompt import Prompt, PromptTemplate, PromptType
@@ -20,6 +21,9 @@ from .data_scraper import DataScraper
 __all__ = [
     "Repository",
     "Issue",
+    "Authentication",
+    "AuthenticationError",
+    "GitHubAuthError",
     "Database",
     "UserDatabase",
     "ServerDatabase",
