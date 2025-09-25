@@ -12,6 +12,7 @@ PIP := pip3
 PYTEST := python -m pytest
 FLAKE8 := flake8
 BLACK := black
+MYPY := mypy
 
 # Project directories
 SRC_DIR := src
@@ -61,8 +62,13 @@ test-fast: ## Run tests without coverage
 
 lint: ## Run linting with flake8
 	@echo "Running linting checks..."
-	$(FLAKE8) $(SRC_DIR)/ $(MAIN_FILE)
+	$(FLAKE8) $(SRC_DIR)/ $(MAIN_FILE) --max-line-length=79 --ignore=E203,W503,E402
 	@echo "Linting completed!"
+
+typecheck: ## Run type checking with mypy
+	@echo "Running type checks..."
+	$(MYPY) $(SRC_DIR)/ $(MAIN_FILE)
+	@echo "Type checking completed!"
 
 format: ## Format code with black
 	@echo "Formatting code with black..."
@@ -74,7 +80,7 @@ format-check: ## Check if code needs formatting
 	$(BLACK) --check $(SRC_DIR)/ $(MAIN_FILE)
 	@echo "Format check completed!"
 
-check: format-check lint test ## Run all checks (format, lint, test)
+check: format-check lint typecheck test ## Run all checks (format, lint, typecheck, test)
 	@echo "All checks completed successfully!"
 
 clean: ## Clean build artifacts and cache files
@@ -126,5 +132,5 @@ all: clean setup check ## Clean, setup, and run all checks
 dev: setup ## Setup development environment
 	@echo "Development environment ready!"
 
-ci: install format-check lint test ## CI pipeline: install, format-check, lint, test
+ci: install format-check lint typecheck test ## CI pipeline: install, format-check, lint, typecheck, test
 	@echo "CI pipeline completed successfully!"
