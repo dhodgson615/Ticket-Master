@@ -36,8 +36,8 @@ class TestAuthentication:
         auth = Authentication("instance_token")
         token = auth.get_token()
         assert token == "instance_token"
-    
-    @patch.dict(os.environ, {'GITHUB_TOKEN': 'env_token'})
+
+    @patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"})
     def test_get_token_from_environment(self):
         """Test get_token from environment variable."""
         auth = Authentication()
