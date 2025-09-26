@@ -31,7 +31,6 @@ except ImportError:
 from ticket_master import Issue, Repository, __version__
 from ticket_master.issue import GitHubAuthError, IssueError
 from ticket_master.llm import LLM, LLMError
-from ticket_master.prompt import Prompt
 from ticket_master.repository import RepositoryError
 
 
@@ -115,10 +114,18 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
                     ):
                         result[key] = merge_dicts(result[key], value)
                     else:
-                        result[key] = value
+                        # Don't override with null values - keep defaults
+                        if value is not None:
+                            result[key] = value
                 return result
 
-            return merge_dicts(default_config, user_config)
+            merged_config = merge_dicts(default_config, user_config)
+            
+            # Ensure github token is set from environment if not in config
+            if not merged_config["github"]["token"]:
+                merged_config["github"]["token"] = os.getenv("GITHUB_TOKEN")
+                
+            return merged_config
 
         except Exception as e:
             logging.getLogger(__name__).warning(
@@ -162,7 +169,9 @@ def analyze_repository(
             commits = repo.get_commit_history(max_count=max_commits)
             logger.info(f"Retrieved {len(commits)} commits")
         except Exception as commit_error:
-            logger.warning(f"Could not get detailed commit history: {commit_error}")
+            logger.warning(
+                f"Could not get detailed commit history: {commit_error}"
+            )
             logger.info("Using minimal commit analysis")
             commits = [
                 {

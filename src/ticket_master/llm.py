@@ -46,6 +46,7 @@ class LLMProvider(Enum):
     ANTHROPIC = "anthropic"
     HUGGINGFACE = "huggingface"
     LOCAL = "local"
+    MOCK = "mock"
 
 
 class LLMBackend(ABC):
@@ -464,6 +465,71 @@ class OpenAIBackend(LLMBackend):
             }
 
 
+class MockBackend(LLMBackend):
+    """Mock LLM backend for testing and demonstration purposes."""
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize Mock backend.
+
+        Args:
+            config: Configuration dictionary
+        """
+        super().__init__(config)
+        self.model = config.get("model", "mock-model")
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        """Generate mock response based on prompt analysis.
+
+        Args:
+            prompt: Input prompt for the LLM
+            **kwargs: Additional parameters
+
+        Returns:
+            Generated mock response
+        """
+        # Create reasonable mock responses based on prompt content
+        if "issue" in prompt.lower() and "json" in prompt.lower():
+            # Generate mock JSON for issue generation
+            return '''[
+  {
+    "title": "Improve code documentation",
+    "description": "Based on the repository analysis, several files could benefit from improved documentation. This includes adding docstrings to functions and updating README files to reflect recent changes.",
+    "labels": ["documentation", "enhancement", "automated"]
+  },
+  {
+    "title": "Add unit tests for new functionality", 
+    "description": "New code has been added that lacks adequate test coverage. Adding comprehensive unit tests would improve code reliability and maintainability.",
+    "labels": ["testing", "enhancement", "automated"]
+  }
+]'''
+        else:
+            # General mock response
+            return ("This is a mock response from the Mock LLM backend. "
+                   "In a real implementation, this would be generated "
+                   "by an actual language model.")
+
+    def is_available(self) -> bool:
+        """Mock backend is always available.
+
+        Returns:
+            Always True for demonstration purposes
+        """
+        return True
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get mock model information.
+
+        Returns:
+            Dictionary containing mock model information
+        """
+        return {
+            "name": self.model,
+            "provider": "mock",
+            "status": "available",
+            "description": "Mock LLM backend for testing and demonstration",
+        }
+
+
 class LLM:
     """Main LLM class for managing Large Language Model interactions.
 
@@ -553,6 +619,8 @@ class LLM:
             return OllamaBackend(config)
         elif provider == LLMProvider.OPENAI:
             return OpenAIBackend(config)
+        elif provider == LLMProvider.MOCK:
+            return MockBackend(config)
         else:
             raise LLMError(
                 f"Backend not implemented for provider: {provider.value}"
