@@ -3,7 +3,6 @@ Tests for the Authentication class.
 """
 
 import os
-# Add src to path for imports
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
