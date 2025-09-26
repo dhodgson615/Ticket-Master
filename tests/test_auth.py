@@ -78,7 +78,7 @@ class TestAuthentication:
             auth = Authentication()
             str_repr = str(auth)
             assert "Authentication(has_token=True)" == str_repr
-    
+
     def test_repr_representation(self):
         """Test repr representation."""
         with patch.dict(os.environ, {'GITHUB_TOKEN': 'env_token'}):
