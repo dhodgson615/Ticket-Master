@@ -1,0 +1,36 @@
+# Test Configuration for Ticket-Master
+# This configuration uses the Mock LLM provider for testing and demonstration
+
+# GitHub Configuration
+github:
+  token: null  # Will use GITHUB_TOKEN environment variable
+  default_labels:
+    - "enhancement"
+    - "automated"
+    - "ai-generated"
+
+# Repository Analysis Configuration
+repository:
+  max_commits: 10  # Reduced for testing
+  ignore_patterns:
+    - ".git"
+    - "__pycache__"
+    - "*.pyc"
+    - "node_modules"
+
+# Issue Generation Configuration
+issue_generation:
+  max_issues: 3  # Reduced for testing
+  min_description_length: 50
+
+# LLM Configuration - Using Mock Provider
+llm:
+  provider: "mock"
+  model: "mock-test-model"
+  temperature: 0.7
+  max_tokens: 1000
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
