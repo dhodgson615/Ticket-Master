@@ -281,5 +281,5 @@ def test_basic_import():
     assert GitHubAuthError is not None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])
