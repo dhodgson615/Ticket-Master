@@ -264,37 +264,34 @@ def generate_issues_with_llm(
             )
             return generate_sample_issues(analysis, config)
 
-        # For now, create a simple prompt since we need to understand
-        # the structure better
-        # TODO: Replace with proper prompt template usage using Prompt class
-        prompt = f"""You are an expert software development assistant. Based on the following repository analysis, generate {max_issues} high-quality GitHub issues.
 
-Repository Information:
-- Name: {analysis['repository_info']['name']}
-- Branch: {analysis['repository_info']['active_branch']}
-- Commits analyzed: {analysis['analysis_summary']['commit_count']}
-- Files modified: {analysis['analysis_summary']['files_modified']}
-- Files added: {analysis['analysis_summary']['files_added']}
-- Total changes: +{analysis['analysis_summary']['total_insertions']}/-{analysis['analysis_summary']['total_deletions']} lines
-
-Recent Commits:
-{chr(10).join(f"- {commit['short_hash']}: {commit['summary']}" 
-              for commit in analysis['commits'][:5])}
-
-Generate {max_issues} actionable GitHub issues in JSON format. 
-Each issue should have:
-- title: Clear, specific title
-- description: Detailed description with context
-- labels: Relevant labels (include {config['github']['default_labels']})
-
-Respond with valid JSON only:
-[
-  {{
-    "title": "Issue title",
-    "description": "Detailed description",
-    "labels": ["label1", "label2"]
-  }}
-]"""
+        # Use proper prompt template system  
+        from ticket_master.prompt import Prompt
+        
+        prompt_manager = Prompt()
+        
+        # Prepare variables for the prompt template
+        template_variables = {
+            "repo_path": analysis['repository_info']['path'],
+            "commit_count": analysis['analysis_summary']['commit_count'],
+            "modified_files_count": analysis['analysis_summary']['files_modified'],
+            "new_files_count": analysis['analysis_summary']['files_added'],
+            "num_issues": max_issues,
+            "recent_changes": "\n".join(f"- {commit['short_hash']}: {commit['summary']}" 
+                                       for commit in analysis['commits'][:5]),
+            "file_changes_summary": f"Modified: {analysis['analysis_summary']['files_modified']} files, "
+                                  f"Added: {analysis['analysis_summary']['files_added']} files, "
+                                  f"Changes: +{analysis['analysis_summary']['total_insertions']}/"
+                                  f"-{analysis['analysis_summary']['total_deletions']} lines"
+        }
+        
+        # Get the appropriate prompt template for the LLM provider
+        template = prompt_manager.get_template("basic_issue_generation")
+        if not template:
+            logger.warning("No prompt template found, using fallback")
+            return generate_sample_issues(analysis, config)
+            
+        prompt = template.render(provider, **template_variables)
 
         logger.info("Generating issues using LLM...")
 
@@ -734,21 +731,156 @@ def print_results_summary(
     print("\n" + "=" * 80)
 
 
+def validate_config_command(config_path: Optional[str] = None) -> int:
+    """Validate configuration file and display results.
+    
+    Args:
+        config_path: Path to configuration file (optional)
+        
+    Returns:
+        Exit code (0 for success, non-zero for error)
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info("Validating configuration...")
+        
+        # Load configuration
+        config = load_config(config_path)
+        
+        print("\n" + "=" * 60)
+        print("CONFIGURATION VALIDATION RESULTS")
+        print("=" * 60)
+        
+        validation_results = []
+        
+        # Validate GitHub configuration
+        github_config = config.get("github", {})
+        if github_config.get("token"):
+            print("✓ GitHub token: Found")
+            validation_results.append(("GitHub token", True, "Token found"))
+            
+            # Test GitHub connection
+            try:
+                from ticket_master.issue import test_github_connection
+                connection_result = test_github_connection(github_config["token"])
+                if connection_result.get("authenticated"):
+                    user_info = connection_result.get("user", {})
+                    print(f"✓ GitHub connection: Authenticated as {user_info.get('login', 'unknown')}")
+                    validation_results.append(("GitHub connection", True, f"Authenticated as {user_info.get('login')}"))
+                else:
+                    print(f"✗ GitHub connection: Failed - {connection_result.get('error', 'Unknown error')}")
+                    validation_results.append(("GitHub connection", False, connection_result.get('error', 'Unknown error')))
+            except Exception as e:
+                print(f"✗ GitHub connection: Error testing connection - {e}")
+                validation_results.append(("GitHub connection", False, str(e)))
+        else:
+            print("✗ GitHub token: Missing")
+            validation_results.append(("GitHub token", False, "Token not found in config or environment"))
+        
+        # Validate LLM configuration
+        llm_config = config.get("llm", {})
+        provider = llm_config.get("provider", "ollama")
+        print(f"✓ LLM provider: {provider}")
+        validation_results.append(("LLM provider", True, f"Provider set to {provider}"))
+        
+        # Test LLM availability
+        try:
+            from ticket_master.llm import LLM
+            llm = LLM(provider, llm_config)
+            
+            if llm.is_available():
+                print(f"✓ LLM availability: {provider} is available")
+                validation_results.append(("LLM availability", True, f"{provider} is available"))
+                
+                # Check model availability
+                model_info = llm.backend.get_model_info()
+                model_name = model_info.get("name", llm_config.get("model", "unknown"))
+                if model_info.get("status") not in ["not_found", "model_not_found", "unavailable", "error"]:
+                    print(f"✓ LLM model: {model_name} is available")
+                    validation_results.append(("LLM model", True, f"{model_name} is available"))
+                else:
+                    print(f"✗ LLM model: {model_name} not found")
+                    validation_results.append(("LLM model", False, f"{model_name} not found"))
+                    
+                    # Offer to install if Ollama
+                    if provider == "ollama":
+                        print(f"  → You can install it with: ollama pull {model_name}")
+            else:
+                print(f"✗ LLM availability: {provider} is not available")
+                validation_results.append(("LLM availability", False, f"{provider} is not available"))
+                
+                if provider == "ollama":
+                    print("  → Make sure Ollama is running (ollama serve)")
+        except Exception as e:
+            print(f"✗ LLM configuration: Error testing LLM - {e}")
+            validation_results.append(("LLM configuration", False, str(e)))
+        
+        # Validate other configuration sections
+        repo_config = config.get("repository", {})
+        print(f"✓ Repository config: Max commits: {repo_config.get('max_commits', 50)}")
+        validation_results.append(("Repository config", True, "Configuration valid"))
+        
+        issue_config = config.get("issue_generation", {})
+        print(f"✓ Issue generation config: Max issues: {issue_config.get('max_issues', 5)}")
+        validation_results.append(("Issue generation config", True, "Configuration valid"))
+        
+        # Summary
+        print("\n" + "-" * 60)
+        passed = sum(1 for _, status, _ in validation_results if status)
+        total = len(validation_results)
+        print(f"Validation Summary: {passed}/{total} checks passed")
+        
+        if passed == total:
+            print("✓ Configuration is valid and ready to use!")
+            return 0
+        else:
+            print("✗ Configuration has issues that need to be resolved.")
+            return 1
+            
+    except Exception as e:
+        logger.error(f"Configuration validation failed: {e}")
+        print(f"\n✗ Configuration validation failed: {e}")
+        return 1
+
+
 def main() -> int:
     """Main entry point for the application.
 
     Returns:
         Exit code (0 for success, non-zero for error)
     """
+    # Check if this looks like the validate-config command
+    if len(sys.argv) > 1 and sys.argv[1] == "validate-config":
+        # Handle validate-config command
+        parser = argparse.ArgumentParser(
+            description="Validate Ticket-Master configuration",
+            formatter_class=argparse.RawDescriptionHelpFormatter
+        )
+        parser.add_argument("command", help="Command to run")
+        parser.add_argument("--config", help="Path to configuration YAML file")
+        parser.add_argument(
+            "--log-level",
+            choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+            default="INFO",
+            help="Set the logging level",
+        )
+        
+        args = parser.parse_args()
+        setup_logging(args.log_level)
+        
+        return validate_config_command(getattr(args, 'config', None))
+    
+    # Default behavior - generate issues (backward compatibility)
     parser = argparse.ArgumentParser(
         description="Ticket-Master: AI-powered GitHub issue generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s /path/to/repo owner/repo
-  %(prog)s /path/to/repo owner/repo --dry-run
+  %(prog)s /path/to/repo owner/repo --dry-run  
   %(prog)s /path/to/repo owner/repo --config config.yaml --max-issues 3
-  %(prog)s /path/to/repo owner/repo --log-level DEBUG
+  %(prog)s validate-config --config config.yaml
 
 Environment Variables:
   GITHUB_TOKEN    GitHub personal access token (required)
@@ -805,7 +937,7 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         config = load_config(args.config)
 
         # Apply command line overrides
-        if args.max_issues:
+        if hasattr(args, 'max_issues') and args.max_issues:
             config["issue_generation"]["max_issues"] = args.max_issues
 
         # Validate required configuration
