@@ -275,7 +275,7 @@ def test_basic_import():
     """Test that the Authentication class can be imported."""
     from ticket_master.auth import (Authentication, AuthenticationError,
                                     GitHubAuthError)
-    
+
     assert Authentication is not None
     assert AuthenticationError is not None
     assert GitHubAuthError is not None
