@@ -1,11 +1,3 @@
-"""
-Prompt module for managing prompt templates and variations.
-
-This module provides the Prompt class for managing different prompt templates
-that each LLM model will receive in different parts of the pipeline to ensure
-models behave as desired with provider-specific optimizations.
-"""
-
 import json
 import logging
 import subprocess
@@ -15,13 +7,14 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-# Import with fallback installation
 try:
     import yaml
+
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"]
     )
+
     import yaml
 
 

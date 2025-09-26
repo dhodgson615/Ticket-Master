@@ -15,9 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-# Import with fallback installation
 try:
-    # Note: git module imported as individual components
     pass
 except ImportError:
     import subprocess
@@ -26,6 +24,7 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
+
     from git import Repo, InvalidGitRepositoryError
 
 from .database import DatabaseError, UserDatabase
@@ -77,6 +76,7 @@ class DataScraper:
 
         try:
             self.repository = Repository(str(self.repo_path))
+
         except RepositoryError as e:
             raise DataScraperError(f"Invalid repository: {e}")
 
@@ -92,10 +92,12 @@ class DataScraper:
                 self.cache_db = UserDatabase()
                 with self.cache_db:
                     self.cache_db.create_tables()
+
             except DatabaseError as e:
                 self.logger.warning(
                     f"Failed to initialize cache database: {e}"
                 )
+
                 self.use_cache = False
 
     def scrape_all(self, max_commits: int = 100) -> Dict[str, Any]:
@@ -113,12 +115,14 @@ class DataScraper:
         self.logger.info(
             f"Starting comprehensive repository analysis: {self.repo_path}"
         )
+
         start_time = time.time()
 
         try:
             # Check cache first
             cache_key = f"full_analysis_{max_commits}"
             cached_result = self._get_from_cache(cache_key)
+
             if cached_result:
                 self.logger.info("Using cached analysis results")
                 return cached_result
@@ -149,6 +153,7 @@ class DataScraper:
             self.logger.info(
                 f"Completed repository analysis in {analysis_time:.2f}s"
             )
+
             return analysis_result
 
         except Exception as e:
@@ -344,6 +349,7 @@ class DataScraper:
                 # Language detection
                 if file_ext in language_extensions:
                     lang = language_extensions[file_ext]
+
                     if lang not in analysis["programming_languages"]:
                         analysis["programming_languages"][lang] = {
                             "files": [],
@@ -364,7 +370,8 @@ class DataScraper:
                             analysis["programming_languages"][lang][
                                 "total_lines"
                             ] += lines
-                        except Exception:
+
+                        except Exception:  # TODO: specify exception
                             pass
 
                 # Special file detection
@@ -521,6 +528,7 @@ class DataScraper:
                 return self.cache_db.get_cached_repository_data(
                     str(self.repo_path), cache_key
                 )
+
         except DatabaseError:
             return None
 
@@ -542,6 +550,7 @@ class DataScraper:
                     data,
                     self.cache_expiry_hours,
                 )
+
         except DatabaseError as e:
             self.logger.warning(f"Failed to cache data: {e}")
 
@@ -575,11 +584,13 @@ class DataScraper:
             # Extract common config values
             try:
                 config["user_name"] = config_reader.get_value("user", "name")
+
             except Exception:
                 pass
 
             try:
                 config["user_email"] = config_reader.get_value("user", "email")
+
             except Exception:
                 pass
 
@@ -598,7 +609,9 @@ class DataScraper:
                         "url": next(iter(remote.urls), "unknown"),
                     }
                 )
+
             return remotes
+
         except Exception:
             return []
 
@@ -625,8 +638,10 @@ class DataScraper:
     ) -> Dict[str, Any]:
         """Analyze contributor patterns."""
         contributors = {}
+
         for commit in commits:
             author = commit.get("author", "Unknown")
+
             if author not in contributors:
                 contributors[author] = {
                     "commits": 0,
@@ -635,8 +650,10 @@ class DataScraper:
                 }
 
             contributors[author]["commits"] += 1
+
             if commit["date"] > contributors[author]["last_commit"]:
                 contributors[author]["last_commit"] = commit["date"]
+
             if commit["date"] < contributors[author]["first_commit"]:
                 contributors[author]["first_commit"] = commit["date"]
 
@@ -654,11 +671,13 @@ class DataScraper:
         """Analyze branching patterns."""
         try:
             branches = list(self.repository.repo.branches)
+
             return {
                 "total_branches": len(branches),
                 "branch_names": [branch.name for branch in branches],
                 "current_branch": self.repository.repo.active_branch.name,
             }
+
         except Exception:
             return {"error": "Could not analyze branches"}
 
@@ -666,6 +685,7 @@ class DataScraper:
     def _extract_python_dependencies(self) -> Optional[Dict[str, Any]]:
         """Extract Python dependencies from requirements.txt, setup.py, pyproject.toml."""
         req_file = self.repo_path / "requirements.txt"
+
         if req_file.exists():
             try:
                 with open(req_file, "r") as f:
@@ -674,25 +694,32 @@ class DataScraper:
                         for line in f
                         if line.strip() and not line.startswith("#")
                     ]
+
                 return {"file": "requirements.txt", "dependencies": deps}
+
             except Exception:
                 pass
+
         return None
 
     def _extract_javascript_dependencies(self) -> Optional[Dict[str, Any]]:
         """Extract JavaScript dependencies from package.json."""
         package_file = self.repo_path / "package.json"
+
         if package_file.exists():
             try:
                 with open(package_file, "r") as f:
                     package_data = json.load(f)
+
                 return {
                     "file": "package.json",
                     "dependencies": package_data.get("dependencies", {}),
                     "devDependencies": package_data.get("devDependencies", {}),
                 }
-            except Exception:
+
+            except Exception:  # TODO: specify exception
                 pass
+
         return None
 
     def _extract_java_dependencies(self) -> Optional[Dict[str, Any]]:
@@ -700,22 +727,28 @@ class DataScraper:
         # Simplified implementation - would need XML/Gradle parsing
         if (self.repo_path / "pom.xml").exists():
             return {"file": "pom.xml", "build_system": "maven"}
+
         elif (self.repo_path / "build.gradle").exists():
             return {"file": "build.gradle", "build_system": "gradle"}
+
         return None
 
     def _extract_go_dependencies(self) -> Optional[Dict[str, Any]]:
         """Extract Go dependencies from go.mod."""
         go_mod = self.repo_path / "go.mod"
+
         if go_mod.exists():
             return {"file": "go.mod", "build_system": "go_modules"}
+
         return None
 
     def _extract_rust_dependencies(self) -> Optional[Dict[str, Any]]:
         """Extract Rust dependencies from Cargo.toml."""
         cargo_toml = self.repo_path / "Cargo.toml"
+
         if cargo_toml.exists():
             return {"file": "Cargo.toml", "build_system": "cargo"}
+
         return None
 
     def _extract_ci_config(self) -> Optional[Dict[str, Any]]:
@@ -724,10 +757,12 @@ class DataScraper:
 
         # GitHub Actions
         gh_actions_dir = self.repo_path / ".github" / "workflows"
+
         if gh_actions_dir.exists():
             workflows = list(gh_actions_dir.glob("*.yml")) + list(
                 gh_actions_dir.glob("*.yaml")
             )
+
             if workflows:
                 ci_configs.append(
                     {
@@ -738,6 +773,7 @@ class DataScraper:
 
         # GitLab CI
         gitlab_ci = self.repo_path / ".gitlab-ci.yml"
+
         if gitlab_ci.exists():
             ci_configs.append(
                 {"type": "gitlab_ci", "files": [".gitlab-ci.yml"]}
@@ -745,6 +781,7 @@ class DataScraper:
 
         # Travis CI
         travis_ci = self.repo_path / ".travis.yml"
+
         if travis_ci.exists():
             ci_configs.append({"type": "travis_ci", "files": [".travis.yml"]})
 
@@ -798,7 +835,8 @@ class DataScraper:
                 "has_usage": "usage" in content.lower(),
                 "has_examples": "example" in content.lower(),
             }
-        except Exception:
+
+        except Exception:  # TODO: specify exception
             return {"error": "Could not analyze README"}
 
     def _analyze_license(self, license_path: Path) -> Dict[str, Any]:
@@ -824,7 +862,8 @@ class DataScraper:
                     break
 
             return {"detected_type": detected_license, "length": len(content)}
-        except Exception:
+
+        except Exception:  # TODO: specify exception
             return {"error": "Could not analyze license"}
 
     def _calculate_activity_span(self, commits: List[Dict[str, Any]]) -> int:
@@ -836,6 +875,7 @@ class DataScraper:
             datetime.fromisoformat(commit["date"].replace("Z", "+00:00"))
             for commit in commits
         ]
+
         return (max(dates) - min(dates)).days
 
     def _analyze_commit_sizes(
@@ -848,6 +888,7 @@ class DataScraper:
     def _analyze_file_sizes(self) -> Dict[str, Any]:
         """Analyze file size distribution."""
         sizes = []
+
         for item in self.repo_path.rglob("*"):
             if item.is_file() and not self.repository.is_ignored(
                 str(item.relative_to(self.repo_path))
@@ -858,6 +899,7 @@ class DataScraper:
             return {}
 
         sizes.sort()
+
         return {
             "min": min(sizes),
             "max": max(sizes),

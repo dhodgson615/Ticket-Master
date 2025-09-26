@@ -1,15 +1,7 @@
-"""
-Branch module for Git branch operations and representation.
-
-This module provides the Branch class for representing and working with
-Git branches in an object-oriented way.
-"""
-
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-# Import with fallback installation
 try:
     from git import Head as GitHead
     from git import RemoteReference

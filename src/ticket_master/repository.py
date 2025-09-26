@@ -1,11 +1,3 @@
-"""
-Repository module for Git operations and analysis.
-
-This module provides the Repository class for interacting with Git repositories,
-extracting commit history, analyzing file changes, and preparing data for
-issue generation.
-"""
-
 import logging
 import subprocess
 import sys
@@ -13,14 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Import with fallback installation
 try:
     import git
     from git import InvalidGitRepositoryError, Repo
+
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
+
     import git
     from git import Repo, InvalidGitRepositoryError
 
@@ -62,10 +55,12 @@ class Repository:
 
         try:
             self.repo = Repo(str(self.path))
+
         except InvalidGitRepositoryError as e:
             raise RepositoryError(
                 f"Invalid Git repository at {self.path}: {e}"
             )
+
         except Exception as e:
             raise RepositoryError(f"Failed to initialize repository: {e}")
 
@@ -107,6 +102,7 @@ class Repository:
                     "insertions": commit.stats.total["insertions"],
                     "deletions": commit.stats.total["deletions"],
                 }
+
                 commits.append(commit_info)
 
             self.logger.info(f"Retrieved {len(commits)} commits from {branch}")
@@ -133,6 +129,7 @@ class Repository:
         try:
             if commit_hash:
                 commits = [self.repo.commit(commit_hash)]
+
             else:
                 commits = list(
                     self.repo.iter_commits("HEAD", max_count=max_commits)
@@ -155,6 +152,7 @@ class Repository:
                     # Get the diff for this commit
                     if commit.parents:
                         diffs = commit.parents[0].diff(commit)
+
                     else:
                         # First commit, compare against empty tree
                         diffs = commit.diff(git.NULL_TREE)
@@ -170,15 +168,19 @@ class Repository:
                                     "deletions": 0,
                                     "commits": [],
                                 }
+
                             file_changes["modified_files"][file_path][
                                 "changes"
                             ] += 1
+
                             file_changes["modified_files"][file_path][
                                 "insertions"
                             ] += (diff.insertions or 0)
+
                             file_changes["modified_files"][file_path][
                                 "deletions"
                             ] += (diff.deletions or 0)
+
                             file_changes["modified_files"][file_path][
                                 "commits"
                             ].append(commit.hexsha[:8])
@@ -201,16 +203,20 @@ class Repository:
                                     else None
                                 ),
                             }
+
                             file_changes["renamed_files"].append(rename_info)
 
                     # Update summary
                     stats = commit.stats.total
+
                     file_changes["summary"]["total_insertions"] += stats.get(
                         "insertions", 0
                     )
+
                     file_changes["summary"]["total_deletions"] += stats.get(
                         "deletions", 0
                     )
+
                     file_changes["summary"]["total_files"] += stats.get(
                         "files", 0
                     )
@@ -219,11 +225,13 @@ class Repository:
                     self.logger.warning(
                         f"Error analyzing commit {commit.hexsha[:8]}: {commit_error}"
                     )
+
                     continue
 
             self.logger.info(
                 f"Analyzed file changes across {len(commits)} commits"
             )
+
             return file_changes
 
         except Exception as e:
@@ -306,12 +314,14 @@ class Repository:
         try:
             if commit_hash:
                 commit = self.repo.commit(commit_hash)
+
             else:
                 commit = self.repo.head.commit
 
             try:
                 blob = commit.tree[file_path]
                 return blob.data_stream.read().decode("utf-8", errors="ignore")
+
             except KeyError:
                 return None
 
@@ -337,8 +347,10 @@ class Repository:
                 capture_output=True,
                 text=True,
             )
+
             return result.returncode == 0
-        except Exception:
+
+        except Exception:  # TODO: specify exception
             return False
 
     def get_commits(
@@ -366,6 +378,7 @@ class Repository:
             self.logger.info(
                 f"Retrieved {len(commits)} Commit objects from {branch}"
             )
+
             return commits
 
         except Exception as e:
@@ -406,6 +419,7 @@ class Repository:
                 f"Retrieved {len(branches)} Branch objects "
                 f"({'with' if include_remote else 'without'} remotes)"
             )
+
             return branches
 
         except Exception as e:
@@ -451,6 +465,7 @@ class Repository:
                         if not self.repo.head.is_detached
                         else None
                     )
+
                     is_active = git_branch.name == active_branch_name
                     return Branch(git_branch, self.repo, is_active)
 
@@ -464,6 +479,7 @@ class Repository:
 
         except RepositoryError:
             raise
+
         except Exception as e:
             raise RepositoryError(f"Failed to get branch {branch_name}: {e}")
 
@@ -478,6 +494,7 @@ class Repository:
             if not self.repo.head.is_detached
             else "detached"
         )
+
         return (
             f"Repository(path='{self.path}', active_branch='{active_branch}')"
         )

@@ -1,17 +1,9 @@
-"""
-Issue module for GitHub API integration.
-
-This module provides the Issue class for creating and managing GitHub issues,
-including authentication, validation, and API interaction.
-"""
-
 import logging
 import os
 import subprocess
 import sys
 from typing import Any, Dict, List, Optional
 
-# Import with fallback installation
 try:
     from github import Auth, Github
     from github.GithubException import (BadCredentialsException,
@@ -21,7 +13,9 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
     )
+
     from github import Github, Auth
+
     from github.GithubException import (
         GithubException,
         BadCredentialsException,

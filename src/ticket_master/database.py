@@ -1,20 +1,9 @@
-"""
-Database module for data operations and storage.
-
-This module provides the Database base class and its subclasses for handling
-both local user data and server data operations with proper connection management,
-error handling, and security considerations.
-"""
-
 import json
 import logging
 import sqlite3
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
-# Import with fallback installation - placeholder
-# (yaml not needed in current implementation)
 
 
 class DatabaseError(Exception):

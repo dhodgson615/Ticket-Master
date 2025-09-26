@@ -1,19 +1,11 @@
-"""
-Pull Request module for GitHub pull request operations and representation.
-
-This module provides the PullRequest class for representing and working with
-GitHub pull requests in an object-oriented way.
-"""
-
 import logging
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-# Import with fallback installation
 try:
     from github import Github
     from github import PullRequest as GitHubPullRequest
     from github.GithubException import GithubException
+
 except ImportError:
     import subprocess
     import sys
@@ -21,10 +13,10 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
     )
+
     from github import Github, PullRequest as GitHubPullRequest
     from github.GithubException import GithubException
 
-from .branch import Branch
 from .commit import Commit
 
 

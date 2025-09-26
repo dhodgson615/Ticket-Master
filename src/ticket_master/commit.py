@@ -1,15 +1,7 @@
-"""
-Commit module for Git commit operations and representation.
-
-This module provides the Commit class for representing and working with
-Git commits in an object-oriented way.
-"""
-
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-# Import with fallback installation
 try:
     from git import NULL_TREE
     from git import Commit as GitCommit
@@ -20,6 +12,7 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
+
     from git import NULL_TREE
     from git import Commit as GitCommit
 
@@ -69,14 +62,17 @@ class Commit:
         # Extract basic commit information
         self.hash = git_commit.hexsha
         self.short_hash = git_commit.hexsha[:8]
+
         self.author = {
             "name": git_commit.author.name,
             "email": git_commit.author.email,
         }
+
         self.committer = {
             "name": git_commit.committer.name,
             "email": git_commit.committer.email,
         }
+
         self.message = git_commit.message.strip()
         self.summary = git_commit.summary
         self.date = datetime.fromtimestamp(git_commit.committed_date)
@@ -87,10 +83,12 @@ class Commit:
             self.files_changed = len(git_commit.stats.files)
             self.insertions = stats.get("insertions", 0)
             self.deletions = stats.get("deletions", 0)
+
         except Exception as e:
             self.logger.warning(
                 f"Could not get stats for commit {self.short_hash}: {e}"
             )
+
             self.files_changed = 0
             self.insertions = 0
             self.deletions = 0
@@ -108,13 +106,16 @@ class Commit:
             if self.git_commit.parents:
                 # Compare with parent commit
                 diffs = self.git_commit.parents[0].diff(self.git_commit)
+
             else:
                 # First commit, compare against empty tree
                 diffs = self.git_commit.diff(NULL_TREE)
 
             changed_files = []
+
             for diff in diffs:
                 file_path = diff.a_path or diff.b_path
+
                 if file_path:
                     changed_files.append(file_path)
 
@@ -142,6 +143,7 @@ class Commit:
                 diffs = self.git_commit.parents[0].diff(
                     self.git_commit, paths=[file_path]
                 )
+
             else:
                 diffs = self.git_commit.diff(NULL_TREE, paths=[file_path])
 
@@ -192,22 +194,18 @@ class Commit:
         }
 
     def __str__(self) -> str:
-        """String representation of the commit."""
         return f"{self.short_hash}: {self.summary}"
 
     def __repr__(self) -> str:
-        """Detailed string representation of the commit."""
         return (
-            f"Commit(hash='{self.short_hash}', author='{self.author['name']}', "
+            f"Commit(hash='{self.short_hash}', "
+            f"author='{self.author['name']}', "
             f"date='{self.date.strftime('%Y-%m-%d %H:%M:%S')}', "
             f"files_changed={self.files_changed})"
         )
 
     def __eq__(self, other) -> bool:
-        """Check equality with another commit."""
-        if not isinstance(other, Commit):
-            return False
-        return self.hash == other.hash
+        return isinstance(other, Commit) and self.hash == other.hash
 
     def __hash__(self) -> int:
         """Hash function for commit objects."""

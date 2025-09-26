@@ -1,11 +1,3 @@
-"""
-Pipe module for LLM pipeline operations and orchestration.
-
-This module provides the Pipe class for "daisy chaining" LLM outputs with
-proper error handling, validation, and intermediate verification to ensure
-reliable pipeline execution across multiple LLM operations.
-"""
-
 import logging
 import time
 from datetime import datetime

@@ -1,11 +1,3 @@
-"""
-LLM module for Large Language Model integration and management.
-
-This module provides the LLM class and related components for integrating
-with multiple LLM providers (Ollama, OpenAI, etc.) with proper error handling,
-response validation, and fallback mechanisms.
-"""
-
 import json
 import logging
 import subprocess
@@ -19,10 +11,12 @@ from typing import Any, Dict, List, Optional, Union
 # Import with fallback installation
 try:
     import requests
+
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "requests>=2.31.0"]
     )
+
     import requests
 
 

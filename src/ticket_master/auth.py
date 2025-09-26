@@ -101,6 +101,7 @@ class Authentication:
 
         except BadCredentialsException as e:
             raise GitHubAuthError(f"Invalid GitHub credentials: {e}")
+
         except Exception as e:
             raise GitHubAuthError(f"Failed to authenticate with GitHub: {e}")
 
@@ -116,8 +117,6 @@ class Authentication:
         try:
             github_client = self.create_client(token)
             user = github_client.get_user()
-
-            # Get rate limit information
             rate_limit = github_client.get_rate_limit()
 
             return {
@@ -154,6 +153,7 @@ class Authentication:
             github_client = self.create_client(token)
             github_client.get_user()
             return True
+
         except Exception:
             return False
 
@@ -195,6 +195,7 @@ class Authentication:
     def __repr__(self) -> str:
         """Developer representation of the Authentication instance."""
         has_token = bool(self.token or os.getenv("GITHUB_TOKEN"))
+
         return (
             f"Authentication(token_set={bool(self.token)}, "
             f"env_token_set={bool(os.getenv('GITHUB_TOKEN'))}, has_token={has_token})"
