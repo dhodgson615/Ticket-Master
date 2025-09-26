@@ -58,7 +58,7 @@ class TestAuthentication:
             with pytest.raises(GitHubAuthError) as exc_info:
                 auth.get_token()
             assert "GitHub token not provided" in str(exc_info.value)
-    
+
     def test_str_representation_with_token(self):
         """Test string representation with token."""
         auth = Authentication("test_token")
