@@ -29,7 +29,7 @@ except ImportError:
 
 from ticket_master import Issue, Repository, __version__
 from ticket_master.issue import GitHubAuthError, IssueError
-from ticket_master.llm import LLM, LLMError, LLMProvider
+from ticket_master.llm import LLM, LLMError
 from ticket_master.prompt import Prompt
 from ticket_master.repository import RepositoryError
 
@@ -163,7 +163,8 @@ def analyze_repository(
         # Get file changes
         file_changes = repo.get_file_changes(max_commits=max_commits)
         logger.info(
-            f"Analyzed changes across {file_changes['summary']['total_files']} files"
+            f"Analyzed changes across "
+            f"{file_changes['summary']['total_files']} files"
         )
 
         return {
@@ -202,6 +203,9 @@ def generate_issues_with_llm(
     issues = []
 
     try:
+        # Get max issues from config
+        max_issues = config["issue_generation"]["max_issues"]
+
         # Initialize LLM
         llm_config = config["llm"].copy()
         provider = llm_config.pop("provider", "ollama")
@@ -212,15 +216,14 @@ def generate_issues_with_llm(
         # Check if LLM is available
         if not llm.is_available():
             logger.warning(
-                f"LLM provider {provider} is not available, falling back to sample generation"
+                f"LLM provider {provider} is not available, "
+                "falling back to sample generation"
             )
             return generate_sample_issues(analysis, config)
 
-        # Initialize prompt manager
-        prompt_manager = Prompt(default_provider=provider)
-
-        # For now, create a simple prompt since we need to understand the structure better
-        # TODO: Replace with proper prompt template usage
+        # For now, create a simple prompt since we need to understand
+        # the structure better
+        # TODO: Replace with proper prompt template usage using Prompt class
         prompt = f"""You are an expert software development assistant. Based on the following repository analysis, generate {max_issues} high-quality GitHub issues.
 
 Repository Information:
@@ -232,9 +235,11 @@ Repository Information:
 - Total changes: +{analysis['analysis_summary']['total_insertions']}/-{analysis['analysis_summary']['total_deletions']} lines
 
 Recent Commits:
-{chr(10).join(f"- {commit['short_hash']}: {commit['summary']}" for commit in analysis['commits'][:5])}
+{chr(10).join(f"- {commit['short_hash']}: {commit['summary']}" 
+              for commit in analysis['commits'][:5])}
 
-Generate {max_issues} actionable GitHub issues in JSON format. Each issue should have:
+Generate {max_issues} actionable GitHub issues in JSON format. 
+Each issue should have:
 - title: Clear, specific title
 - description: Detailed description with context
 - labels: Relevant labels (include {config['github']['default_labels']})
