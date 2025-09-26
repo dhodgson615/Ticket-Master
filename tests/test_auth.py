@@ -64,7 +64,7 @@ class TestAuthentication:
         auth = Authentication("test_token")
         str_repr = str(auth)
         assert "Authentication(has_token=True)" == str_repr
-    
+
     def test_str_representation_without_token(self):
         """Test string representation without token."""
         with patch.dict(os.environ, {}, clear=True):
