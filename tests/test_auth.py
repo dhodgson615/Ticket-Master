@@ -46,7 +46,7 @@ class TestAuthentication:
     
     def test_get_token_instance_overrides_env(self):
         """Test that instance token overrides environment token."""
-        with patch.dict(os.environ, {'GITHUB_TOKEN': 'env_token'}):
+        with patch.dict(os.environ, {"GITHUB_TOKEN": "env_token"}):
             auth = Authentication("instance_token")
             token = auth.get_token()
             assert token == "instance_token"
