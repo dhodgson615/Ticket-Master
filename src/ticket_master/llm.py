@@ -204,7 +204,9 @@ class OllamaBackend(LLMBackend):
             self.logger.warning(f"Failed to get model info: {e}")
             return {"name": self.model, "provider": "ollama", "error": str(e)}
 
-    def install_model(self, model_name: Optional[str] = None) -> Dict[str, Any]:
+    def install_model(
+        self, model_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Install or pull a model from Ollama.
 
         Args:
@@ -214,10 +216,10 @@ class OllamaBackend(LLMBackend):
             Dictionary containing installation result
         """
         target_model = model_name or self.model
-        
+
         try:
             self.logger.info(f"Installing Ollama model: {target_model}")
-            
+
             payload = {"name": target_model}
             response = requests.post(
                 f"{self.base_url}/api/pull",
@@ -225,9 +227,9 @@ class OllamaBackend(LLMBackend):
                 stream=True,  # Use streaming for progress updates
                 timeout=300,  # 5 minutes for model download
             )
-            
+
             response.raise_for_status()
-            
+
             # Parse streaming response to get final status
             last_line = ""
             for line in response.iter_lines(decode_unicode=True):
@@ -239,24 +241,29 @@ class OllamaBackend(LLMBackend):
                             self.logger.debug(f"Pull status: {last_line}")
                     except json.JSONDecodeError:
                         continue
-            
+
             # Check if installation was successful
-            if "success" in last_line.lower() or "complete" in last_line.lower():
-                self.logger.info(f"Successfully installed model: {target_model}")
+            if (
+                "success" in last_line.lower()
+                or "complete" in last_line.lower()
+            ):
+                self.logger.info(
+                    f"Successfully installed model: {target_model}"
+                )
                 return {
                     "success": True,
                     "model": target_model,
                     "status": "installed",
-                    "message": last_line
+                    "message": last_line,
                 }
             else:
                 return {
                     "success": False,
                     "model": target_model,
                     "status": "failed",
-                    "message": last_line or "Installation failed"
+                    "message": last_line or "Installation failed",
                 }
-                
+
         except requests.RequestException as e:
             error_msg = f"Failed to install model {target_model}: {e}"
             self.logger.error(error_msg)
@@ -264,7 +271,7 @@ class OllamaBackend(LLMBackend):
                 "success": False,
                 "model": target_model,
                 "status": "error",
-                "error": str(e)
+                "error": str(e),
             }
 
     def list_available_models(self) -> Dict[str, Any]:
@@ -276,10 +283,10 @@ class OllamaBackend(LLMBackend):
         try:
             response = requests.get(f"{self.base_url}/api/tags", timeout=10)
             response.raise_for_status()
-            
+
             models_data = response.json()
             models = models_data.get("models", [])
-            
+
             return {
                 "success": True,
                 "models": [
@@ -290,16 +297,16 @@ class OllamaBackend(LLMBackend):
                     }
                     for model in models
                 ],
-                "count": len(models)
+                "count": len(models),
             }
-            
+
         except requests.RequestException as e:
             self.logger.error(f"Failed to list models: {e}")
             return {
                 "success": False,
                 "error": str(e),
                 "models": [],
-                "count": 0
+                "count": 0,
             }
 
 
@@ -316,7 +323,7 @@ class OpenAIBackend(LLMBackend):
         self.api_key = config.get("api_key")
         self.model = config.get("model", "gpt-3.5-turbo")
         self.base_url = config.get("base_url", "https://api.openai.com/v1")
-        
+
         if not self.api_key:
             raise LLMProviderError("OpenAI API key is required")
 
@@ -336,16 +343,20 @@ class OpenAIBackend(LLMBackend):
         try:
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
-            
+
             # Prepare the request payload
             payload = {
                 "model": self.model,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": kwargs.get("temperature", 0.7),
                 "max_tokens": kwargs.get("max_tokens", 1000),
-                **{k: v for k, v in kwargs.items() if k not in ["temperature", "max_tokens", "timeout"]}
+                **{
+                    k: v
+                    for k, v in kwargs.items()
+                    if k not in ["temperature", "max_tokens", "timeout"]
+                },
             }
 
             response = requests.post(
@@ -357,18 +368,22 @@ class OpenAIBackend(LLMBackend):
             response.raise_for_status()
 
             result = response.json()
-            
+
             if "choices" not in result or not result["choices"]:
-                raise LLMProviderError("No response choices returned from OpenAI API")
-                
+                raise LLMProviderError(
+                    "No response choices returned from OpenAI API"
+                )
+
             content = result["choices"][0]["message"]["content"]
             return content.strip() if content else ""
 
         except requests.RequestException as e:
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 try:
                     error_detail = e.response.json()
-                    error_msg = error_detail.get('error', {}).get('message', str(e))
+                    error_msg = error_detail.get("error", {}).get(
+                        "message", str(e)
+                    )
                     raise LLMProviderError(f"OpenAI API error: {error_msg}")
                 except (json.JSONDecodeError, AttributeError):
                     pass
@@ -386,18 +401,16 @@ class OpenAIBackend(LLMBackend):
         """
         if not self.api_key:
             return False
-            
+
         try:
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
-            
+
             # Test with a simple models list request
             response = requests.get(
-                f"{self.base_url}/models",
-                headers=headers,
-                timeout=10
+                f"{self.base_url}/models", headers=headers, timeout=10
             )
             return response.status_code == 200
         except requests.RequestException:
@@ -416,21 +429,21 @@ class OpenAIBackend(LLMBackend):
                 "name": self.model,
                 "provider": "openai",
                 "status": "unavailable",
-                "error": "API key not set or API not accessible"
+                "error": "API key not set or API not accessible",
             }
-            
+
         try:
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
-            
+
             response = requests.get(
                 f"{self.base_url}/models/{self.model}",
                 headers=headers,
-                timeout=10
+                timeout=10,
             )
-            
+
             if response.status_code == 200:
                 model_data = response.json()
                 return {
@@ -438,22 +451,22 @@ class OpenAIBackend(LLMBackend):
                     "provider": "openai",
                     "owned_by": model_data.get("owned_by", "unknown"),
                     "created": model_data.get("created", "unknown"),
-                    "status": "available"
+                    "status": "available",
                 }
             else:
                 return {
                     "name": self.model,
                     "provider": "openai",
-                    "status": "model_not_found"
+                    "status": "model_not_found",
                 }
-                
+
         except requests.RequestException as e:
             self.logger.warning(f"Failed to get model info: {e}")
             return {
                 "name": self.model,
                 "provider": "openai",
                 "error": str(e),
-                "status": "error"
+                "status": "error",
             }
 
 

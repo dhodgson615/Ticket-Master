@@ -29,9 +29,9 @@ except ImportError:
 
 from ticket_master import Issue, Repository, __version__
 from ticket_master.issue import GitHubAuthError, IssueError
-from ticket_master.repository import RepositoryError
 from ticket_master.llm import LLM, LLMError, LLMProvider
 from ticket_master.prompt import Prompt
+from ticket_master.repository import RepositoryError
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -205,18 +205,20 @@ def generate_issues_with_llm(
         # Initialize LLM
         llm_config = config["llm"].copy()
         provider = llm_config.pop("provider", "ollama")
-        
+
         logger.info(f"Initializing LLM with provider: {provider}")
         llm = LLM(provider, llm_config)
 
         # Check if LLM is available
         if not llm.is_available():
-            logger.warning(f"LLM provider {provider} is not available, falling back to sample generation")
+            logger.warning(
+                f"LLM provider {provider} is not available, falling back to sample generation"
+            )
             return generate_sample_issues(analysis, config)
 
         # Initialize prompt manager
         prompt_manager = Prompt(default_provider=provider)
-        
+
         # For now, create a simple prompt since we need to understand the structure better
         # TODO: Replace with proper prompt template usage
         prompt = f"""You are an expert software development assistant. Based on the following repository analysis, generate {max_issues} high-quality GitHub issues.
@@ -247,16 +249,18 @@ Respond with valid JSON only:
 ]"""
 
         logger.info("Generating issues using LLM...")
-        
+
         # Generate response using LLM
         llm_response = llm.generate(
             prompt,
             temperature=llm_config.get("temperature", 0.7),
-            max_tokens=llm_config.get("max_tokens", 2000)
+            max_tokens=llm_config.get("max_tokens", 2000),
         )
 
         if not llm_response or not llm_response.get("response"):
-            logger.warning("LLM generated empty response, falling back to sample generation")
+            logger.warning(
+                "LLM generated empty response, falling back to sample generation"
+            )
             return generate_sample_issues(analysis, config)
 
         # Parse the LLM response to extract issues
@@ -268,37 +272,41 @@ Respond with valid JSON only:
         try:
             # Clean the response - remove any markdown formatting
             cleaned_response = generated_text.strip()
-            if cleaned_response.startswith('```json'):
+            if cleaned_response.startswith("```json"):
                 cleaned_response = cleaned_response[7:]
-            if cleaned_response.endswith('```'):
+            if cleaned_response.endswith("```"):
                 cleaned_response = cleaned_response[:-3]
             cleaned_response = cleaned_response.strip()
-            
+
             # Try to parse as JSON
             parsed_issues = json.loads(cleaned_response)
-            
+
             # Ensure it's a list
             if not isinstance(parsed_issues, list):
                 parsed_issues = [parsed_issues] if parsed_issues else []
-                
+
         except json.JSONDecodeError:
             # If JSON parsing fails, try to extract issues from text
-            logger.warning("Failed to parse as JSON, attempting text extraction")
+            logger.warning(
+                "Failed to parse as JSON, attempting text extraction"
+            )
             parsed_issues = []
-        
+
         if not parsed_issues:
-            logger.warning("Failed to parse LLM response, falling back to sample generation")
+            logger.warning(
+                "Failed to parse LLM response, falling back to sample generation"
+            )
             return generate_sample_issues(analysis, config)
 
         # Convert parsed data to Issue objects
         default_labels = config["github"]["default_labels"]
-        
+
         for issue_data in parsed_issues[:max_issues]:
             try:
                 # Ensure minimum required fields
                 title = issue_data.get("title", "").strip()
                 description = issue_data.get("description", "").strip()
-                
+
                 if not title or not description:
                     logger.warning(f"Skipping incomplete issue: {issue_data}")
                     continue
@@ -308,17 +316,17 @@ Respond with valid JSON only:
                 suggested_labels = issue_data.get("labels", [])
                 if isinstance(suggested_labels, list):
                     issue_labels.extend(suggested_labels)
-                
+
                 issue = Issue(
                     title=title,
                     description=description,
                     labels=issue_labels,
-                    assignees=issue_data.get("assignees", [])
+                    assignees=issue_data.get("assignees", []),
                 )
-                
+
                 issues.append(issue)
                 logger.info(f"Created issue: {title}")
-                
+
             except Exception as e:
                 logger.error(f"Error creating issue from LLM data: {e}")
                 continue
@@ -334,7 +342,7 @@ Respond with valid JSON only:
         logger.error(f"LLM error: {e}")
         logger.info("Falling back to sample issue generation")
         return generate_sample_issues(analysis, config)
-        
+
     except Exception as e:
         logger.error(f"Unexpected error in LLM issue generation: {e}")
         logger.info("Falling back to sample issue generation")

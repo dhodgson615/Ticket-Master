@@ -33,7 +33,7 @@ class TestDataScraper(unittest.TestCase):
     def test_scrape_repository_info(self):
         """Test repository information scraping."""
         info = self.scraper.scrape_repository_info()
-        
+
         self.assertIn("absolute_path", info)
         self.assertIn("size_info", info)
         self.assertEqual(info["absolute_path"], str(self.repo_path.resolve()))
@@ -41,7 +41,7 @@ class TestDataScraper(unittest.TestCase):
     def test_scrape_file_structure(self):
         """Test file structure analysis."""
         structure = self.scraper.scrape_file_structure()
-        
+
         self.assertIn("total_files", structure)
         self.assertIn("file_types", structure)
         self.assertIn("directories", structure)
@@ -50,10 +50,10 @@ class TestDataScraper(unittest.TestCase):
     def test_scrape_content_analysis(self):
         """Test content analysis."""
         analysis = self.scraper.scrape_content_analysis()
-        
+
         self.assertIn("programming_languages", analysis)
         self.assertIn("configuration_files", analysis)
-        
+
         # Should detect Python files
         self.assertIn("Python", analysis["programming_languages"])
 

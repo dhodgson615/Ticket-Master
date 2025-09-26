@@ -42,10 +42,10 @@ class TestUserDatabase(unittest.TestCase):
     def test_connect_disconnect(self):
         """Test database connection and disconnection."""
         self.assertFalse(self.db.is_connected())
-        
+
         self.db.connect()
         self.assertTrue(self.db.is_connected())
-        
+
         self.db.disconnect()
         self.assertFalse(self.db.is_connected())
 
@@ -65,25 +65,31 @@ class TestUserDatabase(unittest.TestCase):
         """Test user preference storage and retrieval."""
         with self.db:
             self.db.create_tables()
-            
+
             # Test setting and getting preference
             self.db.set_user_preference("test_key", "test_value")
             value = self.db.get_user_preference("test_key")
             self.assertEqual(value, "test_value")
-            
+
             # Test default value
-            default_value = self.db.get_user_preference("nonexistent", "default")
+            default_value = self.db.get_user_preference(
+                "nonexistent", "default"
+            )
             self.assertEqual(default_value, "default")
 
     def test_cache_repository_data(self):
         """Test repository data caching."""
         with self.db:
             self.db.create_tables()
-            
+
             test_data = {"key": "value", "number": 42}
-            self.db.cache_repository_data("/test/repo", "test_cache", test_data)
-            
-            cached_data = self.db.get_cached_repository_data("/test/repo", "test_cache")
+            self.db.cache_repository_data(
+                "/test/repo", "test_cache", test_data
+            )
+
+            cached_data = self.db.get_cached_repository_data(
+                "/test/repo", "test_cache"
+            )
             self.assertEqual(cached_data, test_data)
 
 

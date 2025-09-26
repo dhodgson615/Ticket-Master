@@ -23,7 +23,7 @@ class TestPullRequest(unittest.TestCase):
         self.mock_pr.title = "Test pull request"
         self.mock_pr.body = "This is a test pull request description"
         self.mock_pr.state = "open"
-        self.mock_pr.user.name = "Test Author" 
+        self.mock_pr.user.name = "Test Author"
         self.mock_pr.user.login = "testuser"
         self.mock_pr.user.email = None
         self.mock_pr.draft = False
@@ -42,10 +42,12 @@ class TestPullRequest(unittest.TestCase):
     def test_init_valid_pr(self):
         """Test PullRequest initialization with valid PR object."""
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertEqual(pr.number, 123)
         self.assertEqual(pr.title, "Test pull request")
-        self.assertEqual(pr.description, "This is a test pull request description")
+        self.assertEqual(
+            pr.description, "This is a test pull request description"
+        )
         self.assertEqual(pr.state, "open")
         self.assertEqual(pr.author["name"], "Test Author")
         self.assertEqual(pr.author["login"], "testuser")
@@ -59,7 +61,7 @@ class TestPullRequest(unittest.TestCase):
         """Test pull request mergeability check."""
         pr = PullRequest(self.mock_pr)
         self.assertTrue(pr.mergeable)
-        
+
         # Test non-mergeable PR
         self.mock_pr.mergeable = False
         pr_not_mergeable = PullRequest(self.mock_pr)
@@ -69,7 +71,7 @@ class TestPullRequest(unittest.TestCase):
         """Test pull request merged status."""
         pr = PullRequest(self.mock_pr)
         self.assertFalse(pr.merged)
-        
+
         # Test merged PR
         self.mock_pr.merged = True
         pr_merged = PullRequest(self.mock_pr)
@@ -78,16 +80,16 @@ class TestPullRequest(unittest.TestCase):
     def test_get_branch_info(self):
         """Test getting branch information."""
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertEqual(pr.source_branch, "feature-branch")
         self.assertEqual(pr.target_branch, "main")
 
     def test_to_dict(self):
         """Test pull request dictionary representation."""
         pr = PullRequest(self.mock_pr)
-        
+
         pr_dict = pr.to_dict()
-        
+
         self.assertIn("number", pr_dict)
         self.assertIn("title", pr_dict)
         self.assertIn("description", pr_dict)
@@ -99,14 +101,14 @@ class TestPullRequest(unittest.TestCase):
         self.assertIn("target_branch", pr_dict)
         self.assertIn("mergeable", pr_dict)
         self.assertIn("merged", pr_dict)
-        
+
         self.assertEqual(pr_dict["number"], 123)
         self.assertEqual(pr_dict["title"], "Test pull request")
 
     def test_str_representation(self):
         """Test string representation of pull request."""
         pr = PullRequest(self.mock_pr)
-        
+
         str_repr = str(pr)
         self.assertIn("#123", str_repr)
         self.assertIn("Test pull request", str_repr)
@@ -114,7 +116,7 @@ class TestPullRequest(unittest.TestCase):
     def test_repr_representation(self):
         """Test developer representation of pull request."""
         pr = PullRequest(self.mock_pr)
-        
+
         repr_str = repr(pr)
         self.assertIn("PullRequest", repr_str)
         self.assertIn("123", repr_str)
@@ -123,10 +125,10 @@ class TestPullRequest(unittest.TestCase):
         """Test pull request equality comparison."""
         pr1 = PullRequest(self.mock_pr)
         pr2 = PullRequest(self.mock_pr)
-        
+
         # Same PR number should be equal
         self.assertEqual(pr1, pr2)
-        
+
         # Different PR should not be equal
         mock_other = Mock()
         mock_other.number = 456
@@ -147,7 +149,7 @@ class TestPullRequest(unittest.TestCase):
         mock_other.base.ref = "develop"
         mock_other.mergeable = False
         mock_other.merged = True
-        
+
         pr3 = PullRequest(mock_other)
         self.assertNotEqual(pr1, pr3)
 
