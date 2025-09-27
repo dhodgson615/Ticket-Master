@@ -250,6 +250,12 @@ main {
     color: var(--error-color);
 }
 
+.label-optional {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
 .form-input {
     padding: var(--spacing-md);
     border: 1px solid var(--border-color);

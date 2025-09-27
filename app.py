@@ -19,6 +19,7 @@ from flask import (Flask, render_template, request, flash,  # noqa: E402
 from ticket_master import Repository, __version__  # noqa: E402
 from ticket_master.issue import Issue, GitHubAuthError  # noqa: E402
 from ticket_master.repository import RepositoryError  # noqa: E402
+from ticket_master.github_utils import GitHubUtils, GitHubCloneError  # noqa: E402
 
 # Import the main CLI functions to reuse logic
 from main import load_config, generate_sample_issues  # noqa: E402
@@ -37,42 +38,72 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate_issues():
     """Generate issues for the specified repository."""
+    github_utils = None
     try:
         # Get form data
+        github_repo_input = request.form.get('github_repo', '').strip()
         repository_path = request.form.get('repository_path', '').strip()
-        github_repo = request.form.get('github_repo', '').strip()
         max_issues = request.form.get('max_issues', type=int) or 5
         dry_run = 'dry_run' in request.form
 
-        # Validate inputs
-        if not repository_path:
-            flash('Repository path is required', 'error')
-            return redirect(url_for('index'))
-
-        if not github_repo:
+        # Validate GitHub repository input (required)
+        if not github_repo_input:
             flash('GitHub repository name is required', 'error')
             return redirect(url_for('index'))
 
-        if not os.path.exists(repository_path):
-            flash(f'Repository path does not exist: {repository_path}',
-                  'error')
+        # Initialize GitHub utilities
+        github_utils = GitHubUtils()
+        repo_path = None
+        temp_repo_path = None
+
+        # Parse and validate GitHub repository format
+        try:
+            github_repo = github_utils.parse_github_url(github_repo_input)
+        except ValueError as e:
+            flash(str(e), 'error')
             return redirect(url_for('index'))
+
+        # Check if repository is public
+        is_public = github_utils.is_public_repository(github_repo)
 
         # Load configuration
         config = load_config()
         config['issue_generation']['max_issues'] = max_issues
 
-        # Validate GitHub token
-        if not config['github']['token']:
-            flash('GitHub token not found. Please set GITHUB_TOKEN '
-                  'environment variable.', 'error')
+        # Handle authentication requirements
+        github_token = config['github']['token']
+        if not is_public and not github_token:
+            flash(f'Repository {github_repo} appears to be private but no GitHub token found. '
+                  'Please set GITHUB_TOKEN environment variable.', 'error')
             return redirect(url_for('index'))
 
-        # Initialize repository
-        repo = Repository(repository_path)
+        # Handle repository path - either use provided local path or clone
+        if repository_path:
+            # Use provided local path
+            if not os.path.exists(repository_path):
+                flash(f'Local repository path does not exist: {repository_path}', 'error')
+                return redirect(url_for('index'))
+            repo_path = repository_path
+            flash(f'Using local repository at: {repository_path}', 'info')
+        else:
+            # Clone repository to temporary location
+            try:
+                temp_repo_path = github_utils.clone_repository(
+                    github_repo, 
+                    token=github_token if not is_public else None
+                )
+                repo_path = temp_repo_path
+                flash(f'Repository cloned successfully from {github_repo}', 'success')
+            except GitHubCloneError as e:
+                flash(f'Failed to clone repository: {e}', 'error')
+                return redirect(url_for('index'))
 
-        # Get repository analysis
-        analysis = repo.get_repository_info()
+        # Initialize repository for analysis
+        repo = Repository(repo_path)
+
+        # Get repository analysis (use the same analysis function as CLI)
+        from main import analyze_repository
+        analysis = analyze_repository(repo_path, config)
 
         # Generate sample issues (reusing CLI logic)
         issues = generate_sample_issues(analysis, config)
@@ -80,9 +111,14 @@ def generate_issues():
         # Create GitHub issues (if not dry run)
         results = []
         if not dry_run:
+            # Only validate token for issue creation if needed
+            if not github_token:
+                flash('GitHub token is required for creating issues. Set GITHUB_TOKEN environment variable.', 'error')
+                return redirect(url_for('index'))
+                
             try:
                 github_issue = Issue(
-                    token=config['github']['token'],
+                    token=github_token,
                     repository=github_repo
                 )
 
@@ -130,16 +166,22 @@ def generate_issues():
         return render_template('results.html',
                                results=results,
                                analysis=analysis,
-                               repository_path=repository_path,
+                               repository_path=repo_path,
                                github_repo=github_repo,
+                               is_public=is_public,
+                               cloned=bool(temp_repo_path),
                                dry_run=dry_run)
 
-    except RepositoryError as e:
+    except (RepositoryError, GitHubCloneError) as e:
         flash(f'Repository error: {e}', 'error')
         return redirect(url_for('index'))
     except Exception as e:
         flash(f'Unexpected error: {e}', 'error')
         return redirect(url_for('index'))
+    finally:
+        # Cleanup temporary directories
+        if github_utils:
+            github_utils.cleanup_temp_directories()
 
 
 @app.route('/health')

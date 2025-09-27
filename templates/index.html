@@ -15,22 +15,6 @@
         <h3>Repository Configuration</h3>
         <form method="POST" action="{{ url_for('generate_issues') }}" class="issue-form">
             <div class="form-group">
-                <label for="repository_path">
-                    <span class="label-text">Local Repository Path</span>
-                    <span class="label-required">*</span>
-                </label>
-                <input 
-                    type="text" 
-                    id="repository_path" 
-                    name="repository_path" 
-                    required 
-                    placeholder="/path/to/your/git/repository"
-                    class="form-input"
-                >
-                <small class="help-text">Absolute path to the local Git repository you want to analyze</small>
-            </div>
-
-            <div class="form-group">
                 <label for="github_repo">
                     <span class="label-text">GitHub Repository</span>
                     <span class="label-required">*</span>
@@ -40,10 +24,25 @@
                     id="github_repo" 
                     name="github_repo" 
                     required 
-                    placeholder="owner/repository-name"
+                    placeholder="owner/repository-name or https://github.com/owner/repo"
                     class="form-input"
                 >
-                <small class="help-text">GitHub repository in format "owner/repo" (e.g., "microsoft/vscode")</small>
+                <small class="help-text">GitHub repository in format "owner/repo" or full GitHub URL (e.g., "microsoft/vscode")</small>
+            </div>
+
+            <div class="form-group">
+                <label for="repository_path">
+                    <span class="label-text">Local Repository Path</span>
+                    <span class="label-optional">(optional)</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="repository_path" 
+                    name="repository_path" 
+                    placeholder="/path/to/your/git/repository (leave empty to clone automatically)"
+                    class="form-input"
+                >
+                <small class="help-text">Optional: Path to local Git repository. If not provided, the repository will be cloned automatically</small>
             </div>
 
             <div class="form-group">
@@ -109,16 +108,16 @@
         <h3>Prerequisites</h3>
         <ul class="requirements-list">
             <li>
+                <span class="req-icon">🌐</span>
+                <strong>GitHub Repository:</strong> Provide a GitHub repository URL or name in "owner/repo" format
+            </li>
+            <li>
                 <span class="req-icon">🔑</span>
-                <strong>GitHub Token:</strong> Set <code>GITHUB_TOKEN</code> environment variable with a valid GitHub personal access token
+                <strong>GitHub Token (for private repos):</strong> Set <code>GITHUB_TOKEN</code> environment variable for private repositories or to create issues
             </li>
             <li>
                 <span class="req-icon">📁</span>
-                <strong>Git Repository:</strong> Local path must point to a valid Git repository
-            </li>
-            <li>
-                <span class="req-icon">🌐</span>
-                <strong>Repository Access:</strong> GitHub token must have write access to the target repository
+                <strong>Local Repository (optional):</strong> Optionally provide a local path - otherwise the repository will be cloned automatically
             </li>
         </ul>
     </div>
@@ -141,20 +140,24 @@
             const repoPath = document.getElementById('repository_path').value.trim();
             const githubRepo = document.getElementById('github_repo').value.trim();
             
-            if (!repoPath || !githubRepo) {
+            // Only GitHub repo is required now
+            if (!githubRepo) {
                 e.preventDefault();
                 submitBtn.innerHTML = '<span class="btn-icon">🚀</span> Generate Issues';
                 submitBtn.disabled = false;
-                alert('Please fill in all required fields.');
+                alert('Please provide a GitHub repository.');
                 return;
             }
             
-            // Validate GitHub repo format
-            if (!githubRepo.includes('/') || githubRepo.split('/').length !== 2) {
+            // Validate GitHub repo format - accept URLs or owner/repo format
+            const isUrl = githubRepo.startsWith('http://') || githubRepo.startsWith('https://');
+            const isOwnerRepo = githubRepo.includes('/') && !isUrl && githubRepo.split('/').length === 2;
+            
+            if (!isUrl && !isOwnerRepo) {
                 e.preventDefault();
                 submitBtn.innerHTML = '<span class="btn-icon">🚀</span> Generate Issues';
                 submitBtn.disabled = false;
-                alert('GitHub repository must be in format "owner/repo"');
+                alert('GitHub repository must be in format "owner/repo" or a valid GitHub URL');
                 return;
             }
         });
