@@ -32,6 +32,7 @@ from ticket_master import Issue, Repository, __version__
 from ticket_master.issue import GitHubAuthError, IssueError
 from ticket_master.llm import LLM, LLMError
 from ticket_master.repository import RepositoryError
+from ticket_master.github_utils import GitHubUtils, GitHubCloneError
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -877,13 +878,13 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s /path/to/repo owner/repo
-  %(prog)s /path/to/repo owner/repo --dry-run  
-  %(prog)s /path/to/repo owner/repo --config config.yaml --max-issues 3
+  %(prog)s owner/repo
+  %(prog)s https://github.com/owner/repo --dry-run  
+  %(prog)s owner/repo --local-path /path/to/repo --config config.yaml --max-issues 3
   %(prog)s validate-config --config config.yaml
 
 Environment Variables:
-  GITHUB_TOKEN    GitHub personal access token (required)
+  GITHUB_TOKEN    GitHub personal access token (required for private repositories)
 
 For more information, see: https://github.com/dhodgson615/Ticket-Master
         """,
@@ -891,11 +892,14 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
 
     # Required arguments
     parser.add_argument(
-        "repository_path", help="Path to the Git repository to analyze"
+        "github_repo", 
+        help='GitHub repository name in format "owner/repo" or GitHub URL'
     )
 
+    # Optional arguments
     parser.add_argument(
-        "github_repo", help='GitHub repository name in format "owner/repo"'
+        "--local-path", 
+        help="Optional path to local Git repository. If not provided, repository will be cloned to a temporary directory"
     )
 
     # Optional arguments
@@ -940,23 +944,55 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         if hasattr(args, 'max_issues') and args.max_issues:
             config["issue_generation"]["max_issues"] = args.max_issues
 
-        # Validate required configuration
-        if not config["github"]["token"]:
+        # Initialize GitHub utilities
+        github_utils = GitHubUtils()
+        repo_path = None
+        temp_repo_path = None
+
+        # Parse and validate GitHub repository format
+        try:
+            github_repo = github_utils.parse_github_url(args.github_repo)
+            logger.info(f"Analyzing GitHub repository: {github_repo}")
+        except ValueError as e:
+            logger.error(str(e))
+            return 1
+
+        # Check if repository is public
+        is_public = github_utils.is_public_repository(github_repo)
+        logger.info(f"Repository is {'public' if is_public else 'private/not found'}")
+
+        # Handle authentication requirements
+        github_token = config["github"]["token"]
+        if not is_public and not github_token:
             logger.error(
-                "GitHub token not found. Set GITHUB_TOKEN environment variable or add to config file."
+                f"Repository {github_repo} appears to be private but no GitHub token found. "
+                "Set GITHUB_TOKEN environment variable or add to config file."
             )
             return 1
+        elif is_public and not github_token:
+            logger.info("Public repository detected - GitHub token not required")
 
-        # Validate repository path
-        repo_path = Path(args.repository_path).resolve()
-        if not repo_path.exists():
-            logger.error(f"Repository path does not exist: {repo_path}")
-            return 1
-
-        # Validate GitHub repository format
-        if "/" not in args.github_repo or args.github_repo.count("/") != 1:
-            logger.error("GitHub repository must be in format 'owner/repo'")
-            return 1
+        # Handle repository path - either use provided local path or clone
+        if hasattr(args, 'local_path') and args.local_path:
+            # Use provided local path
+            repo_path = Path(args.local_path).resolve()
+            if not repo_path.exists():
+                logger.error(f"Local repository path does not exist: {repo_path}")
+                return 1
+            logger.info(f"Using local repository at: {repo_path}")
+        else:
+            # Clone repository to temporary location
+            logger.info(f"Cloning {github_repo} to temporary directory...")
+            try:
+                temp_repo_path = github_utils.clone_repository(
+                    github_repo, 
+                    token=github_token if not is_public else None
+                )
+                repo_path = Path(temp_repo_path)
+                logger.info(f"Repository cloned to: {repo_path}")
+            except GitHubCloneError as e:
+                logger.error(f"Failed to clone repository: {e}")
+                return 1
 
         # Analyze repository
         logger.info("Analyzing repository...")
@@ -975,7 +1011,7 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         # Create issues on GitHub
         logger.info(f"Processing {len(issues)} issues...")
         results = create_issues_on_github(
-            issues, args.github_repo, config, args.dry_run
+            issues, github_repo, config, args.dry_run
         )
 
         # Print summary
@@ -988,12 +1024,16 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
     except KeyboardInterrupt:
         logger.info("Operation cancelled by user")
         return 130
-    except (RepositoryError, IssueError, GitHubAuthError) as e:
+    except (RepositoryError, IssueError, GitHubAuthError, GitHubCloneError) as e:
         logger.error(f"Application error: {e}")
         return 1
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
         return 1
+    finally:
+        # Cleanup temporary directories
+        if 'github_utils' in locals():
+            github_utils.cleanup_temp_directories()
 
 
 if __name__ == "__main__":
