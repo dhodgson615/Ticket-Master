@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ticket-Master{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎫</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>
+                    <span class="emoji">🎫</span>
+                    Ticket-Master
+                    <span class="version">v{{ version or 'dev' }}</span>
+                </h1>
+                <p class="subtitle">AI-powered GitHub issue generator</p>
+            </div>
+            <nav>
+                <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+                <a href="{{ url_for('health_check') }}" class="nav-link">Status</a>
+            </nav>
+        </header>
+
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">
+                                <span class="flash-icon">
+                                    {% if category == 'error' %}⚠️{% elif category == 'success' %}✅{% else %}ℹ️{% endif %}
+                                </span>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <p>&copy; 2024 Ticket-Master. AI-powered GitHub issue generation.</p>
+                <div class="footer-links">
+                    <a href="https://github.com/dhodgson615/Ticket-Master" target="_blank" rel="noopener">GitHub</a>
+                    <span class="separator">|</span>
+                    <a href="https://github.com/dhodgson615/Ticket-Master#readme" target="_blank" rel="noopener">Documentation</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
