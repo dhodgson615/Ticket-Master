@@ -20,6 +20,9 @@ pytest-cov>=4.1.0
 types-PyYAML>=6.0.12
 types-requests>=2.32.0
 
+# Web interface dependencies
+Flask>=3.0.0
+
 # Optional LLM dependencies
 # ollama-python>=0.1.0  # Uncomment when implementing Ollama integration
 openai>=1.0.0        # OpenAI integration completed - using requests directly for better control
