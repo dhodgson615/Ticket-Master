@@ -9,22 +9,23 @@ using AI analysis of Git repository contents.
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
-
-from flask import Flask, render_template, request, flash, redirect, url_for, jsonify
 
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from ticket_master import Repository, __version__
-from ticket_master.issue import Issue, GitHubAuthError, IssueError
-from ticket_master.repository import RepositoryError
+from flask import (Flask, render_template, request, flash,  # noqa: E402
+                   redirect, url_for, jsonify)
+
+from ticket_master import Repository, __version__  # noqa: E402
+from ticket_master.issue import Issue, GitHubAuthError  # noqa: E402
+from ticket_master.repository import RepositoryError  # noqa: E402
 
 # Import the main CLI functions to reuse logic
-from main import load_config, generate_sample_issues
+from main import load_config, generate_sample_issues  # noqa: E402
 
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-key-please-change-in-production')
+app.secret_key = os.getenv('FLASK_SECRET_KEY',
+                           'dev-key-please-change-in-production')
 
 
 @app.route('/')
@@ -42,38 +43,40 @@ def generate_issues():
         github_repo = request.form.get('github_repo', '').strip()
         max_issues = request.form.get('max_issues', type=int) or 5
         dry_run = 'dry_run' in request.form
-        
+
         # Validate inputs
         if not repository_path:
             flash('Repository path is required', 'error')
             return redirect(url_for('index'))
-            
+
         if not github_repo:
             flash('GitHub repository name is required', 'error')
             return redirect(url_for('index'))
-            
+
         if not os.path.exists(repository_path):
-            flash(f'Repository path does not exist: {repository_path}', 'error')
+            flash(f'Repository path does not exist: {repository_path}',
+                  'error')
             return redirect(url_for('index'))
-            
+
         # Load configuration
         config = load_config()
         config['issue_generation']['max_issues'] = max_issues
-        
+
         # Validate GitHub token
         if not config['github']['token']:
-            flash('GitHub token not found. Please set GITHUB_TOKEN environment variable.', 'error')
+            flash('GitHub token not found. Please set GITHUB_TOKEN '
+                  'environment variable.', 'error')
             return redirect(url_for('index'))
-            
+
         # Initialize repository
         repo = Repository(repository_path)
-        
+
         # Get repository analysis
         analysis = repo.get_repository_info()
-        
+
         # Generate sample issues (reusing CLI logic)
         issues = generate_sample_issues(analysis, config)
-        
+
         # Create GitHub issues (if not dry run)
         results = []
         if not dry_run:
@@ -82,7 +85,7 @@ def generate_issues():
                     token=config['github']['token'],
                     repository=github_repo
                 )
-                
+
                 for issue in issues[:max_issues]:
                     try:
                         issue_url = github_issue.create_issue(
@@ -123,14 +126,14 @@ def generate_issues():
                     'dry_run': True,
                     'error': None
                 })
-        
-        return render_template('results.html', 
-                             results=results, 
-                             analysis=analysis, 
-                             repository_path=repository_path,
-                             github_repo=github_repo,
-                             dry_run=dry_run)
-                             
+
+        return render_template('results.html',
+                               results=results,
+                               analysis=analysis,
+                               repository_path=repository_path,
+                               github_repo=github_repo,
+                               dry_run=dry_run)
+
     except RepositoryError as e:
         flash(f'Repository error: {e}', 'error')
         return redirect(url_for('index'))
@@ -153,9 +156,9 @@ if __name__ == '__main__':
     debug = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 'yes')
     host = os.getenv('FLASK_HOST', '127.0.0.1')
     port = int(os.getenv('FLASK_PORT', '5000'))
-    
+
     print(f"Starting Ticket-Master Web Interface v{__version__}")
     print(f"Server running at http://{host}:{port}")
     print("Press Ctrl+C to stop the server")
-    
+
     app.run(debug=debug, host=host, port=port)
