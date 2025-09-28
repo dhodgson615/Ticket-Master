@@ -256,6 +256,90 @@ def generate_issues_with_llm(
         provider = llm_config.pop("provider", "ollama")
 
         logger.info(f"Initializing LLM with provider: {provider}")
+        
+        # Use Ollama tools if provider is Ollama
+        if provider == "ollama":
+            try:
+                from ticket_master.ollama_tools import create_ollama_processor
+                
+                processor = create_ollama_processor(llm_config)
+                
+                # Check availability
+                if not processor.client:
+                    logger.warning("Ollama client not available, falling back to standard LLM")
+                    return generate_issues_with_standard_llm(analysis, config)
+                
+                # Generate issues using Ollama tools
+                logger.info("Using Ollama tools for issue generation...")
+                generated_issues = processor.generate_issues_from_analysis(
+                    analysis, max_issues=max_issues
+                )
+                
+                # Convert to Issue objects
+                default_labels = config["github"]["default_labels"]
+                
+                for issue_data in generated_issues:
+                    try:
+                        # Combine default labels with generated labels
+                        issue_labels = default_labels.copy()
+                        suggested_labels = issue_data.get("labels", [])
+                        if isinstance(suggested_labels, list):
+                            issue_labels.extend(suggested_labels)
+
+                        issue = Issue(
+                            title=issue_data["title"],
+                            description=issue_data["description"],
+                            labels=issue_labels,
+                            assignees=issue_data.get("assignees", []),
+                        )
+
+                        issues.append(issue)
+                        logger.info(f"Created issue: {issue_data['title']}")
+
+                    except Exception as e:
+                        logger.error(f"Error creating issue from Ollama data: {e}")
+                        continue
+                
+                if issues:
+                    logger.info(f"Successfully generated {len(issues)} issues using Ollama tools")
+                    return issues
+                else:
+                    logger.warning("No valid issues generated using Ollama tools, falling back")
+                    
+            except Exception as e:
+                logger.warning(f"Ollama tools failed: {e}, falling back to standard LLM")
+        
+        return generate_issues_with_standard_llm(analysis, config)
+
+    except Exception as e:
+        logger.error(f"Unexpected error in LLM issue generation: {e}")
+        logger.info("Falling back to sample issue generation")
+        return generate_sample_issues(analysis, config)
+
+
+def generate_issues_with_standard_llm(
+    analysis: Dict[str, Any], config: Dict[str, Any]
+) -> List[Issue]:
+    """Generate issues using standard LLM interface.
+
+    Args:
+        analysis: Repository analysis results
+        config: Configuration dictionary
+
+    Returns:
+        List of generated Issue objects
+    """
+    logger = logging.getLogger(__name__)
+    issues = []
+
+    try:
+        # Get max issues from config
+        max_issues = config["issue_generation"]["max_issues"]
+
+        # Initialize LLM
+        llm_config = config["llm"].copy()
+        provider = llm_config.pop("provider", "ollama")
+
         llm = LLM(provider, llm_config)
 
         # Check if LLM is available
@@ -270,6 +354,7 @@ def generate_issues_with_llm(
         from ticket_master.prompt import Prompt
 
         prompt_manager = Prompt()
+        prompt_manager.create_builtin_templates()  # Ensure built-in templates are created
 
         # Prepare variables for the prompt template
         template_variables = {
