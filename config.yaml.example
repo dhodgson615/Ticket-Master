@@ -52,7 +52,7 @@ llm:
   provider: "ollama"
   
   # Model to use for issue generation
-  model: "llama2"
+  model: "llama3.2"
   
   # Temperature for text generation (0.0 = deterministic, 1.0 = creative)
   temperature: 0.7

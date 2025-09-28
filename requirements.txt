@@ -24,7 +24,7 @@ types-requests>=2.32.0
 Flask>=3.0.0
 
 # Optional LLM dependencies
-ollama>=0.3.0        # Ollama integration - primary AI provider
+ollama>=0.3.0,<0.4.0  # Ollama integration - primary AI provider
 transformers>=4.30.0 # HuggingFace Transformers for local models
 torch>=2.0.0         # PyTorch backend for HuggingFace models
 openai>=1.0.0        # OpenAI integration completed - using requests directly for better control

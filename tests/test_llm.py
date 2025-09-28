@@ -27,21 +27,31 @@ class TestLLMBackend(unittest.TestCase):
         self.assertEqual(backend.model, "llama2")
         self.assertEqual(backend.base_url, "http://localhost:11434")
 
-    @patch("src.ticket_master.llm.requests.get")
-    def test_ollama_is_available(self, mock_get):
+    def test_ollama_is_available(self):
         """Test Ollama availability check."""
         backend = OllamaBackend({"host": "localhost", "port": 11434})
+        
+        # Since ollama client is available in our environment, we expect it to use the client
+        # The test will mock the client's list method
+        if hasattr(backend, 'client') and backend.client:
+            with patch.object(backend.client, 'list') as mock_list:
+                # Test available
+                mock_list.return_value = {"models": []}
+                self.assertTrue(backend.is_available())
+                
+                # Test not available
+                mock_list.side_effect = Exception("Connection failed")
+                self.assertFalse(backend.is_available())
+        else:
+            # If client is not available, it should fall back to requests
+            with patch("src.ticket_master.llm.requests.get") as mock_get:
+                mock_response = Mock()
+                mock_response.status_code = 200
+                mock_get.return_value = mock_response
+                self.assertTrue(backend.is_available())
 
-        # Test available
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_get.return_value = mock_response
-        self.assertTrue(backend.is_available())
-
-        # Test not available (reset mock and set side effect)
-        mock_get.reset_mock()
-        mock_get.side_effect = Exception("Connection failed")
-        self.assertFalse(backend.is_available())
+                mock_get.side_effect = Exception("Connection failed")
+                self.assertFalse(backend.is_available())
 
     def test_openai_backend_init(self):
         """Test OpenAIBackend initialization."""

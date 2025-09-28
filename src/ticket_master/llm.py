@@ -101,7 +101,7 @@ class LLMBackend(ABC):
 
 
 class OllamaBackend(LLMBackend):
-    """Ollama LLM backend implementation."""
+    """Ollama LLM backend implementation using official ollama Python client."""
 
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize Ollama backend.
@@ -112,8 +112,18 @@ class OllamaBackend(LLMBackend):
         super().__init__(config)
         self.host = config.get("host", "localhost")
         self.port = config.get("port", 11434)
-        self.model = config.get("model", "llama2")
+        self.model = config.get("model", "llama3.2")
         self.base_url = f"http://{self.host}:{self.port}"
+        
+        # Initialize the official Ollama client
+        try:
+            import ollama
+            self.client = ollama.Client(host=self.base_url)
+            self._ollama_available = True
+        except ImportError:
+            self.logger.warning("Official ollama client not available, falling back to requests")
+            self.client = None
+            self._ollama_available = False
 
     def generate(self, prompt: str, **kwargs) -> str:
         """Generate text using Ollama API.
@@ -128,6 +138,49 @@ class OllamaBackend(LLMBackend):
         Raises:
             LLMProviderError: If generation fails
         """
+        try:
+            if self._ollama_available and self.client:
+                # Use official ollama client
+                return self._generate_with_client(prompt, **kwargs)
+            else:
+                # Fall back to direct HTTP requests
+                return self._generate_with_requests(prompt, **kwargs)
+
+        except Exception as e:
+            raise LLMProviderError(f"Ollama generation failed: {e}")
+    
+    def _generate_with_client(self, prompt: str, **kwargs) -> str:
+        """Generate using official ollama client."""
+        import ollama
+        
+        try:
+            # Prepare options for ollama client
+            options = {
+                "temperature": kwargs.get("temperature", 0.7),
+                "num_predict": kwargs.get("max_tokens", kwargs.get("num_predict", 1000)),
+                "top_k": kwargs.get("top_k", 40),
+                "top_p": kwargs.get("top_p", 0.9),
+            }
+            
+            # Remove None values and kwargs that aren't ollama options
+            filtered_options = {k: v for k, v in options.items() if v is not None}
+            
+            response = self.client.generate(
+                model=self.model,
+                prompt=prompt,
+                stream=False,
+                options=filtered_options
+            )
+            
+            return response.get("response", "").strip()
+            
+        except ollama.ResponseError as e:
+            raise LLMProviderError(f"Ollama API error: {e}")
+        except Exception as e:
+            raise LLMProviderError(f"Ollama client error: {e}")
+    
+    def _generate_with_requests(self, prompt: str, **kwargs) -> str:
+        """Generate using direct HTTP requests (fallback)."""
         try:
             payload = {
                 "model": self.model,
@@ -158,10 +211,14 @@ class OllamaBackend(LLMBackend):
             True if Ollama is available, False otherwise
         """
         try:
-            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
-            return response.status_code == 200
-        except requests.RequestException:
-            return False
+            if self._ollama_available and self.client:
+                # Use official client
+                models = self.client.list()
+                return isinstance(models, dict) and "models" in models
+            else:
+                # Fall back to HTTP check
+                response = requests.get(f"{self.base_url}/api/tags", timeout=5)
+                return response.status_code == 200
         except Exception:
             return False
 
@@ -172,30 +229,64 @@ class OllamaBackend(LLMBackend):
             Dictionary containing model information
         """
         try:
-            response = requests.get(f"{self.base_url}/api/tags", timeout=10)
-            response.raise_for_status()
+            if self._ollama_available and self.client:
+                # Use official client for detailed model info
+                try:
+                    model_info = self.client.show(self.model)
+                    return {
+                        "name": self.model,
+                        "provider": "ollama",
+                        "status": "available",
+                        "details": model_info,
+                        "parameters": model_info.get("parameters", {}),
+                        "template": model_info.get("template", ""),
+                        "system": model_info.get("system", ""),
+                        "modified_at": model_info.get("modified_at", "")
+                    }
+                except Exception:
+                    # Fall back to list check
+                    models = self.client.list()
+                    available_models = [m["name"] for m in models.get("models", [])]
+                    if any(self.model in model_name for model_name in available_models):
+                        return {
+                            "name": self.model,
+                            "provider": "ollama",
+                            "status": "available",
+                            "available_models": available_models
+                        }
+                    else:
+                        return {
+                            "name": self.model,
+                            "provider": "ollama",
+                            "status": "not_found",
+                            "available_models": available_models
+                        }
+            else:
+                # Fall back to HTTP requests
+                response = requests.get(f"{self.base_url}/api/tags", timeout=10)
+                response.raise_for_status()
 
-            models = response.json().get("models", [])
-            current_model = next(
-                (model for model in models if model["name"] == self.model),
-                None,
-            )
+                models = response.json().get("models", [])
+                current_model = next(
+                    (model for model in models if model["name"] == self.model),
+                    None,
+                )
 
-            if current_model:
+                if current_model:
+                    return {
+                        "name": current_model["name"],
+                        "size": current_model.get("size", "unknown"),
+                        "modified_at": current_model.get("modified_at", "unknown"),
+                        "provider": "ollama",
+                    }
+
                 return {
-                    "name": current_model["name"],
-                    "size": current_model.get("size", "unknown"),
-                    "modified_at": current_model.get("modified_at", "unknown"),
+                    "name": self.model,
                     "provider": "ollama",
+                    "status": "not_found",
                 }
 
-            return {
-                "name": self.model,
-                "provider": "ollama",
-                "status": "not_found",
-            }
-
-        except requests.RequestException as e:
+        except Exception as e:
             self.logger.warning(f"Failed to get model info: {e}")
             return {"name": self.model, "provider": "ollama", "error": str(e)}
 
@@ -215,51 +306,62 @@ class OllamaBackend(LLMBackend):
         try:
             self.logger.info(f"Installing Ollama model: {target_model}")
 
-            payload = {"name": target_model}
-            response = requests.post(
-                f"{self.base_url}/api/pull",
-                json=payload,
-                stream=True,  # Use streaming for progress updates
-                timeout=300,  # 5 minutes for model download
-            )
-
-            response.raise_for_status()
-
-            # Parse streaming response to get final status
-            last_line = ""
-            for line in response.iter_lines(decode_unicode=True):
-                if line:
-                    try:
-                        data = json.loads(line)
-                        if data.get("status"):
-                            last_line = data["status"]
-                            self.logger.debug(f"Pull status: {last_line}")
-                    except json.JSONDecodeError:
-                        continue
-
-            # Check if installation was successful
-            if (
-                "success" in last_line.lower()
-                or "complete" in last_line.lower()
-            ):
-                self.logger.info(
-                    f"Successfully installed model: {target_model}"
-                )
+            if self._ollama_available and self.client:
+                # Use official client
+                response = self.client.pull(target_model)
                 return {
                     "success": True,
                     "model": target_model,
                     "status": "installed",
-                    "message": last_line,
+                    "response": response
                 }
             else:
-                return {
-                    "success": False,
-                    "model": target_model,
-                    "status": "failed",
-                    "message": last_line or "Installation failed",
-                }
+                # Fall back to HTTP requests
+                payload = {"name": target_model}
+                response = requests.post(
+                    f"{self.base_url}/api/pull",
+                    json=payload,
+                    stream=True,  # Use streaming for progress updates
+                    timeout=300,  # 5 minutes for model download
+                )
 
-        except requests.RequestException as e:
+                response.raise_for_status()
+
+                # Parse streaming response to get final status
+                last_line = ""
+                for line in response.iter_lines(decode_unicode=True):
+                    if line:
+                        try:
+                            data = json.loads(line)
+                            if data.get("status"):
+                                last_line = data["status"]
+                                self.logger.debug(f"Pull status: {last_line}")
+                        except json.JSONDecodeError:
+                            continue
+
+                # Check if installation was successful
+                if (
+                    "success" in last_line.lower()
+                    or "complete" in last_line.lower()
+                ):
+                    self.logger.info(
+                        f"Successfully installed model: {target_model}"
+                    )
+                    return {
+                        "success": True,
+                        "model": target_model,
+                        "status": "installed",
+                        "message": last_line,
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "model": target_model,
+                        "status": "failed",
+                        "message": last_line or "Installation failed",
+                    }
+
+        except Exception as e:
             error_msg = f"Failed to install model {target_model}: {e}"
             self.logger.error(error_msg)
             return {
@@ -276,26 +378,45 @@ class OllamaBackend(LLMBackend):
             Dictionary containing available models information
         """
         try:
-            response = requests.get(f"{self.base_url}/api/tags", timeout=10)
-            response.raise_for_status()
+            if self._ollama_available and self.client:
+                # Use official client
+                models_data = self.client.list()
+                models = models_data.get("models", [])
+                
+                return {
+                    "success": True,
+                    "models": [
+                        {
+                            "name": model["name"],
+                            "size": model.get("size", "unknown"),
+                            "modified_at": model.get("modified_at", "unknown"),
+                        }
+                        for model in models
+                    ],
+                    "count": len(models),
+                }
+            else:
+                # Fall back to HTTP requests
+                response = requests.get(f"{self.base_url}/api/tags", timeout=10)
+                response.raise_for_status()
 
-            models_data = response.json()
-            models = models_data.get("models", [])
+                models_data = response.json()
+                models = models_data.get("models", [])
 
-            return {
-                "success": True,
-                "models": [
-                    {
-                        "name": model["name"],
-                        "size": model.get("size", "unknown"),
-                        "modified_at": model.get("modified_at", "unknown"),
-                    }
-                    for model in models
-                ],
-                "count": len(models),
-            }
+                return {
+                    "success": True,
+                    "models": [
+                        {
+                            "name": model["name"],
+                            "size": model.get("size", "unknown"),
+                            "modified_at": model.get("modified_at", "unknown"),
+                        }
+                        for model in models
+                    ],
+                    "count": len(models),
+                }
 
-        except requests.RequestException as e:
+        except Exception as e:
             self.logger.error(f"Failed to list models: {e}")
             return {
                 "success": False,
