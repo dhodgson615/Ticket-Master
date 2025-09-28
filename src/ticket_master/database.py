@@ -309,7 +309,7 @@ class UserDatabase(Database):
         for table_sql in tables:
             try:
                 self.execute_command(table_sql)
-                self.logger.debug(f"Created/verified table")
+                self.logger.debug("Created/verified table")
             except DatabaseError as e:
                 self.logger.error(f"Failed to create table: {e}")
                 raise
@@ -367,7 +367,7 @@ class UserDatabase(Database):
         """
         self.execute_command(
             """
-            INSERT OR REPLACE INTO repository_cache 
+            INSERT OR REPLACE INTO repository_cache
             (repo_path, cache_key, cache_data, created_at, expires_at)
             VALUES (:repo_path, :cache_key, :cache_data, CURRENT_TIMESTAMP, datetime('now', '+{} hours'))
             """.format(
@@ -395,8 +395,8 @@ class UserDatabase(Database):
         try:
             results = self.execute_query(
                 """
-                SELECT cache_data FROM repository_cache 
-                WHERE repo_path = :repo_path AND cache_key = :cache_key AND 
+                SELECT cache_data FROM repository_cache
+                WHERE repo_path = :repo_path AND cache_key = :cache_key AND
                 (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 """,
                 {"repo_path": repo_path, "cache_key": cache_key},

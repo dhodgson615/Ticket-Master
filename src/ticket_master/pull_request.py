@@ -2,9 +2,7 @@ import logging
 from typing import Any, Dict, List
 
 try:
-    from github import Github
     from github import PullRequest as GitHubPullRequest
-    from github.GithubException import GithubException
 
 except ImportError:
     import subprocess
@@ -14,8 +12,7 @@ except ImportError:
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
     )
 
-    from github import Github, PullRequest as GitHubPullRequest
-    from github.GithubException import GithubException
+    from github import PullRequest as GitHubPullRequest
 
 from .commit import Commit
 

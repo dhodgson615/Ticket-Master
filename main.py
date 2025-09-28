@@ -121,11 +121,11 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
                 return result
 
             merged_config = merge_dicts(default_config, user_config)
-            
+
             # Ensure github token is set from environment if not in config
             if not merged_config["github"]["token"]:
                 merged_config["github"]["token"] = os.getenv("GITHUB_TOKEN")
-                
+
             return merged_config
 
         except Exception as e:
@@ -197,7 +197,9 @@ def analyze_repository(
                 f"{file_changes['summary']['total_files']} files"
             )
         except Exception as file_error:
-            logger.warning(f"Could not get detailed file changes: {file_error}")
+            logger.warning(
+                f"Could not get detailed file changes: {file_error}"
+            )
             logger.info("Using minimal file change analysis")
             file_changes = {
                 "modified_files": {},
@@ -265,33 +267,36 @@ def generate_issues_with_llm(
             )
             return generate_sample_issues(analysis, config)
 
-
-        # Use proper prompt template system  
+        # Use proper prompt template system
         from ticket_master.prompt import Prompt
-        
+
         prompt_manager = Prompt()
-        
+
         # Prepare variables for the prompt template
         template_variables = {
-            "repo_path": analysis['repository_info']['path'],
-            "commit_count": analysis['analysis_summary']['commit_count'],
-            "modified_files_count": analysis['analysis_summary']['files_modified'],
-            "new_files_count": analysis['analysis_summary']['files_added'],
+            "repo_path": analysis["repository_info"]["path"],
+            "commit_count": analysis["analysis_summary"]["commit_count"],
+            "modified_files_count": analysis["analysis_summary"][
+                "files_modified"
+            ],
+            "new_files_count": analysis["analysis_summary"]["files_added"],
             "num_issues": max_issues,
-            "recent_changes": "\n".join(f"- {commit['short_hash']}: {commit['summary']}" 
-                                       for commit in analysis['commits'][:5]),
+            "recent_changes": "\n".join(
+                f"- {commit['short_hash']}: {commit['summary']}"
+                for commit in analysis["commits"][:5]
+            ),
             "file_changes_summary": f"Modified: {analysis['analysis_summary']['files_modified']} files, "
-                                  f"Added: {analysis['analysis_summary']['files_added']} files, "
-                                  f"Changes: +{analysis['analysis_summary']['total_insertions']}/"
-                                  f"-{analysis['analysis_summary']['total_deletions']} lines"
+            f"Added: {analysis['analysis_summary']['files_added']} files, "
+            f"Changes: +{analysis['analysis_summary']['total_insertions']}/"
+            f"-{analysis['analysis_summary']['total_deletions']} lines",
         }
-        
+
         # Get the appropriate prompt template for the LLM provider
         template = prompt_manager.get_template("basic_issue_generation")
         if not template:
             logger.warning("No prompt template found, using fallback")
             return generate_sample_issues(analysis, config)
-            
+
         prompt = template.render(provider, **template_variables)
 
         logger.info("Generating issues using LLM...")
@@ -607,7 +612,9 @@ def create_issues_on_github(
         if dry_run:
             logger.info("Skipping GitHub connection test in dry-run mode")
         else:
-            logger.info("Skipping GitHub connection test with dummy/missing token")
+            logger.info(
+                "Skipping GitHub connection test with dummy/missing token"
+            )
 
     # Process each issue
     for i, issue in enumerate(issues, 1):
@@ -734,111 +741,164 @@ def print_results_summary(
 
 def validate_config_command(config_path: Optional[str] = None) -> int:
     """Validate configuration file and display results.
-    
+
     Args:
         config_path: Path to configuration file (optional)
-        
+
     Returns:
         Exit code (0 for success, non-zero for error)
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         logger.info("Validating configuration...")
-        
+
         # Load configuration
         config = load_config(config_path)
-        
+
         print("\n" + "=" * 60)
         print("CONFIGURATION VALIDATION RESULTS")
         print("=" * 60)
-        
+
         validation_results = []
-        
+
         # Validate GitHub configuration
         github_config = config.get("github", {})
         if github_config.get("token"):
             print("✓ GitHub token: Found")
             validation_results.append(("GitHub token", True, "Token found"))
-            
+
             # Test GitHub connection
             try:
                 from ticket_master.issue import test_github_connection
-                connection_result = test_github_connection(github_config["token"])
+
+                connection_result = test_github_connection(
+                    github_config["token"]
+                )
                 if connection_result.get("authenticated"):
                     user_info = connection_result.get("user", {})
-                    print(f"✓ GitHub connection: Authenticated as {user_info.get('login', 'unknown')}")
-                    validation_results.append(("GitHub connection", True, f"Authenticated as {user_info.get('login')}"))
+                    print(
+                        f"✓ GitHub connection: Authenticated as {user_info.get('login', 'unknown')}"
+                    )
+                    validation_results.append(
+                        (
+                            "GitHub connection",
+                            True,
+                            f"Authenticated as {user_info.get('login')}",
+                        )
+                    )
                 else:
-                    print(f"✗ GitHub connection: Failed - {connection_result.get('error', 'Unknown error')}")
-                    validation_results.append(("GitHub connection", False, connection_result.get('error', 'Unknown error')))
+                    print(
+                        f"✗ GitHub connection: Failed - {connection_result.get('error', 'Unknown error')}"
+                    )
+                    validation_results.append(
+                        (
+                            "GitHub connection",
+                            False,
+                            connection_result.get("error", "Unknown error"),
+                        )
+                    )
             except Exception as e:
                 print(f"✗ GitHub connection: Error testing connection - {e}")
                 validation_results.append(("GitHub connection", False, str(e)))
         else:
             print("✗ GitHub token: Missing")
-            validation_results.append(("GitHub token", False, "Token not found in config or environment"))
-        
+            validation_results.append(
+                (
+                    "GitHub token",
+                    False,
+                    "Token not found in config or environment",
+                )
+            )
+
         # Validate LLM configuration
         llm_config = config.get("llm", {})
         provider = llm_config.get("provider", "ollama")
         print(f"✓ LLM provider: {provider}")
-        validation_results.append(("LLM provider", True, f"Provider set to {provider}"))
-        
+        validation_results.append(
+            ("LLM provider", True, f"Provider set to {provider}")
+        )
+
         # Test LLM availability
         try:
             from ticket_master.llm import LLM
+
             llm = LLM(provider, llm_config)
-            
+
             if llm.is_available():
                 print(f"✓ LLM availability: {provider} is available")
-                validation_results.append(("LLM availability", True, f"{provider} is available"))
-                
+                validation_results.append(
+                    ("LLM availability", True, f"{provider} is available")
+                )
+
                 # Check model availability
                 model_info = llm.backend.get_model_info()
-                model_name = model_info.get("name", llm_config.get("model", "unknown"))
-                if model_info.get("status") not in ["not_found", "model_not_found", "unavailable", "error"]:
+                model_name = model_info.get(
+                    "name", llm_config.get("model", "unknown")
+                )
+                if model_info.get("status") not in [
+                    "not_found",
+                    "model_not_found",
+                    "unavailable",
+                    "error",
+                ]:
                     print(f"✓ LLM model: {model_name} is available")
-                    validation_results.append(("LLM model", True, f"{model_name} is available"))
+                    validation_results.append(
+                        ("LLM model", True, f"{model_name} is available")
+                    )
                 else:
                     print(f"✗ LLM model: {model_name} not found")
-                    validation_results.append(("LLM model", False, f"{model_name} not found"))
-                    
+                    validation_results.append(
+                        ("LLM model", False, f"{model_name} not found")
+                    )
+
                     # Offer to install if Ollama
                     if provider == "ollama":
-                        print(f"  → You can install it with: ollama pull {model_name}")
+                        print(
+                            f"  → You can install it with: ollama pull {model_name}"
+                        )
             else:
                 print(f"✗ LLM availability: {provider} is not available")
-                validation_results.append(("LLM availability", False, f"{provider} is not available"))
-                
+                validation_results.append(
+                    ("LLM availability", False, f"{provider} is not available")
+                )
+
                 if provider == "ollama":
                     print("  → Make sure Ollama is running (ollama serve)")
         except Exception as e:
             print(f"✗ LLM configuration: Error testing LLM - {e}")
             validation_results.append(("LLM configuration", False, str(e)))
-        
+
         # Validate other configuration sections
         repo_config = config.get("repository", {})
-        print(f"✓ Repository config: Max commits: {repo_config.get('max_commits', 50)}")
-        validation_results.append(("Repository config", True, "Configuration valid"))
-        
+        print(
+            f"✓ Repository config: Max commits: {repo_config.get('max_commits', 50)}"
+        )
+        validation_results.append(
+            ("Repository config", True, "Configuration valid")
+        )
+
         issue_config = config.get("issue_generation", {})
-        print(f"✓ Issue generation config: Max issues: {issue_config.get('max_issues', 5)}")
-        validation_results.append(("Issue generation config", True, "Configuration valid"))
-        
+        print(
+            f"✓ Issue generation config: Max issues: {issue_config.get('max_issues', 5)}"
+        )
+        validation_results.append(
+            ("Issue generation config", True, "Configuration valid")
+        )
+
         # Summary
         print("\n" + "-" * 60)
         passed = sum(1 for _, status, _ in validation_results if status)
         total = len(validation_results)
         print(f"Validation Summary: {passed}/{total} checks passed")
-        
+
         if passed == total:
             print("✓ Configuration is valid and ready to use!")
             return 0
         else:
             print("✗ Configuration has issues that need to be resolved.")
             return 1
-            
+
     except Exception as e:
         logger.error(f"Configuration validation failed: {e}")
         print(f"\n✗ Configuration validation failed: {e}")
@@ -856,7 +916,7 @@ def main() -> int:
         # Handle validate-config command
         parser = argparse.ArgumentParser(
             description="Validate Ticket-Master configuration",
-            formatter_class=argparse.RawDescriptionHelpFormatter
+            formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         parser.add_argument("command", help="Command to run")
         parser.add_argument("--config", help="Path to configuration YAML file")
@@ -866,12 +926,12 @@ def main() -> int:
             default="INFO",
             help="Set the logging level",
         )
-        
+
         args = parser.parse_args()
         setup_logging(args.log_level)
-        
-        return validate_config_command(getattr(args, 'config', None))
-    
+
+        return validate_config_command(getattr(args, "config", None))
+
     # Default behavior - generate issues (backward compatibility)
     parser = argparse.ArgumentParser(
         description="Ticket-Master: AI-powered GitHub issue generator",
@@ -879,27 +939,30 @@ def main() -> int:
         epilog="""
 Examples:
   %(prog)s owner/repo
-  %(prog)s https://github.com/owner/repo --dry-run  
-  %(prog)s owner/repo --local-path /path/to/repo --config config.yaml --max-issues 3
+  %(prog)s https://github.com/owner/repo --dry-run
+  %(prog)s owner/repo --local-path /path/to/repo --config config.yaml \\
+    --max-issues 3
   %(prog)s validate-config --config config.yaml
 
 Environment Variables:
-  GITHUB_TOKEN    GitHub personal access token (required for private repositories)
+  GITHUB_TOKEN    GitHub personal access token (required for private repos)
 
-For more information, see: https://github.com/dhodgson615/Ticket-Master
+For more information, see:
+  https://github.com/dhodgson615/Ticket-Master
         """,
     )
 
     # Required arguments
     parser.add_argument(
-        "github_repo", 
-        help='GitHub repository name in format "owner/repo" or GitHub URL'
+        "github_repo",
+        help='GitHub repository name in format "owner/repo" or GitHub URL',
     )
 
     # Optional arguments
     parser.add_argument(
-        "--local-path", 
-        help="Optional path to local Git repository. If not provided, repository will be cloned to a temporary directory"
+        "--local-path",
+        help="Optional path to local Git repository. If not provided, "
+        "repository will be cloned to a temporary directory",
     )
 
     # Optional arguments
@@ -941,7 +1004,7 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         config = load_config(args.config)
 
         # Apply command line overrides
-        if hasattr(args, 'max_issues') and args.max_issues:
+        if hasattr(args, "max_issues") and args.max_issues:
             config["issue_generation"]["max_issues"] = args.max_issues
 
         # Initialize GitHub utilities
@@ -959,7 +1022,9 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
 
         # Check if repository is public
         is_public = github_utils.is_public_repository(github_repo)
-        logger.info(f"Repository is {'public' if is_public else 'private/not found'}")
+        logger.info(
+            f"Repository is {'public' if is_public else 'private/not found'}"
+        )
 
         # Handle authentication requirements
         github_token = config["github"]["token"]
@@ -970,14 +1035,18 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
             )
             return 1
         elif is_public and not github_token:
-            logger.info("Public repository detected - GitHub token not required")
+            logger.info(
+                "Public repository detected - GitHub token not required"
+            )
 
         # Handle repository path - either use provided local path or clone
-        if hasattr(args, 'local_path') and args.local_path:
+        if hasattr(args, "local_path") and args.local_path:
             # Use provided local path
             repo_path = Path(args.local_path).resolve()
             if not repo_path.exists():
-                logger.error(f"Local repository path does not exist: {repo_path}")
+                logger.error(
+                    f"Local repository path does not exist: {repo_path}"
+                )
                 return 1
             logger.info(f"Using local repository at: {repo_path}")
         else:
@@ -985,8 +1054,7 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
             logger.info(f"Cloning {github_repo} to temporary directory...")
             try:
                 temp_repo_path = github_utils.clone_repository(
-                    github_repo, 
-                    token=github_token if not is_public else None
+                    github_repo, token=github_token if not is_public else None
                 )
                 repo_path = Path(temp_repo_path)
                 logger.info(f"Repository cloned to: {repo_path}")
@@ -1024,7 +1092,12 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
     except KeyboardInterrupt:
         logger.info("Operation cancelled by user")
         return 130
-    except (RepositoryError, IssueError, GitHubAuthError, GitHubCloneError) as e:
+    except (
+        RepositoryError,
+        IssueError,
+        GitHubAuthError,
+        GitHubCloneError,
+    ) as e:
         logger.error(f"Application error: {e}")
         return 1
     except Exception as e:
@@ -1032,7 +1105,7 @@ For more information, see: https://github.com/dhodgson615/Ticket-Master
         return 1
     finally:
         # Cleanup temporary directories
-        if 'github_utils' in locals():
+        if "github_utils" in locals():
             github_utils.cleanup_temp_directories()
 
 
