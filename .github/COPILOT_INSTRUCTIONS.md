@@ -127,27 +127,27 @@ except ImportError:
 ```python
 class ExampleClass:
     """Example class demonstrating proper structure.
-    
+
     This class shows the expected code quality and documentation
     standards for the Ticket-Master project.
-    
+
     Attributes:
         config: Configuration object for the class
         logger: Logger instance for this class
     """
-    
+
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize the example class.
-        
+
         Args:
             config: Configuration dictionary with required settings
-            
+
         Raises:
             ValueError: If required configuration is missing
         """
         self.config = self._validate_config(config)
         self.logger = logging.getLogger(self.__class__.__name__)
-        
+
     def _validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Validate configuration parameters."""
         # Implementation with proper validation

@@ -22,7 +22,7 @@ This document outlines the planned features, enhancements, and long-term goals f
 
 #### Ollama Integration (Primary LLM Provider)
 - [ ] **Finalize API Client**: Complete error handling and connection management
-- [ ] **Model Management**: 
+- [ ] **Model Management**:
   - [ ] Automatic model downloading and installation
   - [ ] Model availability checking and validation
   - [ ] Local model caching and optimization

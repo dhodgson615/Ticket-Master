@@ -8,9 +8,15 @@ including provider integration, response validation, and error handling.
 import unittest
 from unittest.mock import Mock, patch
 
-from src.ticket_master.llm import (LLM, LLMError, LLMProvider,
-                                   LLMProviderError, OllamaBackend,
-                                   OpenAIBackend, MockBackend)
+from src.ticket_master.llm import (
+    LLM,
+    LLMError,
+    LLMProvider,
+    LLMProviderError,
+    OllamaBackend,
+    OpenAIBackend,
+    MockBackend,
+)
 
 
 class TestLLMBackend(unittest.TestCase):
@@ -30,15 +36,15 @@ class TestLLMBackend(unittest.TestCase):
     def test_ollama_is_available(self):
         """Test Ollama availability check."""
         backend = OllamaBackend({"host": "localhost", "port": 11434})
-        
+
         # Since ollama client is available in our environment, we expect it to use the client
         # The test will mock the client's list method
-        if hasattr(backend, 'client') and backend.client:
-            with patch.object(backend.client, 'list') as mock_list:
+        if hasattr(backend, "client") and backend.client:
+            with patch.object(backend.client, "list") as mock_list:
                 # Test available
                 mock_list.return_value = {"models": []}
                 self.assertTrue(backend.is_available())
-                
+
                 # Test not available
                 mock_list.side_effect = Exception("Connection failed")
                 self.assertFalse(backend.is_available())
@@ -132,54 +138,54 @@ class TestLLMBackend(unittest.TestCase):
     def test_mock_backend_init(self):
         """Test MockBackend initialization."""
         config = {"model": "test-mock-model"}
-        
+
         backend = MockBackend(config)
-        
+
         self.assertEqual(backend.model, "test-mock-model")
-        
+
     def test_mock_backend_init_defaults(self):
         """Test MockBackend initialization with defaults."""
         backend = MockBackend({})
-        
+
         self.assertEqual(backend.model, "mock-model")
-        
+
     def test_mock_backend_is_available(self):
         """Test MockBackend availability (should always be True)."""
         backend = MockBackend({})
-        
+
         self.assertTrue(backend.is_available())
-        
+
     def test_mock_backend_get_model_info(self):
         """Test MockBackend model info."""
         backend = MockBackend({"model": "test-mock"})
-        
+
         info = backend.get_model_info()
-        
+
         self.assertEqual(info["name"], "test-mock")
         self.assertEqual(info["provider"], "mock")
         self.assertEqual(info["status"], "available")
         self.assertIn("description", info)
-        
+
     def test_mock_backend_generate_json_prompt(self):
         """Test MockBackend generation with JSON prompt."""
         backend = MockBackend({})
-        
+
         prompt = "Generate some issues in JSON format"
         response = backend.generate(prompt)
-        
+
         self.assertIsInstance(response, str)
         self.assertIn("title", response)
         self.assertIn("description", response)
         # Should return JSON-like content for issue generation
-        self.assertTrue(response.startswith('[') or response.startswith('{'))
-        
+        self.assertTrue(response.startswith("[") or response.startswith("{"))
+
     def test_mock_backend_generate_general_prompt(self):
         """Test MockBackend generation with general prompt."""
         backend = MockBackend({})
-        
+
         prompt = "What is the weather like?"
         response = backend.generate(prompt)
-        
+
         self.assertIsInstance(response, str)
         self.assertIn("mock response", response.lower())
 
@@ -265,24 +271,24 @@ class TestLLM(unittest.TestCase):
         """Test complete Mock LLM integration."""
         config = {"model": "test-mock"}
         llm = LLM("mock", config)
-        
+
         self.assertEqual(llm.provider, LLMProvider.MOCK)
         self.assertTrue(llm.is_available())
-        
+
         # Test generation
         prompt = "Generate some issues in JSON format"
         result = llm.generate(prompt)
-        
+
         # Verify response structure
         self.assertIn("response", result)
         self.assertIn("metadata", result)
         self.assertIn("validation", result)
-        
+
         # Verify metadata
         self.assertEqual(result["metadata"]["provider"], "mock")
         self.assertEqual(result["metadata"]["model"], "test-mock")
         self.assertTrue(result["metadata"]["is_primary"])
-        
+
         # Verify response content
         response = result["response"]
         self.assertIsInstance(response, str)

@@ -7,8 +7,12 @@ including template rendering, validation, and container management.
 
 import unittest
 
-from src.ticket_master.prompt import (Prompt, PromptError, PromptTemplate,
-                                      PromptType)
+from src.ticket_master.prompt import (
+    Prompt,
+    PromptError,
+    PromptTemplate,
+    PromptType,
+)
 
 
 class TestPromptTemplate(unittest.TestCase):

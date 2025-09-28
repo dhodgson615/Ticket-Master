@@ -19,11 +19,11 @@
                     <span class="label-text">GitHub Repository</span>
                     <span class="label-required">*</span>
                 </label>
-                <input 
-                    type="text" 
-                    id="github_repo" 
-                    name="github_repo" 
-                    required 
+                <input
+                    type="text"
+                    id="github_repo"
+                    name="github_repo"
+                    required
                     placeholder="owner/repository-name or https://github.com/owner/repo"
                     class="form-input"
                 >
@@ -35,10 +35,10 @@
                     <span class="label-text">Local Repository Path</span>
                     <span class="label-optional">(optional)</span>
                 </label>
-                <input 
-                    type="text" 
-                    id="repository_path" 
-                    name="repository_path" 
+                <input
+                    type="text"
+                    id="repository_path"
+                    name="repository_path"
                     placeholder="/path/to/your/git/repository (leave empty to clone automatically)"
                     class="form-input"
                 >
@@ -49,12 +49,12 @@
                 <label for="max_issues">
                     <span class="label-text">Maximum Issues</span>
                 </label>
-                <input 
-                    type="number" 
-                    id="max_issues" 
-                    name="max_issues" 
-                    min="1" 
-                    max="20" 
+                <input
+                    type="number"
+                    id="max_issues"
+                    name="max_issues"
+                    min="1"
+                    max="20"
                     value="5"
                     class="form-input"
                 >
@@ -88,13 +88,13 @@
             <h4>Repository Analysis</h4>
             <p>Analyzes Git history, file changes, and code patterns to understand your project structure and identify improvement opportunities.</p>
         </div>
-        
+
         <div class="info-card">
             <div class="info-icon">🤖</div>
             <h4>AI-Powered Generation</h4>
             <p>Uses intelligent heuristics to generate relevant issues for documentation, testing, code quality, and maintenance.</p>
         </div>
-        
+
         <div class="info-card">
             <div class="info-icon">⚡</div>
             <h4>GitHub Integration</h4>
@@ -130,16 +130,16 @@
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('.issue-form');
         const submitBtn = form.querySelector('.btn-primary');
-        
+
         form.addEventListener('submit', function(e) {
             // Show loading state
             submitBtn.innerHTML = '<span class="btn-icon">⏳</span> Generating Issues...';
             submitBtn.disabled = true;
-            
+
             // Basic client-side validation
             const repoPath = document.getElementById('repository_path').value.trim();
             const githubRepo = document.getElementById('github_repo').value.trim();
-            
+
             // Only GitHub repo is required now
             if (!githubRepo) {
                 e.preventDefault();
@@ -148,11 +148,11 @@
                 alert('Please provide a GitHub repository.');
                 return;
             }
-            
+
             // Validate GitHub repo format - accept URLs or owner/repo format
             const isUrl = githubRepo.startsWith('http://') || githubRepo.startsWith('https://');
             const isOwnerRepo = githubRepo.includes('/') && !isUrl && githubRepo.split('/').length === 2;
-            
+
             if (!isUrl && !isOwnerRepo) {
                 e.preventDefault();
                 submitBtn.innerHTML = '<span class="btn-icon">🚀</span> Generate Issues';

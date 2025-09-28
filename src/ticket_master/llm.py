@@ -114,14 +114,17 @@ class OllamaBackend(LLMBackend):
         self.port = config.get("port", 11434)
         self.model = config.get("model", "llama3.2")
         self.base_url = f"http://{self.host}:{self.port}"
-        
+
         # Initialize the official Ollama client
         try:
             import ollama
+
             self.client = ollama.Client(host=self.base_url)
             self._ollama_available = True
         except ImportError:
-            self.logger.warning("Official ollama client not available, falling back to requests")
+            self.logger.warning(
+                "Official ollama client not available, falling back to requests"
+            )
             self.client = None
             self._ollama_available = False
 
@@ -148,11 +151,11 @@ class OllamaBackend(LLMBackend):
 
         except Exception as e:
             raise LLMProviderError(f"Ollama generation failed: {e}")
-    
+
     def _generate_with_client(self, prompt: str, **kwargs) -> str:
         """Generate using official ollama client."""
         import ollama
-        
+
         try:
             # Prepare options for ollama client
             options = {}
@@ -166,21 +169,21 @@ class OllamaBackend(LLMBackend):
                 options["top_k"] = kwargs["top_k"]
             if "top_p" in kwargs:
                 options["top_p"] = kwargs["top_p"]
-            
+
             response = self.client.generate(
                 model=self.model,
                 prompt=prompt,
                 stream=False,
-                options=options if options else None
+                options=options if options else None,
             )
-            
+
             return response.get("response", "").strip()
-            
+
         except ollama.ResponseError as e:
             raise LLMProviderError(f"Ollama API error: {e}")
         except Exception as e:
             raise LLMProviderError(f"Ollama client error: {e}")
-    
+
     def _generate_with_requests(self, prompt: str, **kwargs) -> str:
         """Generate using direct HTTP requests (fallback)."""
         try:
@@ -243,29 +246,36 @@ class OllamaBackend(LLMBackend):
                         "parameters": model_info.get("parameters", {}),
                         "template": model_info.get("template", ""),
                         "system": model_info.get("system", ""),
-                        "modified_at": model_info.get("modified_at", "")
+                        "modified_at": model_info.get("modified_at", ""),
                     }
                 except Exception:
                     # Fall back to list check
                     models = self.client.list()
-                    available_models = [m["name"] for m in models.get("models", [])]
-                    if any(self.model in model_name for model_name in available_models):
+                    available_models = [
+                        m["name"] for m in models.get("models", [])
+                    ]
+                    if any(
+                        self.model in model_name
+                        for model_name in available_models
+                    ):
                         return {
                             "name": self.model,
                             "provider": "ollama",
                             "status": "available",
-                            "available_models": available_models
+                            "available_models": available_models,
                         }
                     else:
                         return {
                             "name": self.model,
                             "provider": "ollama",
                             "status": "not_found",
-                            "available_models": available_models
+                            "available_models": available_models,
                         }
             else:
                 # Fall back to HTTP requests
-                response = requests.get(f"{self.base_url}/api/tags", timeout=10)
+                response = requests.get(
+                    f"{self.base_url}/api/tags", timeout=10
+                )
                 response.raise_for_status()
 
                 models = response.json().get("models", [])
@@ -278,7 +288,9 @@ class OllamaBackend(LLMBackend):
                     return {
                         "name": current_model["name"],
                         "size": current_model.get("size", "unknown"),
-                        "modified_at": current_model.get("modified_at", "unknown"),
+                        "modified_at": current_model.get(
+                            "modified_at", "unknown"
+                        ),
                         "provider": "ollama",
                     }
 
@@ -315,7 +327,7 @@ class OllamaBackend(LLMBackend):
                     "success": True,
                     "model": target_model,
                     "status": "installed",
-                    "response": response
+                    "response": response,
                 }
             else:
                 # Fall back to HTTP requests
@@ -384,7 +396,7 @@ class OllamaBackend(LLMBackend):
                 # Use official client
                 models_data = self.client.list()
                 models = models_data.get("models", [])
-                
+
                 return {
                     "success": True,
                     "models": [
@@ -399,7 +411,9 @@ class OllamaBackend(LLMBackend):
                 }
             else:
                 # Fall back to HTTP requests
-                response = requests.get(f"{self.base_url}/api/tags", timeout=10)
+                response = requests.get(
+                    f"{self.base_url}/api/tags", timeout=10
+                )
                 response.raise_for_status()
 
                 models_data = response.json()
@@ -669,7 +683,7 @@ class HuggingFaceBackend(LLMBackend):
         self.device = config.get("device", "cpu")
         self.max_length = config.get("max_length", 1000)
         self.temperature = config.get("temperature", 0.7)
-        
+
         # Initialize model and tokenizer lazily
         self._model = None
         self._tokenizer = None
@@ -679,17 +693,31 @@ class HuggingFaceBackend(LLMBackend):
         """Load the model and tokenizer if not already loaded."""
         if self._pipeline is not None:
             return
-        
+
         try:
             # Import with fallback installation
             try:
-                from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+                from transformers import (
+                    pipeline,
+                    AutoTokenizer,
+                    AutoModelForCausalLM,
+                )
             except ImportError:
-                subprocess.check_call([
-                    sys.executable, "-m", "pip", "install", 
-                    "transformers>=4.30.0", "torch>=2.0.0"
-                ])
-                from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+                subprocess.check_call(
+                    [
+                        sys.executable,
+                        "-m",
+                        "pip",
+                        "install",
+                        "transformers>=4.30.0",
+                        "torch>=2.0.0",
+                    ]
+                )
+                from transformers import (
+                    pipeline,
+                    AutoTokenizer,
+                    AutoModelForCausalLM,
+                )
 
             # Use pipeline for text generation
             self._pipeline = pipeline(
@@ -697,14 +725,16 @@ class HuggingFaceBackend(LLMBackend):
                 model=self.model_name,
                 device=0 if self.device == "cuda" else -1,
                 torch_dtype="auto" if self.device == "cuda" else None,
-                trust_remote_code=True
+                trust_remote_code=True,
             )
-            
+
             self.logger.info(f"Loaded HuggingFace model: {self.model_name}")
-            
+
         except Exception as e:
             self.logger.error(f"Failed to load HuggingFace model: {e}")
-            raise LLMProviderError(f"Failed to load HuggingFace model {self.model_name}: {e}")
+            raise LLMProviderError(
+                f"Failed to load HuggingFace model {self.model_name}: {e}"
+            )
 
     def generate(self, prompt: str, **kwargs) -> str:
         """Generate text using HuggingFace Transformers.
@@ -721,11 +751,11 @@ class HuggingFaceBackend(LLMBackend):
         """
         try:
             self._load_model()
-            
+
             # Set generation parameters
             max_length = kwargs.get("max_length", self.max_length)
             temperature = kwargs.get("temperature", self.temperature)
-            
+
             # Generate response
             responses = self._pipeline(
                 prompt,
@@ -734,19 +764,19 @@ class HuggingFaceBackend(LLMBackend):
                 do_sample=True,
                 pad_token_id=self._pipeline.tokenizer.eos_token_id,
                 num_return_sequences=1,
-                return_full_text=False
+                return_full_text=False,
             )
-            
+
             # Extract generated text
             if responses and len(responses) > 0:
                 generated_text = responses[0].get("generated_text", "").strip()
                 # Remove the original prompt if it's included
                 if generated_text.startswith(prompt):
-                    generated_text = generated_text[len(prompt):].strip()
+                    generated_text = generated_text[len(prompt) :].strip()
                 return generated_text
             else:
                 return ""
-                
+
         except Exception as e:
             self.logger.error(f"HuggingFace generation failed: {e}")
             raise LLMProviderError(f"HuggingFace generation error: {e}")
@@ -760,6 +790,7 @@ class HuggingFaceBackend(LLMBackend):
         try:
             import transformers
             import torch
+
             # Try loading a simple model to verify functionality
             return True
         except ImportError:
@@ -779,22 +810,29 @@ class HuggingFaceBackend(LLMBackend):
             # Try to get model info from HuggingFace Hub
             try:
                 from huggingface_hub import model_info
+
                 info = model_info(self.model_name)
                 return {
                     "name": self.model_name,
                     "provider": "huggingface",
-                    "status": "available" if self.is_available() else "unavailable",
-                    "downloads": getattr(info, 'downloads', 0),
-                    "likes": getattr(info, 'likes', 0),
-                    "pipeline_tag": getattr(info, 'pipeline_tag', 'text-generation'),
+                    "status": (
+                        "available" if self.is_available() else "unavailable"
+                    ),
+                    "downloads": getattr(info, "downloads", 0),
+                    "likes": getattr(info, "likes", 0),
+                    "pipeline_tag": getattr(
+                        info, "pipeline_tag", "text-generation"
+                    ),
                     "device": self.device,
                 }
             except ImportError:
                 # Fallback without huggingface_hub
                 return {
                     "name": self.model_name,
-                    "provider": "huggingface", 
-                    "status": "available" if self.is_available() else "unavailable",
+                    "provider": "huggingface",
+                    "status": (
+                        "available" if self.is_available() else "unavailable"
+                    ),
                     "device": self.device,
                 }
         except Exception as e:

@@ -8,33 +8,33 @@
     --bg-card: #1c2128;
     --border-color: #30363d;
     --border-hover: #484f58;
-    
+
     /* Text colors */
     --text-primary: #f0f6fc;
     --text-secondary: #8b949e;
     --text-muted: #6e7681;
-    
+
     /* Accent colors */
     --accent-primary: #238636;
     --accent-secondary: #1f6feb;
     --accent-tertiary: #f85149;
     --accent-warning: #d29922;
     --accent-info: #1f6feb;
-    
+
     /* Status colors */
     --success-color: #238636;
     --error-color: #f85149;
     --warning-color: #d29922;
     --info-color: #1f6feb;
-    
+
     /* Interactive colors */
     --hover-bg: #262c36;
     --active-bg: #2d333b;
-    
+
     /* Typography */
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
     --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    
+
     /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
@@ -42,12 +42,12 @@
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
     --spacing-2xl: 3rem;
-    
+
     /* Border radius */
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
-    
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
@@ -812,49 +812,49 @@ footer {
         --spacing-xl: 1rem;
         --spacing-2xl: 1.5rem;
     }
-    
+
     .header-content {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--spacing-md);
     }
-    
+
     header h1 {
         font-size: 1.5rem;
     }
-    
+
     .welcome-content h2 {
         font-size: 2rem;
     }
-    
+
     .summary-stats {
         gap: var(--spacing-md);
     }
-    
+
     .stat-number {
         font-size: 2rem;
     }
-    
+
     .info-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .action-buttons {
         flex-direction: column;
         align-items: center;
     }
-    
+
     .issue-header {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--spacing-md);
     }
-    
+
     .footer-content {
         flex-direction: column;
         text-align: center;
     }
-    
+
     nav {
         gap: var(--spacing-md);
     }
@@ -864,11 +864,11 @@ footer {
     main {
         padding: var(--spacing-md);
     }
-    
+
     header {
         padding: var(--spacing-md);
     }
-    
+
     .form-container,
     .repository-info,
     .issue-card,
@@ -884,20 +884,20 @@ footer {
         background: white;
         color: black;
     }
-    
+
     header,
     footer,
     .action-buttons,
     .nav-link {
         display: none;
     }
-    
+
     .container {
         max-width: none;
         margin: 0;
         padding: 0;
     }
-    
+
     .issue-card,
     .repository-info,
     .form-container {

@@ -82,7 +82,9 @@ def supports_color() -> bool:
         return False
 
     # Check for common color-supporting terminals
-    if any(term.endswith(suffix) for suffix in ["color", "256color", "truecolor"]):
+    if any(
+        term.endswith(suffix) for suffix in ["color", "256color", "truecolor"]
+    ):
         return True
 
     # Check for NO_COLOR environment variable (https://no-color.org/)
@@ -271,7 +273,9 @@ def progress_bar(
 
 
 # Utility function for printing colored messages
-def print_colored(text: Any, color: str = "", style: str = "", **kwargs) -> None:
+def print_colored(
+    text: Any, color: str = "", style: str = "", **kwargs
+) -> None:
     """
     Print text with color and style.
 
