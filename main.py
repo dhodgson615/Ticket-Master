@@ -23,9 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 try:
     import yaml
 except ImportError:
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"]
-    )
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"])
     import yaml
 
 from ticket_master import Issue, Repository, __version__
@@ -33,6 +31,17 @@ from ticket_master.issue import GitHubAuthError, IssueError
 from ticket_master.llm import LLM, LLMError
 from ticket_master.repository import RepositoryError
 from ticket_master.github_utils import GitHubUtils, GitHubCloneError
+from ticket_master.colors import (
+    success,
+    error,
+    warning,
+    info,
+    header,
+    highlight,
+    dim,
+    print_colored,
+    Colors,
+)
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -136,9 +145,7 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     return default_config
 
 
-def analyze_repository(
-    repo_path: str, config: Dict[str, Any]
-) -> Dict[str, Any]:
+def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]:
     """Analyze repository and prepare data for issue generation.
 
     Args:
@@ -160,9 +167,7 @@ def analyze_repository(
 
         # Get repository information
         repo_info = repo.get_repository_info()
-        logger.info(
-            f"Repository: {repo_info['name']} ({repo_info['active_branch']})"
-        )
+        logger.info(f"Repository: {repo_info['name']} ({repo_info['active_branch']})")
 
         # Try to get commit history, but fall back to minimal analysis if it fails
         max_commits = config["repository"]["max_commits"]
@@ -170,9 +175,7 @@ def analyze_repository(
             commits = repo.get_commit_history(max_count=max_commits)
             logger.info(f"Retrieved {len(commits)} commits")
         except Exception as commit_error:
-            logger.warning(
-                f"Could not get detailed commit history: {commit_error}"
-            )
+            logger.warning(f"Could not get detailed commit history: {commit_error}")
             logger.info("Using minimal commit analysis")
             commits = [
                 {
@@ -197,9 +200,7 @@ def analyze_repository(
                 f"{file_changes['summary']['total_files']} files"
             )
         except Exception as file_error:
-            logger.warning(
-                f"Could not get detailed file changes: {file_error}"
-            )
+            logger.warning(f"Could not get detailed file changes: {file_error}")
             logger.info("Using minimal file change analysis")
             file_changes = {
                 "modified_files": {},
@@ -222,9 +223,7 @@ def analyze_repository(
                 "files_modified": len(file_changes["modified_files"]),
                 "files_added": len(file_changes["new_files"]),
                 "files_deleted": len(file_changes["deleted_files"]),
-                "total_insertions": file_changes["summary"][
-                    "total_insertions"
-                ],
+                "total_insertions": file_changes["summary"]["total_insertions"],
                 "total_deletions": file_changes["summary"]["total_deletions"],
             },
         }
@@ -276,9 +275,7 @@ def generate_issues_with_llm(
         template_variables = {
             "repo_path": analysis["repository_info"]["path"],
             "commit_count": analysis["analysis_summary"]["commit_count"],
-            "modified_files_count": analysis["analysis_summary"][
-                "files_modified"
-            ],
+            "modified_files_count": analysis["analysis_summary"]["files_modified"],
             "new_files_count": analysis["analysis_summary"]["files_added"],
             "num_issues": max_issues,
             "recent_changes": "\n".join(
@@ -338,9 +335,7 @@ def generate_issues_with_llm(
 
         except json.JSONDecodeError:
             # If JSON parsing fails, try to extract issues from text
-            logger.warning(
-                "Failed to parse as JSON, attempting text extraction"
-            )
+            logger.warning("Failed to parse as JSON, attempting text extraction")
             parsed_issues = []
 
         if not parsed_issues:
@@ -599,9 +594,7 @@ def create_issues_on_github(
                     f"GitHub authentication failed: {connection_test['error']}"
                 )
 
-            logger.info(
-                f"Connected to GitHub as: {connection_test['user']['login']}"
-            )
+            logger.info(f"Connected to GitHub as: {connection_test['user']['login']}")
             logger.info(
                 f"Rate limit remaining: {connection_test['rate_limit']['core']['remaining']}"
             )
@@ -612,9 +605,7 @@ def create_issues_on_github(
         if dry_run:
             logger.info("Skipping GitHub connection test in dry-run mode")
         else:
-            logger.info(
-                "Skipping GitHub connection test with dummy/missing token"
-            )
+            logger.info("Skipping GitHub connection test with dummy/missing token")
 
     # Process each issue
     for i, issue in enumerate(issues, 1):
@@ -622,9 +613,7 @@ def create_issues_on_github(
             # Validate issue content
             warnings = issue.validate_content()
             if warnings:
-                logger.warning(
-                    f"Issue {i} validation warnings: {'; '.join(warnings)}"
-                )
+                logger.warning(f"Issue {i} validation warnings: {'; '.join(warnings)}")
 
             if dry_run:
                 result = {
@@ -647,9 +636,7 @@ def create_issues_on_github(
                     "created": True,
                     "validation_warnings": warnings,
                 }
-                logger.info(
-                    f"Created issue #{issue_info['number']}: {issue.title}"
-                )
+                logger.info(f"Created issue #{issue_info['number']}: {issue.title}")
 
             results.append(result)
 
@@ -675,47 +662,54 @@ def print_results_summary(
         results: List of issue creation results
         analysis: Repository analysis results
     """
-    print("\n" + "=" * 80)
-    print("TICKET-MASTER RESULTS SUMMARY")
-    print("=" * 80)
+    print_colored("\n" + "=" * 80, Colors.CYAN, Colors.BOLD)
+    print_colored("TICKET-MASTER RESULTS SUMMARY", Colors.CYAN, Colors.BOLD)
+    print_colored("=" * 80, Colors.CYAN, Colors.BOLD)
 
     # Repository summary
     repo_info = analysis["repository_info"]
     summary = analysis["analysis_summary"]
 
-    print(f"\nRepository: {repo_info['name']} ({repo_info['active_branch']})")
-    print(f"Path: {repo_info['path']}")
-    print(f"Commits analyzed: {summary['commit_count']}")
-    print(f"Files modified: {summary['files_modified']}")
-    print(f"Files added: {summary['files_added']}")
     print(
-        f"Total changes: +{summary['total_insertions']}/-{summary['total_deletions']} lines"
+        f"\n{info('Repository:')} {highlight(repo_info['name'])} ({dim(repo_info['active_branch'])})"
+    )
+    print(f"{info('Path:')} {dim(repo_info['path'])}")
+    print(f"{info('Commits analyzed:')} {highlight(str(summary['commit_count']))}")
+    print(f"{info('Files modified:')} {highlight(str(summary['files_modified']))}")
+    print(f"{info('Files added:')} {highlight(str(summary['files_added']))}")
+    insertions = summary["total_insertions"]
+    deletions = summary["total_deletions"]
+    print(
+        f"{info('Total changes:')} {success(f'+{insertions}')}/{error(f'-{deletions}', False)} lines"
     )
 
     # Issues summary
-    print(f"\nIssues processed: {len(results)}")
+    print(f"\n{header('Issues processed:')} {highlight(str(len(results)))}")
 
-    successful = [
-        r for r in results if r.get("created") or r.get("would_create")
-    ]
+    successful = [r for r in results if r.get("created") or r.get("would_create")]
     failed = [r for r in results if r.get("error")]
     dry_run = any(r.get("dry_run") for r in results)
 
     if dry_run:
-        print(f"Dry run completed: {len(successful)} issues would be created")
+        print(
+            f"{info('Dry run completed:')} {success(f'{len(successful)} issues would be created', True)}"
+        )
     else:
-        print(f"Successfully created: {len(successful)} issues")
+        print(
+            f"{success('Successfully created:')} {success(f'{len(successful)} issues', True)}"
+        )
 
     if failed:
-        print(f"Failed: {len(failed)} issues")
+        print(f"{error('Failed:')} {error(f'{len(failed)} issues', True)}")
 
     # List issues
-    print("\nIssue Details:")
+    print(f"\n{header('Issue Details:')}")
     for result in results:
-        status = (
-            "✓"
-            if (result.get("created") or result.get("would_create"))
-            else "✗"
+        status_symbol = (
+            "✓" if (result.get("created") or result.get("would_create")) else "✗"
+        )
+        status_color = (
+            success if (result.get("created") or result.get("would_create")) else error
         )
         title = (
             result["title"][:60] + "..."
@@ -724,19 +718,25 @@ def print_results_summary(
         )
 
         if result.get("url"):
-            print(f"  {status} #{result['issue_number']}: {title}")
-            print(f"    URL: {result['url']}")
+            print(
+                f"  {status_color(status_symbol)} #{highlight(str(result['issue_number']))}: {title}"
+            )
+            print(f"    {dim('URL:')} {info(result['url'])}")
         elif result.get("dry_run"):
-            print(f"  {status} [DRY RUN] {title}")
+            print(
+                f"  {status_color(status_symbol)} {warning('[DRY RUN]', True)} {title}"
+            )
         else:
-            print(f"  {status} FAILED: {title}")
+            print(f"  {status_color(status_symbol)} {error('FAILED:', True)} {title}")
             if result.get("error"):
-                print(f"    Error: {result['error']}")
+                print(f"    {error('Error:')} {result['error']}")
 
         if result.get("validation_warnings"):
-            print(f"    Warnings: {'; '.join(result['validation_warnings'])}")
+            print(
+                f"    {warning('Warnings:')} {'; '.join(result['validation_warnings'])}"
+            )
 
-    print("\n" + "=" * 80)
+    print_colored("\n" + "=" * 80, Colors.CYAN, Colors.BOLD)
 
 
 def validate_config_command(config_path: Optional[str] = None) -> int:
@@ -756,29 +756,29 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
         # Load configuration
         config = load_config(config_path)
 
-        print("\n" + "=" * 60)
-        print("CONFIGURATION VALIDATION RESULTS")
-        print("=" * 60)
+        print_colored("\n" + "=" * 60, Colors.CYAN, Colors.BOLD)
+        print_colored("CONFIGURATION VALIDATION RESULTS", Colors.CYAN, Colors.BOLD)
+        print_colored("=" * 60, Colors.CYAN, Colors.BOLD)
 
         validation_results = []
 
         # Validate GitHub configuration
         github_config = config.get("github", {})
         if github_config.get("token"):
-            print("✓ GitHub token: Found")
+            print(f"{success('✓')} {info('GitHub token:')} {success('Found')}")
             validation_results.append(("GitHub token", True, "Token found"))
 
             # Test GitHub connection
             try:
                 from ticket_master.issue import test_github_connection
 
-                connection_result = test_github_connection(
-                    github_config["token"]
-                )
+                connection_result = test_github_connection(github_config["token"])
                 if connection_result.get("authenticated"):
                     user_info = connection_result.get("user", {})
+                    username = user_info.get("login", "unknown")
+                    auth_msg = f"Authenticated as {highlight(username)}"
                     print(
-                        f"✓ GitHub connection: Authenticated as {user_info.get('login', 'unknown')}"
+                        f"{success('✓')} {info('GitHub connection:')} {success(auth_msg)}"
                     )
                     validation_results.append(
                         (
@@ -788,8 +788,9 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
                         )
                     )
                 else:
+                    error_msg = connection_result.get("error", "Unknown error")
                     print(
-                        f"✗ GitHub connection: Failed - {connection_result.get('error', 'Unknown error')}"
+                        f"{error('✗')} {info('GitHub connection:')} {error(f'Failed - {error_msg}')}"
                     )
                     validation_results.append(
                         (
@@ -799,10 +800,12 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
                         )
                     )
             except Exception as e:
-                print(f"✗ GitHub connection: Error testing connection - {e}")
+                print(
+                    f"{error('✗')} {info('GitHub connection:')} {error(f'Error testing connection - {e}')}"
+                )
                 validation_results.append(("GitHub connection", False, str(e)))
         else:
-            print("✗ GitHub token: Missing")
+            print(f"{error('✗')} {info('GitHub token:')} {error('Missing')}")
             validation_results.append(
                 (
                     "GitHub token",
@@ -814,10 +817,8 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
         # Validate LLM configuration
         llm_config = config.get("llm", {})
         provider = llm_config.get("provider", "ollama")
-        print(f"✓ LLM provider: {provider}")
-        validation_results.append(
-            ("LLM provider", True, f"Provider set to {provider}")
-        )
+        print(f"{success('✓')} {info('LLM provider:')} {highlight(provider)}")
+        validation_results.append(("LLM provider", True, f"Provider set to {provider}"))
 
         # Test LLM availability
         try:
@@ -826,28 +827,32 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
             llm = LLM(provider, llm_config)
 
             if llm.is_available():
-                print(f"✓ LLM availability: {provider} is available")
+                print(
+                    f"{success('✓')} {info('LLM availability:')} {success(f'{provider} is available')}"
+                )
                 validation_results.append(
                     ("LLM availability", True, f"{provider} is available")
                 )
 
                 # Check model availability
                 model_info = llm.backend.get_model_info()
-                model_name = model_info.get(
-                    "name", llm_config.get("model", "unknown")
-                )
+                model_name = model_info.get("name", llm_config.get("model", "unknown"))
                 if model_info.get("status") not in [
                     "not_found",
                     "model_not_found",
                     "unavailable",
                     "error",
                 ]:
-                    print(f"✓ LLM model: {model_name} is available")
+                    print(
+                        f"{success('✓')} {info('LLM model:')} {success(f'{model_name} is available')}"
+                    )
                     validation_results.append(
                         ("LLM model", True, f"{model_name} is available")
                     )
                 else:
-                    print(f"✗ LLM model: {model_name} not found")
+                    print(
+                        f"{error('✗')} {info('LLM model:')} {error(f'{model_name} not found')}"
+                    )
                     validation_results.append(
                         ("LLM model", False, f"{model_name} not found")
                     )
@@ -855,53 +860,65 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
                     # Offer to install if Ollama
                     if provider == "ollama":
                         print(
-                            f"  → You can install it with: ollama pull {model_name}"
+                            f"  {dim('→')} {warning(f'You can install it with: ollama pull {model_name}')}"
                         )
             else:
-                print(f"✗ LLM availability: {provider} is not available")
+                print(
+                    f"{error('✗')} {info('LLM availability:')} {error(f'{provider} is not available')}"
+                )
                 validation_results.append(
                     ("LLM availability", False, f"{provider} is not available")
                 )
 
                 if provider == "ollama":
-                    print("  → Make sure Ollama is running (ollama serve)")
+                    print(
+                        f"  {dim('→')} {warning('Make sure Ollama is running (ollama serve)')}"
+                    )
         except Exception as e:
-            print(f"✗ LLM configuration: Error testing LLM - {e}")
+            print(
+                f"{error('✗')} {info('LLM configuration:')} {error(f'Error testing LLM - {e}')}"
+            )
             validation_results.append(("LLM configuration", False, str(e)))
 
         # Validate other configuration sections
         repo_config = config.get("repository", {})
+        max_commits = repo_config.get("max_commits", 50)
         print(
-            f"✓ Repository config: Max commits: {repo_config.get('max_commits', 50)}"
+            f"{success('✓')} {info('Repository config:')} {highlight(f'Max commits: {max_commits}')}"
         )
-        validation_results.append(
-            ("Repository config", True, "Configuration valid")
-        )
+        validation_results.append(("Repository config", True, "Configuration valid"))
 
         issue_config = config.get("issue_generation", {})
+        max_issues = issue_config.get("max_issues", 5)
         print(
-            f"✓ Issue generation config: Max issues: {issue_config.get('max_issues', 5)}"
+            f"{success('✓')} {info('Issue generation config:')} {highlight(f'Max issues: {max_issues}')}"
         )
         validation_results.append(
             ("Issue generation config", True, "Configuration valid")
         )
 
         # Summary
-        print("\n" + "-" * 60)
+        print_colored("\n" + "-" * 60, Colors.YELLOW)
         passed = sum(1 for _, status, _ in validation_results if status)
         total = len(validation_results)
-        print(f"Validation Summary: {passed}/{total} checks passed")
+        print(
+            f"{header('Validation Summary:')} {highlight(f'{passed}/{total}')} checks passed"
+        )
 
         if passed == total:
-            print("✓ Configuration is valid and ready to use!")
+            print(
+                f"{success('✓', True)} {success('Configuration is valid and ready to use!', True)}"
+            )
             return 0
         else:
-            print("✗ Configuration has issues that need to be resolved.")
+            print(
+                f"{error('✗', True)} {error('Configuration has issues that need to be resolved.', True)}"
+            )
             return 1
 
     except Exception as e:
         logger.error(f"Configuration validation failed: {e}")
-        print(f"\n✗ Configuration validation failed: {e}")
+        print(f"\n{error('✗', True)} {error(f'Configuration validation failed: {e}')}")
         return 1
 
 
@@ -1022,9 +1039,7 @@ For more information, see:
 
         # Check if repository is public
         is_public = github_utils.is_public_repository(github_repo)
-        logger.info(
-            f"Repository is {'public' if is_public else 'private/not found'}"
-        )
+        logger.info(f"Repository is {'public' if is_public else 'private/not found'}")
 
         # Handle authentication requirements
         github_token = config["github"]["token"]
@@ -1035,18 +1050,14 @@ For more information, see:
             )
             return 1
         elif is_public and not github_token:
-            logger.info(
-                "Public repository detected - GitHub token not required"
-            )
+            logger.info("Public repository detected - GitHub token not required")
 
         # Handle repository path - either use provided local path or clone
         if hasattr(args, "local_path") and args.local_path:
             # Use provided local path
             repo_path = Path(args.local_path).resolve()
             if not repo_path.exists():
-                logger.error(
-                    f"Local repository path does not exist: {repo_path}"
-                )
+                logger.error(f"Local repository path does not exist: {repo_path}")
                 return 1
             logger.info(f"Using local repository at: {repo_path}")
         else:
@@ -1071,16 +1082,12 @@ For more information, see:
         issues = generate_issues_with_llm(analysis, config)
 
         if not issues:
-            logger.warning(
-                "No issues were generated based on repository analysis"
-            )
+            logger.warning("No issues were generated based on repository analysis")
             return 0
 
         # Create issues on GitHub
         logger.info(f"Processing {len(issues)} issues...")
-        results = create_issues_on_github(
-            issues, github_repo, config, args.dry_run
-        )
+        results = create_issues_on_github(issues, github_repo, config, args.dry_run)
 
         # Print summary
         print_results_summary(results, analysis)
