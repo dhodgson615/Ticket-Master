@@ -532,6 +532,159 @@ class MockBackend(LLMBackend):
         }
 
 
+class HuggingFaceBackend(LLMBackend):
+    """HuggingFace Transformers LLM backend implementation."""
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize HuggingFace backend.
+
+        Args:
+            config: Configuration dictionary with 'model', 'device', 'max_length' keys
+        """
+        super().__init__(config)
+        self.model_name = config.get("model", "microsoft/DialoGPT-medium")
+        self.device = config.get("device", "cpu")
+        self.max_length = config.get("max_length", 1000)
+        self.temperature = config.get("temperature", 0.7)
+        
+        # Initialize model and tokenizer lazily
+        self._model = None
+        self._tokenizer = None
+        self._pipeline = None
+
+    def _load_model(self):
+        """Load the model and tokenizer if not already loaded."""
+        if self._pipeline is not None:
+            return
+        
+        try:
+            # Import with fallback installation
+            try:
+                from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+            except ImportError:
+                subprocess.check_call([
+                    sys.executable, "-m", "pip", "install", 
+                    "transformers>=4.30.0", "torch>=2.0.0"
+                ])
+                from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+
+            # Use pipeline for text generation
+            self._pipeline = pipeline(
+                "text-generation",
+                model=self.model_name,
+                device=0 if self.device == "cuda" else -1,
+                torch_dtype="auto" if self.device == "cuda" else None,
+                trust_remote_code=True
+            )
+            
+            self.logger.info(f"Loaded HuggingFace model: {self.model_name}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load HuggingFace model: {e}")
+            raise LLMProviderError(f"Failed to load HuggingFace model {self.model_name}: {e}")
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        """Generate text using HuggingFace Transformers.
+
+        Args:
+            prompt: Input prompt for the LLM
+            **kwargs: Additional parameters (temperature, max_length, etc.)
+
+        Returns:
+            Generated text response
+
+        Raises:
+            LLMProviderError: If generation fails
+        """
+        try:
+            self._load_model()
+            
+            # Set generation parameters
+            max_length = kwargs.get("max_length", self.max_length)
+            temperature = kwargs.get("temperature", self.temperature)
+            
+            # Generate response
+            responses = self._pipeline(
+                prompt,
+                max_length=max_length,
+                temperature=temperature,
+                do_sample=True,
+                pad_token_id=self._pipeline.tokenizer.eos_token_id,
+                num_return_sequences=1,
+                return_full_text=False
+            )
+            
+            # Extract generated text
+            if responses and len(responses) > 0:
+                generated_text = responses[0].get("generated_text", "").strip()
+                # Remove the original prompt if it's included
+                if generated_text.startswith(prompt):
+                    generated_text = generated_text[len(prompt):].strip()
+                return generated_text
+            else:
+                return ""
+                
+        except Exception as e:
+            self.logger.error(f"HuggingFace generation failed: {e}")
+            raise LLMProviderError(f"HuggingFace generation error: {e}")
+
+    def is_available(self) -> bool:
+        """Check if HuggingFace backend is available.
+
+        Returns:
+            True if transformers and torch are available, False otherwise
+        """
+        try:
+            import transformers
+            import torch
+            # Try loading a simple model to verify functionality
+            return True
+        except ImportError:
+            self.logger.debug("HuggingFace dependencies not available")
+            return False
+        except Exception as e:
+            self.logger.debug(f"HuggingFace backend not available: {e}")
+            return False
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get HuggingFace model information.
+
+        Returns:
+            Dictionary containing model information
+        """
+        try:
+            # Try to get model info from HuggingFace Hub
+            try:
+                from huggingface_hub import model_info
+                info = model_info(self.model_name)
+                return {
+                    "name": self.model_name,
+                    "provider": "huggingface",
+                    "status": "available" if self.is_available() else "unavailable",
+                    "downloads": getattr(info, 'downloads', 0),
+                    "likes": getattr(info, 'likes', 0),
+                    "pipeline_tag": getattr(info, 'pipeline_tag', 'text-generation'),
+                    "device": self.device,
+                }
+            except ImportError:
+                # Fallback without huggingface_hub
+                return {
+                    "name": self.model_name,
+                    "provider": "huggingface", 
+                    "status": "available" if self.is_available() else "unavailable",
+                    "device": self.device,
+                }
+        except Exception as e:
+            self.logger.warning(f"Failed to get HuggingFace model info: {e}")
+            return {
+                "name": self.model_name,
+                "provider": "huggingface",
+                "status": "error",
+                "error": str(e),
+                "device": self.device,
+            }
+
+
 class LLM:
     """Main LLM class for managing Large Language Model interactions.
 
@@ -621,6 +774,8 @@ class LLM:
             return OllamaBackend(config)
         elif provider == LLMProvider.OPENAI:
             return OpenAIBackend(config)
+        elif provider == LLMProvider.HUGGINGFACE:
+            return HuggingFaceBackend(config)
         elif provider == LLMProvider.MOCK:
             return MockBackend(config)
         else:

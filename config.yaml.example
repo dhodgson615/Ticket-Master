@@ -46,9 +46,9 @@ issue_generation:
     - name: "refactoring"
       priority: "low"
 
-# LLM Configuration (placeholder for future implementation)
+# LLM Configuration
 llm:
-  # Primary LLM provider (ollama, openai, etc.)
+  # Primary LLM provider (ollama is the default and recommended option)
   provider: "ollama"
   
   # Model to use for issue generation
@@ -60,7 +60,7 @@ llm:
   # Maximum tokens for generated content
   max_tokens: 1000
   
-  # Ollama-specific configuration
+  # Ollama-specific configuration (default provider)
   ollama:
     base_url: "http://localhost:11434"
     timeout: 30
@@ -69,6 +69,13 @@ llm:
   openai:
     api_key: null  # Set via OPENAI_API_KEY environment variable
     organization: null
+  
+  # HuggingFace-specific configuration 
+  huggingface:
+    model: "microsoft/DialoGPT-medium"  # Default model for text generation
+    device: "cpu"  # Use "cuda" for GPU acceleration if available
+    max_length: 1000
+    temperature: 0.7
 
 # Logging Configuration
 logging:
