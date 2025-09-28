@@ -61,7 +61,7 @@ template = PromptTemplate(
 
 # Process the prompt
 result = processor.process_prompt(
-    template, 
+    template,
     {"num": 3, "repo": "my-project"},
     temperature=0.7
 )

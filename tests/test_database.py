@@ -10,8 +10,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.ticket_master.database import (Database, DatabaseError,
-                                        ServerDatabase, UserDatabase)
+from src.ticket_master.database import (
+    Database,
+    DatabaseError,
+    ServerDatabase,
+    UserDatabase,
+)
 
 
 class TestUserDatabase(unittest.TestCase):

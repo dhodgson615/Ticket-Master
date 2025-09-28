@@ -33,7 +33,7 @@
             {% endif %}
         </div>
     </div>
-    
+
     <div class="repository-info">
         <h3>Repository Information</h3>
         <div class="repo-details">
@@ -57,7 +57,7 @@
 
 <div class="issues-section">
     <h3>Generated Issues</h3>
-    
+
     {% if results %}
         <div class="issues-list">
             {% for result in results %}
@@ -75,7 +75,7 @@
                             <span class="status-text">Would Create</span>
                         {% endif %}
                     </div>
-                    
+
                     {% if result.url %}
                     <a href="{{ result.url }}" target="_blank" rel="noopener" class="issue-link">
                         <span class="link-icon">🔗</span>
@@ -83,10 +83,10 @@
                     </a>
                     {% endif %}
                 </div>
-                
+
                 <div class="issue-content">
                     <h4 class="issue-title">{{ result.title }}</h4>
-                    
+
                     {% if result.labels %}
                     <div class="issue-labels">
                         {% for label in result.labels %}
@@ -94,12 +94,12 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-                    
+
                     <div class="issue-description">
                         <div class="description-preview">
                             {{ result.description[:200] }}{% if result.description|length > 200 %}...{% endif %}
                         </div>
-                        
+
                         {% if result.description|length > 200 %}
                         <details class="full-description">
                             <summary>Show full description</summary>
@@ -109,7 +109,7 @@
                         </details>
                         {% endif %}
                     </div>
-                    
+
                     {% if result.error %}
                     <div class="error-details">
                         <strong>Error:</strong> {{ result.error }}
@@ -134,14 +134,14 @@
             <span class="btn-icon">🔄</span>
             Generate More Issues
         </a>
-        
+
         {% if not dry_run and results|selectattr('created')|list|length > 0 %}
         <a href="https://github.com/{{ github_repo }}/issues" target="_blank" rel="noopener" class="btn btn-primary">
             <span class="btn-icon">🔗</span>
             View on GitHub
         </a>
         {% endif %}
-        
+
         {% if dry_run %}
         <form method="POST" action="{{ url_for('generate_issues') }}" style="display: inline;">
             <input type="hidden" name="repository_path" value="{{ repository_path }}">
@@ -181,7 +181,7 @@
                 issuesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 500);
         }
-        
+
         // Add copy functionality for code blocks
         const codeBlocks = document.querySelectorAll('pre code');
         codeBlocks.forEach(block => {

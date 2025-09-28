@@ -23,7 +23,9 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 try:
     import yaml
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"]
+    )
     import yaml
 
 from ticket_master import Issue, Repository, __version__
@@ -145,7 +147,9 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     return default_config
 
 
-def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]:
+def analyze_repository(
+    repo_path: str, config: Dict[str, Any]
+) -> Dict[str, Any]:
     """Analyze repository and prepare data for issue generation.
 
     Args:
@@ -167,7 +171,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
 
         # Get repository information
         repo_info = repo.get_repository_info()
-        logger.info(f"Repository: {repo_info['name']} ({repo_info['active_branch']})")
+        logger.info(
+            f"Repository: {repo_info['name']} ({repo_info['active_branch']})"
+        )
 
         # Try to get commit history, but fall back to minimal analysis if it fails
         max_commits = config["repository"]["max_commits"]
@@ -175,7 +181,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
             commits = repo.get_commit_history(max_count=max_commits)
             logger.info(f"Retrieved {len(commits)} commits")
         except Exception as commit_error:
-            logger.warning(f"Could not get detailed commit history: {commit_error}")
+            logger.warning(
+                f"Could not get detailed commit history: {commit_error}"
+            )
             logger.info("Using minimal commit analysis")
             commits = [
                 {
@@ -200,7 +208,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
                 f"{file_changes['summary']['total_files']} files"
             )
         except Exception as file_error:
-            logger.warning(f"Could not get detailed file changes: {file_error}")
+            logger.warning(
+                f"Could not get detailed file changes: {file_error}"
+            )
             logger.info("Using minimal file change analysis")
             file_changes = {
                 "modified_files": {},
@@ -223,7 +233,9 @@ def analyze_repository(repo_path: str, config: Dict[str, Any]) -> Dict[str, Any]
                 "files_modified": len(file_changes["modified_files"]),
                 "files_added": len(file_changes["new_files"]),
                 "files_deleted": len(file_changes["deleted_files"]),
-                "total_insertions": file_changes["summary"]["total_insertions"],
+                "total_insertions": file_changes["summary"][
+                    "total_insertions"
+                ],
                 "total_deletions": file_changes["summary"]["total_deletions"],
             },
         }
@@ -256,28 +268,30 @@ def generate_issues_with_llm(
         provider = llm_config.pop("provider", "ollama")
 
         logger.info(f"Initializing LLM with provider: {provider}")
-        
+
         # Use Ollama tools if provider is Ollama
         if provider == "ollama":
             try:
                 from ticket_master.ollama_tools import create_ollama_processor
-                
+
                 processor = create_ollama_processor(llm_config)
-                
+
                 # Check availability
                 if not processor.client:
-                    logger.warning("Ollama client not available, falling back to standard LLM")
+                    logger.warning(
+                        "Ollama client not available, falling back to standard LLM"
+                    )
                     return generate_issues_with_standard_llm(analysis, config)
-                
+
                 # Generate issues using Ollama tools
                 logger.info("Using Ollama tools for issue generation...")
                 generated_issues = processor.generate_issues_from_analysis(
                     analysis, max_issues=max_issues
                 )
-                
+
                 # Convert to Issue objects
                 default_labels = config["github"]["default_labels"]
-                
+
                 for issue_data in generated_issues:
                     try:
                         # Combine default labels with generated labels
@@ -297,18 +311,26 @@ def generate_issues_with_llm(
                         logger.info(f"Created issue: {issue_data['title']}")
 
                     except Exception as e:
-                        logger.error(f"Error creating issue from Ollama data: {e}")
+                        logger.error(
+                            f"Error creating issue from Ollama data: {e}"
+                        )
                         continue
-                
+
                 if issues:
-                    logger.info(f"Successfully generated {len(issues)} issues using Ollama tools")
+                    logger.info(
+                        f"Successfully generated {len(issues)} issues using Ollama tools"
+                    )
                     return issues
                 else:
-                    logger.warning("No valid issues generated using Ollama tools, falling back")
-                    
+                    logger.warning(
+                        "No valid issues generated using Ollama tools, falling back"
+                    )
+
             except Exception as e:
-                logger.warning(f"Ollama tools failed: {e}, falling back to standard LLM")
-        
+                logger.warning(
+                    f"Ollama tools failed: {e}, falling back to standard LLM"
+                )
+
         return generate_issues_with_standard_llm(analysis, config)
 
     except Exception as e:
@@ -360,7 +382,9 @@ def generate_issues_with_standard_llm(
         template_variables = {
             "repo_path": analysis["repository_info"]["path"],
             "commit_count": analysis["analysis_summary"]["commit_count"],
-            "modified_files_count": analysis["analysis_summary"]["files_modified"],
+            "modified_files_count": analysis["analysis_summary"][
+                "files_modified"
+            ],
             "new_files_count": analysis["analysis_summary"]["files_added"],
             "num_issues": max_issues,
             "recent_changes": "\n".join(
@@ -420,7 +444,9 @@ def generate_issues_with_standard_llm(
 
         except json.JSONDecodeError:
             # If JSON parsing fails, try to extract issues from text
-            logger.warning("Failed to parse as JSON, attempting text extraction")
+            logger.warning(
+                "Failed to parse as JSON, attempting text extraction"
+            )
             parsed_issues = []
 
         if not parsed_issues:
@@ -679,7 +705,9 @@ def create_issues_on_github(
                     f"GitHub authentication failed: {connection_test['error']}"
                 )
 
-            logger.info(f"Connected to GitHub as: {connection_test['user']['login']}")
+            logger.info(
+                f"Connected to GitHub as: {connection_test['user']['login']}"
+            )
             logger.info(
                 f"Rate limit remaining: {connection_test['rate_limit']['core']['remaining']}"
             )
@@ -690,7 +718,9 @@ def create_issues_on_github(
         if dry_run:
             logger.info("Skipping GitHub connection test in dry-run mode")
         else:
-            logger.info("Skipping GitHub connection test with dummy/missing token")
+            logger.info(
+                "Skipping GitHub connection test with dummy/missing token"
+            )
 
     # Process each issue
     for i, issue in enumerate(issues, 1):
@@ -698,7 +728,9 @@ def create_issues_on_github(
             # Validate issue content
             warnings = issue.validate_content()
             if warnings:
-                logger.warning(f"Issue {i} validation warnings: {'; '.join(warnings)}")
+                logger.warning(
+                    f"Issue {i} validation warnings: {'; '.join(warnings)}"
+                )
 
             if dry_run:
                 result = {
@@ -721,7 +753,9 @@ def create_issues_on_github(
                     "created": True,
                     "validation_warnings": warnings,
                 }
-                logger.info(f"Created issue #{issue_info['number']}: {issue.title}")
+                logger.info(
+                    f"Created issue #{issue_info['number']}: {issue.title}"
+                )
 
             results.append(result)
 
@@ -759,8 +793,12 @@ def print_results_summary(
         f"\n{info('Repository:')} {highlight(repo_info['name'])} ({dim(repo_info['active_branch'])})"
     )
     print(f"{info('Path:')} {dim(repo_info['path'])}")
-    print(f"{info('Commits analyzed:')} {highlight(str(summary['commit_count']))}")
-    print(f"{info('Files modified:')} {highlight(str(summary['files_modified']))}")
+    print(
+        f"{info('Commits analyzed:')} {highlight(str(summary['commit_count']))}"
+    )
+    print(
+        f"{info('Files modified:')} {highlight(str(summary['files_modified']))}"
+    )
     print(f"{info('Files added:')} {highlight(str(summary['files_added']))}")
     insertions = summary["total_insertions"]
     deletions = summary["total_deletions"]
@@ -771,7 +809,9 @@ def print_results_summary(
     # Issues summary
     print(f"\n{header('Issues processed:')} {highlight(str(len(results)))}")
 
-    successful = [r for r in results if r.get("created") or r.get("would_create")]
+    successful = [
+        r for r in results if r.get("created") or r.get("would_create")
+    ]
     failed = [r for r in results if r.get("error")]
     dry_run = any(r.get("dry_run") for r in results)
 
@@ -791,10 +831,14 @@ def print_results_summary(
     print(f"\n{header('Issue Details:')}")
     for result in results:
         status_symbol = (
-            "✓" if (result.get("created") or result.get("would_create")) else "✗"
+            "✓"
+            if (result.get("created") or result.get("would_create"))
+            else "✗"
         )
         status_color = (
-            success if (result.get("created") or result.get("would_create")) else error
+            success
+            if (result.get("created") or result.get("would_create"))
+            else error
         )
         title = (
             result["title"][:60] + "..."
@@ -812,7 +856,9 @@ def print_results_summary(
                 f"  {status_color(status_symbol)} {warning('[DRY RUN]', True)} {title}"
             )
         else:
-            print(f"  {status_color(status_symbol)} {error('FAILED:', True)} {title}")
+            print(
+                f"  {status_color(status_symbol)} {error('FAILED:', True)} {title}"
+            )
             if result.get("error"):
                 print(f"    {error('Error:')} {result['error']}")
 
@@ -842,7 +888,9 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
         config = load_config(config_path)
 
         print_colored("\n" + "=" * 60, Colors.CYAN, Colors.BOLD)
-        print_colored("CONFIGURATION VALIDATION RESULTS", Colors.CYAN, Colors.BOLD)
+        print_colored(
+            "CONFIGURATION VALIDATION RESULTS", Colors.CYAN, Colors.BOLD
+        )
         print_colored("=" * 60, Colors.CYAN, Colors.BOLD)
 
         validation_results = []
@@ -857,7 +905,9 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
             try:
                 from ticket_master.issue import test_github_connection
 
-                connection_result = test_github_connection(github_config["token"])
+                connection_result = test_github_connection(
+                    github_config["token"]
+                )
                 if connection_result.get("authenticated"):
                     user_info = connection_result.get("user", {})
                     username = user_info.get("login", "unknown")
@@ -903,7 +953,9 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
         llm_config = config.get("llm", {})
         provider = llm_config.get("provider", "ollama")
         print(f"{success('✓')} {info('LLM provider:')} {highlight(provider)}")
-        validation_results.append(("LLM provider", True, f"Provider set to {provider}"))
+        validation_results.append(
+            ("LLM provider", True, f"Provider set to {provider}")
+        )
 
         # Test LLM availability
         try:
@@ -921,7 +973,9 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
 
                 # Check model availability
                 model_info = llm.backend.get_model_info()
-                model_name = model_info.get("name", llm_config.get("model", "unknown"))
+                model_name = model_info.get(
+                    "name", llm_config.get("model", "unknown")
+                )
                 if model_info.get("status") not in [
                     "not_found",
                     "model_not_found",
@@ -971,7 +1025,9 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
         print(
             f"{success('✓')} {info('Repository config:')} {highlight(f'Max commits: {max_commits}')}"
         )
-        validation_results.append(("Repository config", True, "Configuration valid"))
+        validation_results.append(
+            ("Repository config", True, "Configuration valid")
+        )
 
         issue_config = config.get("issue_generation", {})
         max_issues = issue_config.get("max_issues", 5)
@@ -1003,7 +1059,9 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
 
     except Exception as e:
         logger.error(f"Configuration validation failed: {e}")
-        print(f"\n{error('✗', True)} {error(f'Configuration validation failed: {e}')}")
+        print(
+            f"\n{error('✗', True)} {error(f'Configuration validation failed: {e}')}"
+        )
         return 1
 
 
@@ -1124,7 +1182,9 @@ For more information, see:
 
         # Check if repository is public
         is_public = github_utils.is_public_repository(github_repo)
-        logger.info(f"Repository is {'public' if is_public else 'private/not found'}")
+        logger.info(
+            f"Repository is {'public' if is_public else 'private/not found'}"
+        )
 
         # Handle authentication requirements
         github_token = config["github"]["token"]
@@ -1135,14 +1195,18 @@ For more information, see:
             )
             return 1
         elif is_public and not github_token:
-            logger.info("Public repository detected - GitHub token not required")
+            logger.info(
+                "Public repository detected - GitHub token not required"
+            )
 
         # Handle repository path - either use provided local path or clone
         if hasattr(args, "local_path") and args.local_path:
             # Use provided local path
             repo_path = Path(args.local_path).resolve()
             if not repo_path.exists():
-                logger.error(f"Local repository path does not exist: {repo_path}")
+                logger.error(
+                    f"Local repository path does not exist: {repo_path}"
+                )
                 return 1
             logger.info(f"Using local repository at: {repo_path}")
         else:
@@ -1167,12 +1231,16 @@ For more information, see:
         issues = generate_issues_with_llm(analysis, config)
 
         if not issues:
-            logger.warning("No issues were generated based on repository analysis")
+            logger.warning(
+                "No issues were generated based on repository analysis"
+            )
             return 0
 
         # Create issues on GitHub
         logger.info(f"Processing {len(issues)} issues...")
-        results = create_issues_on_github(issues, github_repo, config, args.dry_run)
+        results = create_issues_on_github(
+            issues, github_repo, config, args.dry_run
+        )
 
         # Print summary
         print_results_summary(results, analysis)

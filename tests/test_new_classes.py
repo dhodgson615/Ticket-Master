@@ -14,12 +14,26 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from src.ticket_master.data_scraper import DataScraper, DataScraperError
-from src.ticket_master.database import (Database, DatabaseError,
-                                        ServerDatabase, UserDatabase)
-from src.ticket_master.llm import LLM, LLMError, LLMProvider, OllamaBackend, HuggingFaceBackend
+from src.ticket_master.database import (
+    Database,
+    DatabaseError,
+    ServerDatabase,
+    UserDatabase,
+)
+from src.ticket_master.llm import (
+    LLM,
+    LLMError,
+    LLMProvider,
+    OllamaBackend,
+    HuggingFaceBackend,
+)
 from src.ticket_master.pipe import Pipe, PipeError, PipelineStep, PipeStage
-from src.ticket_master.prompt import (Prompt, PromptError, PromptTemplate,
-                                      PromptType)
+from src.ticket_master.prompt import (
+    Prompt,
+    PromptError,
+    PromptTemplate,
+    PromptType,
+)
 
 
 class TestUserDatabase(unittest.TestCase):
@@ -287,29 +301,39 @@ class TestLLMBackend(unittest.TestCase):
         self.assertEqual(backend.model, "llama2")
         self.assertEqual(backend.base_url, "http://localhost:11434")
 
-    @patch("src.ticket_master.llm.requests.get")
-    def test_ollama_is_available(self, mock_get):
+    def test_ollama_is_available(self):
         """Test Ollama availability check."""
         backend = OllamaBackend({"host": "localhost", "port": 11434})
 
-        # Test available
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_get.return_value = mock_response
-        self.assertTrue(backend.is_available())
+        # Since ollama client is available in our environment, we expect it to use the client
+        # The test will mock the client's list method
+        if hasattr(backend, "client") and backend.client:
+            with patch.object(backend.client, "list") as mock_list:
+                # Test available
+                mock_list.return_value = {"models": []}
+                self.assertTrue(backend.is_available())
 
-        # Test not available (reset mock and set side effect)
-        mock_get.reset_mock()
-        mock_get.side_effect = Exception("Connection failed")
-        self.assertFalse(backend.is_available())
+                # Test not available
+                mock_list.side_effect = Exception("Connection failed")
+                self.assertFalse(backend.is_available())
+        else:
+            # If client is not available, it should fall back to requests
+            with patch("src.ticket_master.llm.requests.get") as mock_get:
+                mock_response = Mock()
+                mock_response.status_code = 200
+                mock_get.return_value = mock_response
+                self.assertTrue(backend.is_available())
+
+                mock_get.side_effect = Exception("Connection failed")
+                self.assertFalse(backend.is_available())
 
     def test_huggingface_backend_init(self):
         """Test HuggingFaceBackend initialization."""
         config = {
             "model": "microsoft/DialoGPT-medium",
-            "device": "cpu", 
+            "device": "cpu",
             "max_length": 500,
-            "temperature": 0.8
+            "temperature": 0.8,
         }
 
         backend = HuggingFaceBackend(config)
@@ -323,26 +347,30 @@ class TestLLMBackend(unittest.TestCase):
     def test_huggingface_is_available(self, mock_load_model):
         """Test HuggingFace availability check."""
         backend = HuggingFaceBackend({"model": "test-model"})
-        
+
         # Mock successful import
-        with patch.dict('sys.modules', {'transformers': Mock(), 'torch': Mock()}):
+        with patch.dict(
+            "sys.modules", {"transformers": Mock(), "torch": Mock()}
+        ):
             self.assertTrue(backend.is_available())
-        
+
         # Mock import error
-        with patch('builtins.__import__', side_effect=ImportError("No module")):
+        with patch(
+            "builtins.__import__", side_effect=ImportError("No module")
+        ):
             self.assertFalse(backend.is_available())
 
     @patch("src.ticket_master.llm.HuggingFaceBackend._load_model")
     def test_huggingface_generate(self, mock_load_model):
         """Test HuggingFace text generation."""
         backend = HuggingFaceBackend({"model": "test-model"})
-        
+
         # Mock pipeline
         mock_pipeline = Mock()
         mock_pipeline.return_value = [{"generated_text": "Generated response"}]
         mock_pipeline.tokenizer.eos_token_id = 50256
         backend._pipeline = mock_pipeline
-        
+
         result = backend.generate("Test prompt")
         self.assertEqual(result, "Generated response")
         mock_pipeline.assert_called_once()
@@ -350,7 +378,7 @@ class TestLLMBackend(unittest.TestCase):
     def test_huggingface_get_model_info(self):
         """Test HuggingFace model info retrieval."""
         backend = HuggingFaceBackend({"model": "test-model", "device": "cpu"})
-        
+
         info = backend.get_model_info()
         self.assertEqual(info["name"], "test-model")
         self.assertEqual(info["provider"], "huggingface")
@@ -405,8 +433,10 @@ class TestLLM(unittest.TestCase):
     def test_create_backend_huggingface(self):
         """Test backend creation for HuggingFace provider."""
         config = {"model": "test-model"}
-        llm = LLM(LLMProvider.MOCK, {"model": "mock"})  # Use mock for initialization
-        
+        llm = LLM(
+            LLMProvider.MOCK, {"model": "mock"}
+        )  # Use mock for initialization
+
         # Test HuggingFace backend creation
         backend = llm._create_backend(LLMProvider.HUGGINGFACE, config)
         self.assertIsInstance(backend, HuggingFaceBackend)

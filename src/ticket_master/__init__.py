@@ -16,7 +16,11 @@ from .data_scraper import DataScraper
 from .database import Database, ServerDatabase, UserDatabase
 from .issue import Issue
 from .llm import LLM, LLMBackend, LLMProvider
-from .ollama_tools import OllamaPromptProcessor, OllamaPromptValidator, create_ollama_processor
+from .ollama_tools import (
+    OllamaPromptProcessor,
+    OllamaPromptValidator,
+    create_ollama_processor,
+)
 from .pipe import Pipe, PipelineStep, PipeStage
 from .prompt import Prompt, PromptTemplate, PromptType
 from .pull_request import PullRequest
@@ -38,7 +42,7 @@ __all__ = [
     "LLMProvider",
     "LLMBackend",
     "OllamaPromptProcessor",
-    "OllamaPromptValidator", 
+    "OllamaPromptValidator",
     "create_ollama_processor",
     "Prompt",
     "PromptTemplate",

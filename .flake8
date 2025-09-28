@@ -1,0 +1,28 @@
+[flake8]
+max-line-length = 88
+extend-ignore = 
+    # Black compatibility
+    E203,  # whitespace before ':'
+    W503,  # line break before binary operator
+    E501,  # line too long (handled by black)
+exclude =
+    .git,
+    __pycache__,
+    .pytest_cache,
+    venv,
+    .venv,
+    dist,
+    build,
+    *.egg-info,
+    migrations,
+    node_modules
+per-file-ignores =
+    # Tests can have long lines and complex expressions
+    tests/*:E501,C901,F401
+    # Main scripts can have higher complexity
+    main.py:C901
+    # Init files can have unused imports
+    __init__.py:F401
+max-complexity = 10
+import-order-style = google
+application-import-names = ticket_master

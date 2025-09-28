@@ -3,6 +3,7 @@ Tests for the Issue class.
 """
 
 import os
+
 # Add src to path for imports
 import sys
 from pathlib import Path
