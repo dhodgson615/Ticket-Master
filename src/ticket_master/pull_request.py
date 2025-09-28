@@ -2,9 +2,7 @@ import logging
 from typing import Any, Dict, List
 
 try:
-    from github import Github
     from github import PullRequest as GitHubPullRequest
-    from github.GithubException import GithubException
 
 except ImportError:
     import subprocess
