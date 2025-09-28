@@ -339,7 +339,7 @@ class Pipe:
         for i, step in enumerate(self.steps):
             try:
                 self.logger.debug(
-                    f"Executing step {i+1}/{len(self.steps)}: {step.name}"
+                    f"Executing step {i + 1}/{len(self.steps)}: {step.name}"
                 )
 
                 # Execute step

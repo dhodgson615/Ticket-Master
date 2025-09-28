@@ -3,8 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 try:
-    from git import Head as GitHead
-    from git import RemoteReference
+    pass
 except ImportError:
     import subprocess
     import sys
@@ -12,7 +11,6 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
-    from git import Head as GitHead, RemoteReference
 
 from .commit import Commit
 

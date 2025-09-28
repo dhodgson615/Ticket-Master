@@ -490,23 +490,25 @@ class MockBackend(LLMBackend):
         # Create reasonable mock responses based on prompt content
         if "issue" in prompt.lower() and "json" in prompt.lower():
             # Generate mock JSON for issue generation
-            return '''[
+            return """[
   {
     "title": "Improve code documentation",
     "description": "Based on the repository analysis, several files could benefit from improved documentation. This includes adding docstrings to functions and updating README files to reflect recent changes.",
     "labels": ["documentation", "enhancement", "automated"]
   },
   {
-    "title": "Add unit tests for new functionality", 
+    "title": "Add unit tests for new functionality",
     "description": "New code has been added that lacks adequate test coverage. Adding comprehensive unit tests would improve code reliability and maintainability.",
     "labels": ["testing", "enhancement", "automated"]
   }
-]'''
+]"""
         else:
             # General mock response
-            return ("This is a mock response from the Mock LLM backend. "
-                   "In a real implementation, this would be generated "
-                   "by an actual language model.")
+            return (
+                "This is a mock response from the Mock LLM backend. "
+                "In a real implementation, this would be generated "
+                "by an actual language model."
+            )
 
     def is_available(self) -> bool:
         """Mock backend is always available.
@@ -816,106 +818,126 @@ class LLM:
 
         return backends_info
 
-    def install_model(self, model_name: Optional[str] = None, provider: Optional[str] = None) -> Dict[str, Any]:
+    def install_model(
+        self, model_name: Optional[str] = None, provider: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Install a model for the specified provider.
-        
+
         Args:
             model_name: Name of the model to install (defaults to current model)
             provider: Provider to install for (defaults to current provider)
-            
+
         Returns:
             Dictionary containing installation results
         """
         target_provider = provider or self.provider.value
-        target_model = model_name or self.metadata.get('model', 'llama2')
-        
-        self.logger.info(f"Installing model {target_model} for provider {target_provider}")
-        
+        target_model = model_name or self.metadata.get("model", "llama2")
+
+        self.logger.info(
+            f"Installing model {target_model} for provider {target_provider}"
+        )
+
         # Only Ollama supports automatic model installation currently
-        if target_provider == 'ollama':
-            if hasattr(self.backend, 'install_model'):
+        if target_provider == "ollama":
+            if hasattr(self.backend, "install_model"):
                 return self.backend.install_model(target_model)
             else:
                 return {
                     "success": False,
                     "error": "Backend does not support model installation",
                     "provider": target_provider,
-                    "model": target_model
+                    "model": target_model,
                 }
         else:
             return {
                 "success": False,
                 "error": f"Automatic installation not supported for provider: {target_provider}",
                 "provider": target_provider,
-                "model": target_model
+                "model": target_model,
             }
-    
-    def list_available_models(self, provider: Optional[str] = None) -> Dict[str, Any]:
+
+    def list_available_models(
+        self, provider: Optional[str] = None
+    ) -> Dict[str, Any]:
         """List available models for the specified provider.
-        
+
         Args:
             provider: Provider to list models for (defaults to current provider)
-            
+
         Returns:
             Dictionary containing available models
         """
         target_provider = provider or self.provider.value
-        
-        if target_provider == 'ollama':
-            if hasattr(self.backend, 'list_available_models'):
+
+        if target_provider == "ollama":
+            if hasattr(self.backend, "list_available_models"):
                 return self.backend.list_available_models()
             else:
                 return {
                     "success": False,
                     "error": "Backend does not support model listing",
                     "models": [],
-                    "count": 0
+                    "count": 0,
                 }
         else:
             return {
                 "success": False,
                 "error": f"Model listing not supported for provider: {target_provider}",
                 "models": [],
-                "count": 0
+                "count": 0,
             }
 
-    def check_model_availability(self, model_name: Optional[str] = None, auto_install: bool = False) -> Dict[str, Any]:
+    def check_model_availability(
+        self, model_name: Optional[str] = None, auto_install: bool = False
+    ) -> Dict[str, Any]:
         """Check if a specific model is available and optionally install it.
-        
+
         Args:
             model_name: Name of the model to check (defaults to current model)
             auto_install: Whether to automatically install the model if not available
-            
+
         Returns:
             Dictionary containing availability status and installation results if applicable
         """
-        target_model = model_name or self.metadata.get('model', 'llama2')
-        
+        target_model = model_name or self.metadata.get("model", "llama2")
+
         self.logger.info(f"Checking availability of model: {target_model}")
-        
+
         # Get current model info
         model_info = self.backend.get_model_info()
-        is_available = model_info.get('status') not in ['not_found', 'model_not_found', 'unavailable', 'error']
-        
+        is_available = model_info.get("status") not in [
+            "not_found",
+            "model_not_found",
+            "unavailable",
+            "error",
+        ]
+
         result = {
             "model": target_model,
             "provider": self.provider.value,
             "available": is_available,
-            "model_info": model_info
+            "model_info": model_info,
         }
-        
+
         # Auto-install if requested and not available
         if not is_available and auto_install:
-            self.logger.info(f"Model {target_model} not available, attempting auto-install...")
+            self.logger.info(
+                f"Model {target_model} not available, attempting auto-install..."
+            )
             install_result = self.install_model(target_model)
             result["installation"] = install_result
-            
+
             # Re-check availability after installation
             if install_result.get("success"):
                 model_info = self.backend.get_model_info()
-                result["available"] = model_info.get('status') not in ['not_found', 'model_not_found', 'unavailable', 'error']
+                result["available"] = model_info.get("status") not in [
+                    "not_found",
+                    "model_not_found",
+                    "unavailable",
+                    "error",
+                ]
                 result["model_info"] = model_info
-        
+
         return result
 
     def get_metadata(self) -> Dict[str, Any]:

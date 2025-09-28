@@ -68,7 +68,7 @@ test-fast: ## Run tests without coverage
 
 lint: ## Run linting with flake8
 	@echo "Running linting checks..."
-	$(FLAKE8) $(SRC_DIR)/ $(MAIN_FILE) --max-line-length=79 --ignore=E203,W503,E402
+	$(FLAKE8) $(SRC_DIR)/ $(MAIN_FILE) --max-line-length=88 --ignore=E203,W503,E402
 	@echo "Linting completed!"
 
 typecheck: ## Run type checking with mypy

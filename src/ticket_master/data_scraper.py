@@ -18,14 +18,9 @@ from typing import Any, Dict, List, Optional, Union
 try:
     pass
 except ImportError:
-    import subprocess
-    import sys
-
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
-
-    from git import Repo, InvalidGitRepositoryError
 
 from .database import DatabaseError, UserDatabase
 from .repository import Repository, RepositoryError
