@@ -155,21 +155,23 @@ class OllamaBackend(LLMBackend):
         
         try:
             # Prepare options for ollama client
-            options = {
-                "temperature": kwargs.get("temperature", 0.7),
-                "num_predict": kwargs.get("max_tokens", kwargs.get("num_predict", 1000)),
-                "top_k": kwargs.get("top_k", 40),
-                "top_p": kwargs.get("top_p", 0.9),
-            }
-            
-            # Remove None values and kwargs that aren't ollama options
-            filtered_options = {k: v for k, v in options.items() if v is not None}
+            options = {}
+            if "temperature" in kwargs:
+                options["temperature"] = kwargs["temperature"]
+            if "max_tokens" in kwargs:
+                options["num_predict"] = kwargs["max_tokens"]
+            elif "num_predict" in kwargs:
+                options["num_predict"] = kwargs["num_predict"]
+            if "top_k" in kwargs:
+                options["top_k"] = kwargs["top_k"]
+            if "top_p" in kwargs:
+                options["top_p"] = kwargs["top_p"]
             
             response = self.client.generate(
                 model=self.model,
                 prompt=prompt,
                 stream=False,
-                options=filtered_options
+                options=options if options else None
             )
             
             return response.get("response", "").strip()

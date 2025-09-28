@@ -79,12 +79,25 @@ class OllamaPromptProcessor:
             
             start_time = time.time()
             
+            # Prepare options for ollama client
+            generation_options = {}
+            if "temperature" in options:
+                generation_options["temperature"] = options["temperature"]
+            if "num_predict" in options:
+                generation_options["num_predict"] = options["num_predict"]
+            if "max_tokens" in options:
+                generation_options["num_predict"] = options["max_tokens"]
+            if "top_k" in options:
+                generation_options["top_k"] = options["top_k"]
+            if "top_p" in options:
+                generation_options["top_p"] = options["top_p"]
+            
             # Send to Ollama
             response = self.client.generate(
                 model=target_model,
                 prompt=rendered_prompt,
                 stream=False,
-                **options
+                options=generation_options if generation_options else None
             )
             
             processing_time = time.time() - start_time
@@ -147,7 +160,7 @@ class OllamaPromptProcessor:
                 results.append({
                     "batch_index": i,
                     "error": str(e),
-                    "template_name": prompt_data.get("template", {}).get("name", "unknown")
+                    "template_name": prompt_data.get("template", PromptTemplate("unknown", None, "")).name
                 })
         
         return results
