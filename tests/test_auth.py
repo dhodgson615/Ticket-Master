@@ -85,7 +85,7 @@ class TestAuthentication:
 class TestAuthenticationGitHubIntegration:
     """Test GitHub integration functionality."""
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_create_client_with_token(self, mock_github_class):
         """Test creating GitHub client with token."""
         mock_github = MagicMock()
@@ -101,7 +101,7 @@ class TestAuthenticationGitHubIntegration:
         mock_github_class.assert_called_once()
         mock_github.get_user.assert_called_once()
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_create_client_token_parameter_overrides_instance(
         self, mock_github_class
     ):
@@ -118,7 +118,7 @@ class TestAuthenticationGitHubIntegration:
         assert client is mock_github
         mock_github_class.assert_called_once()
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_create_client_bad_credentials(self, mock_github_class):
         """Test creating GitHub client with bad credentials."""
         from github.GithubException import BadCredentialsException
@@ -144,7 +144,7 @@ class TestAuthenticationGitHubIntegration:
 
             assert "GitHub token not provided" in str(exc_info.value)
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_is_authenticated_success(self, mock_github_class):
         """Test is_authenticated with valid credentials."""
         mock_github = MagicMock()
@@ -158,7 +158,7 @@ class TestAuthenticationGitHubIntegration:
 
         assert result is True
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_is_authenticated_failure(self, mock_github_class):
         """Test is_authenticated with invalid credentials."""
         from github.GithubException import BadCredentialsException
@@ -174,7 +174,7 @@ class TestAuthenticationGitHubIntegration:
 
         assert result is False
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_get_user_info(self, mock_github_class):
         """Test getting user information."""
         mock_github = MagicMock()
@@ -208,7 +208,7 @@ class TestAuthenticationGitHubIntegration:
 
         assert user_info == expected
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_test_connection_success(self, mock_github_class):
         """Test successful connection test."""
         mock_github = MagicMock()
@@ -238,7 +238,7 @@ class TestAuthenticationGitHubIntegration:
         assert result["user"]["login"] == "test_user"
         assert result["rate_limit"]["core"]["limit"] == 5000
 
-    @patch("auth.Github")
+    @patch("ticket_master_consolidated.Github")
     def test_test_connection_failure(self, mock_github_class):
         """Test failed connection test."""
         from github.GithubException import BadCredentialsException
@@ -275,7 +275,7 @@ class TestAuthenticationErrorHandling:
 
 def test_basic_import():
     """Test that the Authentication class can be imported."""
-    from auth import Authentication, AuthenticationError, GitHubAuthError
+    from ticket_master_consolidated import Authentication, AuthenticationError, GitHubAuthError
 
     assert Authentication is not None
     assert AuthenticationError is not None

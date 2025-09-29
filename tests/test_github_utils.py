@@ -57,7 +57,7 @@ class TestGitHubUtils:
         with pytest.raises(ValueError, match="URL must be from github.com"):
             self.github_utils.parse_github_url("https://gitlab.com/owner/repo")
 
-    @patch("github_utils.requests.get")
+    @patch("ticket_master_consolidated.requests.get")
     def test_is_public_repository_public(self, mock_get):
         """Test detecting public repository."""
         # Mock successful response for public repo
@@ -69,7 +69,7 @@ class TestGitHubUtils:
         result = self.github_utils.is_public_repository("owner/repo")
         assert result is True
 
-    @patch("github_utils.requests.get")
+    @patch("ticket_master_consolidated.requests.get")
     def test_is_public_repository_private(self, mock_get):
         """Test detecting private repository."""
         # Mock successful response for private repo
@@ -81,7 +81,7 @@ class TestGitHubUtils:
         result = self.github_utils.is_public_repository("owner/repo")
         assert result is False
 
-    @patch("github_utils.requests.get")
+    @patch("ticket_master_consolidated.requests.get")
     def test_is_public_repository_not_found(self, mock_get):
         """Test handling repository not found."""
         # Mock 404 response
@@ -93,7 +93,7 @@ class TestGitHubUtils:
         assert result is False
 
     @patch("subprocess.run")
-    @patch("github_utils.requests.get")
+    @patch("ticket_master_consolidated.requests.get")
     def test_is_public_repository_rate_limited_fallback_public(
         self, mock_get, mock_subprocess
     ):
@@ -110,7 +110,7 @@ class TestGitHubUtils:
         assert result is True
 
     @patch("subprocess.run")
-    @patch("github_utils.requests.get")
+    @patch("ticket_master_consolidated.requests.get")
     def test_is_public_repository_rate_limited_fallback_private(
         self, mock_get, mock_subprocess
     ):
@@ -126,7 +126,7 @@ class TestGitHubUtils:
         result = self.github_utils.is_public_repository("owner/repo")
         assert result is False
 
-    @patch("github_utils.requests.get")
+    @patch("ticket_master_consolidated.requests.get")
     def test_get_repository_info_success(self, mock_get):
         """Test getting repository info successfully."""
         # Mock successful response
@@ -152,7 +152,7 @@ class TestGitHubUtils:
         assert result["full_name"] == "owner/repo"
         assert result["private"] is False
 
-    @patch("github_utils.requests.get")
+    @patch("ticket_master_consolidated.requests.get")
     def test_get_repository_info_rate_limited(self, mock_get):
         """Test getting repository info when rate limited."""
         # Mock 403 response (rate limited)
@@ -168,8 +168,8 @@ class TestGitHubUtils:
         assert result["clone_url"] == "https://github.com/owner/repo.git"
         assert result["private"] is None  # Unknown due to rate limiting
 
-    @patch("github_utils.Repo.clone_from")
-    @patch("github_utils.GitHubUtils.get_repository_info")
+    @patch("ticket_master_consolidated.Repo.clone_from")
+    @patch("ticket_master_consolidated.GitHubUtils.get_repository_info")
     def test_clone_repository_public_success(self, mock_get_info, mock_clone):
         """Test successful cloning of public repository."""
         # Mock repository info
@@ -188,8 +188,8 @@ class TestGitHubUtils:
         assert result.startswith("/tmp/ticket-master-owner-repo-")
         mock_clone.assert_called_once()
 
-    @patch("github_utils.Repo.clone_from")
-    @patch("github_utils.GitHubUtils.get_repository_info")
+    @patch("ticket_master_consolidated.Repo.clone_from")
+    @patch("ticket_master_consolidated.GitHubUtils.get_repository_info")
     def test_clone_repository_private_with_token(
         self, mock_get_info, mock_clone
     ):
@@ -214,7 +214,7 @@ class TestGitHubUtils:
         call_args = mock_clone.call_args
         assert "test-token@github.com" in call_args[0][0]
 
-    @patch("github_utils.GitHubUtils.get_repository_info")
+    @patch("ticket_master_consolidated.GitHubUtils.get_repository_info")
     def test_clone_repository_not_found(self, mock_get_info):
         """Test cloning repository that doesn't exist."""
         # Mock repository not found
@@ -225,8 +225,8 @@ class TestGitHubUtils:
         ):
             self.github_utils.clone_repository("owner/nonexistent")
 
-    @patch("github_utils.Repo.clone_from")
-    @patch("github_utils.GitHubUtils.get_repository_info")
+    @patch("ticket_master_consolidated.Repo.clone_from")
+    @patch("ticket_master_consolidated.GitHubUtils.get_repository_info")
     def test_clone_repository_to_local_path(self, mock_get_info, mock_clone):
         """Test cloning repository to specified local path."""
         # Mock repository info

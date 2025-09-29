@@ -331,7 +331,7 @@ class TestLLMBackend(unittest.TestCase):
         self.assertEqual(backend.max_length, 500)
         self.assertEqual(backend.temperature, 0.8)
 
-    @patch("llm.HuggingFaceBackend._load_model")
+    @patch("ticket_master_consolidated.HuggingFaceBackend._load_model")
     def test_huggingface_is_available(self, mock_load_model):
         """Test HuggingFace availability check."""
         backend = HuggingFaceBackend({"model": "test-model"})
@@ -348,7 +348,7 @@ class TestLLMBackend(unittest.TestCase):
         ):
             self.assertFalse(backend.is_available())
 
-    @patch("llm.HuggingFaceBackend._load_model")
+    @patch("ticket_master_consolidated.HuggingFaceBackend._load_model")
     def test_huggingface_generate(self, mock_load_model):
         """Test HuggingFace text generation."""
         backend = HuggingFaceBackend({"model": "test-model"})

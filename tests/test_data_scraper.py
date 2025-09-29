@@ -257,7 +257,7 @@ class TestDataScraperCaching(unittest.TestCase):
         result = scraper._get_from_cache("test_key")
         self.assertIsNone(result)
 
-    @patch("data_scraper.UserDatabase")
+    @patch("ticket_master_consolidated.UserDatabase")
     def test_get_from_cache_with_db(self, mock_db):
         """Test cache retrieval with database."""
         mock_db_instance = MagicMock()
@@ -271,7 +271,7 @@ class TestDataScraperCaching(unittest.TestCase):
             mock_db_instance.method_calls
         )  # Some method was called
 
-    @patch("data_scraper.UserDatabase")
+    @patch("ticket_master_consolidated.UserDatabase")
     def test_store_in_cache_with_db(self, mock_db):
         """Test cache storage with database."""
         mock_db_instance = MagicMock()

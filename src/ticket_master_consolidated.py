@@ -273,6 +273,10 @@ class RepositoryError(Exception):
     """Custom exception for repository-related errors."""
     pass
 
+class CommitError(Exception):
+    """Custom exception for commit-related errors."""
+    pass
+
 class Commit:
     """Represents a Git commit with associated metadata."""
     
@@ -289,6 +293,10 @@ class Commit:
         self.insertions = commit_data.get("insertions", 0)
         self.deletions = commit_data.get("deletions", 0)
 
+class BranchError(Exception):
+    """Custom exception for branch-related errors."""
+    pass
+
 class Branch:
     """Represents a Git branch with associated metadata."""
     
@@ -298,6 +306,10 @@ class Branch:
         self.name = name
         self.is_active = is_active
         self.last_commit = last_commit
+
+class PullRequestError(Exception):
+    """Custom exception for pull request-related errors."""
+    pass
 
 class PullRequest:
     """Represents a GitHub pull request with associated metadata."""
@@ -608,6 +620,10 @@ class LLMError(Exception):
     """Custom exception for LLM-related errors."""
     pass
 
+class LLMProviderError(Exception):
+    """Custom exception for LLM provider-related errors."""
+    pass
+
 class LLMProvider(Enum):
     """Supported LLM providers."""
     OLLAMA = "ollama"
@@ -705,6 +721,70 @@ class OllamaBackend(LLMBackend):
         except Exception as e:
             return {"name": self.model, "status": "error", "error": str(e)}
 
+class MockBackend(LLMBackend):
+    """Mock LLM backend for testing and demonstration purposes."""
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize Mock backend."""
+        super().__init__(config)
+        self.model = config.get("model", "mock-model")
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        """Generate mock response."""
+        if "issue" in prompt.lower() and "json" in prompt.lower():
+            return '[{"title": "Mock Issue", "description": "Mock description", "labels": ["mock"]}]'
+        return "Mock response"
+
+    def is_available(self) -> bool:
+        """Mock backend is always available."""
+        return True
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get mock model information."""
+        return {"name": self.model, "provider": "mock", "status": "available"}
+
+class HuggingFaceBackend(LLMBackend):
+    """HuggingFace Transformers LLM backend implementation."""
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize HuggingFace backend."""
+        super().__init__(config)
+        self.model_name = config.get("model", "microsoft/DialoGPT-medium")
+        self.device = config.get("device", "cpu")
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        """Generate text using HuggingFace Transformers."""
+        raise LLMProviderError("HuggingFace backend not fully implemented")
+
+    def is_available(self) -> bool:
+        """Check if HuggingFace backend is available."""
+        return False
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get HuggingFace model information."""
+        return {"name": self.model_name, "provider": "huggingface", "status": "not_implemented"}
+
+class OpenAIBackend(LLMBackend):
+    """OpenAI LLM backend implementation."""
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize OpenAI backend."""
+        super().__init__(config)
+        self.model = config.get("model", "gpt-3.5-turbo")
+        self.api_key = config.get("api_key")
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        """Generate text using OpenAI."""
+        raise LLMProviderError("OpenAI backend not fully implemented")
+
+    def is_available(self) -> bool:
+        """Check if OpenAI backend is available."""
+        return False
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get OpenAI model information."""
+        return {"name": self.model, "provider": "openai", "status": "not_implemented"}
+
 class LLM:
     """Main LLM interface that manages different backends."""
     
@@ -730,6 +810,10 @@ class LLM:
 
 
 # ==================== PROMPT MODULE ====================
+
+class PromptError(Exception):
+    """Custom exception for prompt-related errors."""
+    pass
 
 class PromptType(Enum):
     """Types of prompts supported by the system."""
@@ -845,6 +929,10 @@ Focus on issues that would genuinely improve the project, such as:
 
 
 # ==================== DATA SCRAPER MODULE ====================
+
+class DataScraperError(Exception):
+    """Custom exception for data scraper-related errors."""
+    pass
 
 class DataScraper:
     """Scrapes and analyzes repository data for issue generation."""
@@ -1029,6 +1117,10 @@ class GitHubUtils:
 
 # ==================== DATABASE MODULE ====================
 
+class DatabaseError(Exception):
+    """Custom exception for database-related errors."""
+    pass
+
 class Database:
     """Base database class for Ticket-Master."""
     
@@ -1093,6 +1185,18 @@ class ServerDatabase(Database):
 
 
 # ==================== PIPELINE MODULE ====================
+
+class PipeError(Exception):
+    """Custom exception for pipeline-related errors."""
+    pass
+
+class PipeExecutionError(PipeError):
+    """Custom exception for pipeline execution errors."""
+    pass
+
+class PipeValidationError(PipeError):
+    """Custom exception for pipeline validation errors."""
+    pass
 
 class PipeStage(Enum):
     """Pipeline execution stages."""
@@ -1167,6 +1271,10 @@ class Pipe:
 
 
 # ==================== OLLAMA TOOLS MODULE ====================
+
+class OllamaToolsError(Exception):
+    """Custom exception for Ollama tools-related errors."""
+    pass
 
 class OllamaPromptValidator:
     """Validates prompts for Ollama-specific requirements."""

@@ -537,7 +537,7 @@ class TestIssueGitHubIntegration:
     """Test GitHub integration functionality."""
 
     @patch.dict(os.environ, {"GITHUB_TOKEN": "test_token"})
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_create_github_client_with_env_token(self, mock_auth_class):
         """Test creating GitHub client with environment token."""
         mock_auth = MagicMock()
@@ -551,7 +551,7 @@ class TestIssueGitHubIntegration:
         mock_auth_class.assert_called_once_with("test_token")
         mock_auth.create_client.assert_called_once()
 
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_create_github_client_with_explicit_token(self, mock_auth_class):
         """Test creating GitHub client with explicit token."""
         mock_auth = MagicMock()
@@ -573,7 +573,7 @@ class TestIssueGitHubIntegration:
 
             assert "GitHub token not provided" in str(exc_info.value)
 
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_create_github_client_bad_credentials(self, mock_auth_class):
         """Test creating GitHub client with bad credentials."""
         mock_auth = MagicMock()
@@ -587,7 +587,7 @@ class TestIssueGitHubIntegration:
 
         assert "Invalid GitHub credentials" in str(exc_info.value)
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_success(self, mock_create_client):
         """Test successful issue creation on GitHub."""
         # Setup mocks
@@ -624,7 +624,7 @@ class TestIssueGitHubIntegration:
         mock_github.get_repo.assert_called_once_with("test/repo")
         mock_repo.create_issue.assert_called_once()
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_with_labels(self, mock_create_client):
         """Test issue creation with labels."""
         # Setup mocks
@@ -679,7 +679,7 @@ class TestIssueErrorHandling:
 class TestGitHubConnection:
     """Test GitHub connection testing functionality."""
 
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_test_github_connection_success(self, mock_auth_class):
         """Test successful GitHub connection test."""
         mock_auth = MagicMock()
@@ -708,7 +708,7 @@ class TestGitHubConnection:
         assert result["user"]["login"] == "test_user"
         assert result["rate_limit"]["core"]["remaining"] == 4999
 
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_test_github_connection_failure(self, mock_auth_class):
         """Test failed GitHub connection test."""
         mock_auth = MagicMock()
@@ -737,7 +737,7 @@ class TestBulkOperations:
         assert result["failed_issues"] == []
         assert result["errors"] == []
 
-    @patch("issue.Issue.create_on_github")
+    @patch("ticket_master_consolidated.Issue.create_on_github")
     @patch("time.sleep")
     def test_create_bulk_issues_success(self, mock_sleep, mock_create):
         """Test successful bulk creation."""
@@ -766,7 +766,7 @@ class TestBulkOperations:
         # Check rate limiting
         mock_sleep.assert_called_once_with(1.0)
 
-    @patch("issue.Issue.create_on_github")
+    @patch("ticket_master_consolidated.Issue.create_on_github")
     def test_create_bulk_issues_with_failures(self, mock_create):
         """Test bulk creation with some failures."""
         # Setup
@@ -792,7 +792,7 @@ class TestBulkOperations:
         assert len(result["failed_issues"]) == 1
         assert "API Error" in result["errors"][0]
 
-    @patch("issue.Issue.create_on_github")
+    @patch("ticket_master_consolidated.Issue.create_on_github")
     def test_create_bulk_issues_stop_on_error(self, mock_create):
         """Test bulk creation with stop_on_error=True."""
         # Setup
@@ -818,7 +818,7 @@ class TestBulkOperations:
         assert result["failed_count"] == 1
         assert mock_create.call_count == 2  # Should not call third
 
-    @patch("issue.Issue.create_on_github")
+    @patch("ticket_master_consolidated.Issue.create_on_github")
     def test_create_bulk_issues_custom_settings(self, mock_create):
         """Test bulk creation with custom rate limit and batch settings."""
         issues = [Issue(f"Issue {i}", f"Description {i}") for i in range(5)]
@@ -854,7 +854,7 @@ class TestTemplateCreation:
         assert result["total_issues"] == 0
         assert result["created_issues"] == []
 
-    @patch("issue.Issue.create_bulk_issues")
+    @patch("ticket_master_consolidated.Issue.create_bulk_issues")
     def test_create_issues_with_templates_success(self, mock_bulk_create):
         """Test successful template creation."""
         template_data = [
@@ -894,7 +894,7 @@ class TestTemplateCreation:
         assert "automated" in issues[0].labels
         assert "automated" in issues[1].labels
 
-    @patch("issue.Issue.create_bulk_issues")
+    @patch("ticket_master_consolidated.Issue.create_bulk_issues")
     def test_create_issues_with_templates_creation_errors(
         self, mock_bulk_create
     ):
@@ -988,7 +988,7 @@ class TestStringMethods:
 class TestErrorHandling:
     """Test error handling scenarios."""
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_rate_limit_error(self, mock_create_client):
         """Test handling of rate limit errors."""
         from github.GithubException import RateLimitExceededException
@@ -1006,7 +1006,7 @@ class TestErrorHandling:
 
         assert "rate limit exceeded" in str(exc_info.value)
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_github_exception(self, mock_create_client):
         """Test handling of general GitHub exceptions."""
         from github.GithubException import GithubException
@@ -1022,7 +1022,7 @@ class TestErrorHandling:
 
         assert "GitHub API error" in str(exc_info.value)
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_general_exception(self, mock_create_client):
         """Test handling of general exceptions."""
         mock_create_client.side_effect = Exception("Unknown error")
@@ -1034,7 +1034,7 @@ class TestErrorHandling:
 
         assert "Failed to create issue" in str(exc_info.value)
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_milestone_error(self, mock_create_client):
         """Test handling of milestone-related errors."""
         mock_github = MagicMock()
@@ -1063,7 +1063,7 @@ class TestErrorHandling:
         result = issue.create_on_github("test/repo")
         assert result["number"] == 1
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_invalid_labels(self, mock_create_client):
         """Test handling of invalid labels."""
         mock_github = MagicMock()
@@ -1106,7 +1106,7 @@ class TestErrorHandling:
 class TestConnectionFunction:
     """Test the standalone test_github_connection function."""
 
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_github_connection_success(self, mock_auth_class):
         """Test successful connection test."""
         mock_auth = MagicMock()
@@ -1118,7 +1118,7 @@ class TestConnectionFunction:
         assert result["authenticated"] is True
         mock_auth_class.assert_called_once_with("test_token")
 
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_github_connection_exception(self, mock_auth_class):
         """Test connection test with exception."""
         mock_auth_class.side_effect = Exception("Connection error")
@@ -1167,7 +1167,7 @@ class TestEdgeCases:
         # Should not trigger single sentence warning due to punctuation
         assert not any("single sentence" in warning for warning in warnings)
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_with_assignees(self, mock_create_client):
         """Test issue creation with assignees."""
         mock_github = MagicMock()
@@ -1204,7 +1204,7 @@ class TestEdgeCases:
         # Verify result includes assignees
         assert result["assignees"] == ["test_user"]
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_with_milestone_success(self, mock_create_client):
         """Test successful milestone assignment."""
         mock_github = MagicMock()
@@ -1239,7 +1239,7 @@ class TestEdgeCases:
         assert "milestone" in call_args
         assert call_args["milestone"] is mock_milestone
 
-    @patch("issue.Issue.create_github_client")
+    @patch("ticket_master_consolidated.Issue.create_github_client")
     def test_create_on_github_milestone_not_found(self, mock_create_client):
         """Test milestone not found scenario."""
         mock_github = MagicMock()
@@ -1330,7 +1330,7 @@ class TestImportEdgeCases:
         # These are already covered by the fact that tests run successfully
         # But we can verify the module imports work
 
-        from issue import (GitHubAuthError, Issue, IssueError,
+        from ticket_master_consolidated import (GitHubAuthError, Issue, IssueError,
                            test_github_connection)
 
         assert Issue is not None
@@ -1338,10 +1338,10 @@ class TestImportEdgeCases:
         assert GitHubAuthError is not None
         assert test_github_connection is not None
 
-    @patch("issue.Authentication")
+    @patch("ticket_master_consolidated.Authentication")
     def test_auth_error_re_raising(self, mock_auth_class):
         """Test that Authentication errors are properly re-raised."""
-        from auth import GitHubAuthError as AuthGitHubAuthError
+        from ticket_master_consolidated import GitHubAuthError as AuthGitHubAuthError
 
         mock_auth = MagicMock()
         mock_auth.create_client.side_effect = AuthGitHubAuthError(
