@@ -279,8 +279,8 @@ class TestOllamaDemoIntegration:
                                                        for call in print_calls)
                                 assert model_info_printed or True  # Allow different output formats
                                 
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                pytest.fail(f"Caught unexpected exception: {e}")
                                 
         except ImportError:
             pytest.skip("ollama_demo module not available")
