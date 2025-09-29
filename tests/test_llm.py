@@ -5,12 +5,17 @@ This module provides comprehensive tests for LLM functionality
 including provider integration, response validation, and error handling.
 """
 
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from src.ticket_master.llm import (LLM, LLMError, LLMProvider,
-                                   LLMProviderError, MockBackend,
-                                   OllamaBackend, OpenAIBackend)
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from llm import (LLM, LLMError, LLMProvider,
+                LLMProviderError, MockBackend,
+                OllamaBackend, OpenAIBackend)
 
 
 class TestLLMBackend(unittest.TestCase):
@@ -44,7 +49,7 @@ class TestLLMBackend(unittest.TestCase):
                 self.assertFalse(backend.is_available())
         else:
             # If client is not available, it should fall back to requests
-            with patch("src.ticket_master.llm.requests.get") as mock_get:
+            with patch("llm.requests.get") as mock_get:
                 mock_response = Mock()
                 mock_response.status_code = 200
                 mock_get.return_value = mock_response
@@ -72,7 +77,7 @@ class TestLLMBackend(unittest.TestCase):
 
         self.assertIn("API key is required", str(context.exception))
 
-    @patch("src.ticket_master.llm.requests.get")
+    @patch("llm.requests.get")
     def test_openai_is_available(self, mock_get):
         """Test OpenAI availability check."""
         backend = OpenAIBackend({"api_key": "test-key"})
@@ -88,7 +93,7 @@ class TestLLMBackend(unittest.TestCase):
         mock_get.side_effect = Exception("Connection failed")
         self.assertFalse(backend.is_available())
 
-    @patch("src.ticket_master.llm.requests.post")
+    @patch("llm.requests.post")
     def test_openai_generate(self, mock_post):
         """Test OpenAI text generation."""
         backend = OpenAIBackend(
@@ -116,7 +121,7 @@ class TestLLMBackend(unittest.TestCase):
             call_args[1]["json"]["messages"][0]["content"], "Test prompt"
         )
 
-    @patch("src.ticket_master.llm.requests.post")
+    @patch("llm.requests.post")
     def test_openai_generate_error(self, mock_post):
         """Test OpenAI text generation with API error."""
         backend = OpenAIBackend({"api_key": "test-key"})
@@ -233,7 +238,7 @@ class TestLLM(unittest.TestCase):
         config = {"api_key": "test-key", "model": "gpt-3.5-turbo"}
         llm = LLM(LLMProvider.OPENAI, config)
 
-        with patch("src.ticket_master.llm.requests.post") as mock_post:
+        with patch("llm.requests.post") as mock_post:
             # Mock successful response
             mock_response = Mock()
             mock_response.status_code = 200
@@ -331,7 +336,7 @@ class TestLLMModelInstallation(unittest.TestCase):
         # Create a mock backend without install_model method
         mock_backend = Mock(spec=[])  # No install_model method
         with patch(
-            "src.ticket_master.llm.OllamaBackend", return_value=mock_backend
+            "llm.OllamaBackend", return_value=mock_backend
         ):
             llm = LLM(LLMProvider.OLLAMA, config)
 
@@ -630,7 +635,7 @@ class TestOpenAIIntegration(unittest.TestCase):
             backend.base_url, "https://custom.openai.proxy.com/v1"
         )
 
-    @patch("src.ticket_master.llm.requests.post")
+    @patch("llm.requests.post")
     def test_openai_generate_success(self, mock_post):
         """Test successful OpenAI text generation."""
         config = {"api_key": "test-key", "model": "gpt-4"}
@@ -648,7 +653,7 @@ class TestOpenAIIntegration(unittest.TestCase):
         self.assertEqual(result, "Generated text response")
         mock_post.assert_called_once()
 
-    @patch("src.ticket_master.llm.requests.post")
+    @patch("llm.requests.post")
     def test_openai_generate_api_error(self, mock_post):
         """Test OpenAI API error handling."""
         config = {"api_key": "invalid-key", "model": "gpt-4"}
@@ -665,7 +670,7 @@ class TestOpenAIIntegration(unittest.TestCase):
         with self.assertRaises(LLMProviderError):
             backend.generate("Test prompt")
 
-    @patch("src.ticket_master.llm.requests.get")
+    @patch("llm.requests.get")
     def test_openai_is_available_success(self, mock_get):
         """Test OpenAI availability check success."""
         config = {"api_key": "test-key", "model": "gpt-4"}
@@ -677,7 +682,7 @@ class TestOpenAIIntegration(unittest.TestCase):
 
         self.assertTrue(backend.is_available())
 
-    @patch("src.ticket_master.llm.requests.get")
+    @patch("llm.requests.get")
     def test_openai_is_available_failure(self, mock_get):
         """Test OpenAI availability check failure."""
         config = {"api_key": "invalid-key", "model": "gpt-4"}

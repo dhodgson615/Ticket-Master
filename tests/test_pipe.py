@@ -5,11 +5,16 @@ This module provides comprehensive tests for pipeline functionality
 including step execution, validation, and stage management.
 """
 
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import Mock
 
-from src.ticket_master.pipe import Pipe, PipeError, PipelineStep, PipeStage
-from src.ticket_master.prompt import PromptTemplate, PromptType
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from pipe import Pipe, PipeError, PipelineStep, PipeStage
+from prompt import PromptTemplate, PromptType
 
 
 class TestPipelineStep(unittest.TestCase):

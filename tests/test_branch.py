@@ -5,10 +5,15 @@ This module provides comprehensive tests for branch functionality
 including branch operations, last activity tracking, and representation.
 """
 
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, Mock
 
-from src.ticket_master.branch import Branch, BranchError
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from branch import Branch, BranchError
 
 
 class TestBranch(unittest.TestCase):

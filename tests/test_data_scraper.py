@@ -5,10 +5,14 @@ This module provides comprehensive tests for data scraper functionality
 including repository analysis, file structure scanning, and content analysis.
 """
 
+import sys
 import unittest
 from pathlib import Path
 
-from src.ticket_master.data_scraper import DataScraper, DataScraperError
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from data_scraper import DataScraper, DataScraperError
 
 
 class TestDataScraper(unittest.TestCase):
