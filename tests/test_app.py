@@ -17,10 +17,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 # Mock external dependencies before importing app
-with patch("ticket_master.auth.Authentication"):
-    with patch("ticket_master.repository.Repository"):
-        with patch("ticket_master.issue.Issue"):
-            with patch("ticket_master.github_utils.GitHubUtils"):
+with patch("auth.Authentication"):
+    with patch("repository.Repository"):
+        with patch("issue.Issue"):
+            with patch("github_utils.GitHubUtils"):
                 import app
 
 

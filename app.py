@@ -7,23 +7,54 @@ using AI analysis of Git repository contents.
 """
 
 import os
+import subprocess
 import sys
 from pathlib import Path
 
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from flask import flash  # noqa: E402
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+# Import with fallback installation - Flask
+try:
+    from flask import flash as flash
+    from flask import Flask as Flask, jsonify as jsonify, redirect as redirect, render_template as render_template, request as request, url_for as url_for
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
+    from flask import flash as flash
+    from flask import Flask as Flask, jsonify as jsonify, redirect as redirect, render_template as render_template, request as request, url_for as url_for
 
 # Import the main CLI functions to reuse logic
-from main import generate_sample_issues, load_config  # noqa: E402
-from ticket_master import Repository, __version__  # noqa: E402
-from ticket_master.colors import header, info, success  # noqa: E402
-from ticket_master.github_utils import (GitHubCloneError,  # noqa: E402
-                                        GitHubUtils)
-from ticket_master.issue import GitHubAuthError, Issue  # noqa: E402
-from ticket_master.repository import RepositoryError  # noqa: E402
+try:
+    from main import generate_sample_issues as generate_sample_issues, load_config as load_config
+except ImportError:
+    from main import generate_sample_issues as generate_sample_issues, load_config as load_config
+
+try:
+    from __init__ import Repository as Repository, __version__ as __version__
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "gitpython"])
+    from __init__ import Repository as Repository, __version__ as __version__
+
+try:
+    from colors import header as header, info as info, success as success
+except ImportError:
+    from colors import header as header, info as info, success as success
+
+try:
+    from github_utils import GitHubCloneError as GitHubCloneError, GitHubUtils as GitHubUtils
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    from github_utils import GitHubCloneError as GitHubCloneError, GitHubUtils as GitHubUtils
+
+try:
+    from issue import GitHubAuthError as GitHubAuthError, Issue as Issue
+except ImportError:
+    from issue import GitHubAuthError as GitHubAuthError, Issue as Issue
+
+try:
+    from repository import RepositoryError as RepositoryError
+except ImportError:
+    from repository import RepositoryError as RepositoryError
 
 app = Flask(__name__)
 app.secret_key = os.getenv(

@@ -18,10 +18,10 @@ import pytest
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.data_scraper import DataScraper
-from ticket_master.github_utils import GitHubUtils
-from ticket_master.issue import Issue
-from ticket_master.repository import Repository, RepositoryError
+from data_scraper import DataScraper
+from github_utils import GitHubUtils
+from issue import Issue
+from repository import Repository, RepositoryError
 
 
 class TestLargeRepositoryPerformance(unittest.TestCase):

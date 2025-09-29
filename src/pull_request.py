@@ -14,7 +14,10 @@ except ImportError:
 
     from github import PullRequest as GitHubPullRequest
 
-from .commit import Commit
+try:
+    from commit import Commit as Commit
+except ImportError:
+    from commit import Commit as Commit
 
 
 class PullRequestError(Exception):

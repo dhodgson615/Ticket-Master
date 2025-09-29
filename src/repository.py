@@ -17,8 +17,15 @@ except ImportError:
     import git
     from git import Repo, InvalidGitRepositoryError
 
-from .branch import Branch
-from .commit import Commit
+try:
+    from branch import Branch as Branch
+except ImportError:
+    from branch import Branch as Branch
+
+try:
+    from commit import Commit as Commit
+except ImportError:
+    from commit import Commit as Commit
 
 
 class RepositoryError(Exception):

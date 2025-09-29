@@ -77,8 +77,8 @@ class TestOllamaDemoFunctionality:
         mock_modules_dict = {
             "ollama": mock_ollama,
             "ticket_master": mock_ticket_master,
-            "ticket_master.ollama_tools": Mock(),
-            "ticket_master.prompt": Mock(),
+            ".ollama_tools": Mock(),
+            ".prompt": Mock(),
         }
         mock_modules.__contains__.side_effect = (
             lambda x: x in mock_modules_dict
@@ -128,8 +128,8 @@ class TestOllamaDemoFunctionality:
         mock_modules_dict = {
             "ollama": Mock(),
             "ticket_master": Mock(),
-            "ticket_master.ollama_tools": Mock(),
-            "ticket_master.prompt": Mock(),
+            ".ollama_tools": Mock(),
+            ".prompt": Mock(),
         }
         mock_modules.__contains__.side_effect = (
             lambda x: x in mock_modules_dict
@@ -180,8 +180,8 @@ class TestOllamaDemoFunctionality:
         mock_modules_dict = {
             "ollama": Mock(),
             "ticket_master": Mock(),
-            "ticket_master.ollama_tools": Mock(),
-            "ticket_master.prompt": Mock(),
+            ".ollama_tools": Mock(),
+            ".prompt": Mock(),
         }
         mock_modules.__contains__.side_effect = (
             lambda x: x in mock_modules_dict
@@ -230,8 +230,8 @@ class TestOllamoDemoConfiguration:
         mock_modules_dict = {
             "ollama": Mock(),
             "ticket_master": Mock(),
-            "ticket_master.ollama_tools": Mock(),
-            "ticket_master.prompt": Mock(),
+            ".ollama_tools": Mock(),
+            ".prompt": Mock(),
         }
         mock_modules.__contains__.side_effect = (
             lambda x: x in mock_modules_dict
@@ -281,8 +281,8 @@ class TestOllamaDemoIntegration:
         mock_modules_dict = {
             "ollama": Mock(),
             "ticket_master": Mock(),
-            "ticket_master.ollama_tools": Mock(),
-            "ticket_master.prompt": Mock(),
+            ".ollama_tools": Mock(),
+            ".prompt": Mock(),
         }
         mock_modules.__contains__.side_effect = (
             lambda x: x in mock_modules_dict
@@ -340,8 +340,8 @@ class TestOllamaDemoIntegration:
         mock_modules_dict = {
             "ollama": Mock(),
             "ticket_master": Mock(),
-            "ticket_master.ollama_tools": Mock(),
-            "ticket_master.prompt": Mock(),
+            ".ollama_tools": Mock(),
+            ".prompt": Mock(),
         }
         mock_modules.__contains__.side_effect = (
             lambda x: x in mock_modules_dict

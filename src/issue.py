@@ -21,8 +21,15 @@ except ImportError:
         RateLimitExceededException,
     )
 
-from .auth import Authentication
-from .auth import GitHubAuthError as AuthGitHubAuthError
+try:
+    from auth import Authentication as Authentication
+except ImportError:
+    from auth import Authentication as Authentication
+
+try:
+    from auth import GitHubAuthError as AuthGitHubAuthError
+except ImportError:
+    from auth import GitHubAuthError as AuthGitHubAuthError
 
 
 class IssueError(Exception):

@@ -21,7 +21,10 @@ except ImportError:
     )
     import ollama
 
-from .prompt import PromptTemplate, PromptType
+try:
+    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
+except ImportError:
+    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
 
 
 class OllamaToolsError(Exception):
@@ -203,7 +206,7 @@ class OllamaPromptProcessor:
         Returns:
             List of generated issue dictionaries
         """
-        from .prompt import Prompt
+        from prompt import Prompt as Prompt
 
         # Get the issue generation template
         prompt_manager = Prompt()

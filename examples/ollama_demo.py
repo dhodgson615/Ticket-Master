@@ -12,10 +12,15 @@ from pathlib import Path
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.ollama_tools import (OllamaPromptValidator,
-                                        OllamaToolsError,
-                                        create_ollama_processor)
-from ticket_master.prompt import PromptTemplate, PromptType
+try:
+    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator, OllamaToolsError as OllamaToolsError, create_ollama_processor as create_ollama_processor
+except ImportError:
+    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator, OllamaToolsError as OllamaToolsError, create_ollama_processor as create_ollama_processor
+
+try:
+    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
+except ImportError:
+    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
 
 
 def main():
