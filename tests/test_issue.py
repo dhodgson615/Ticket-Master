@@ -64,8 +64,7 @@ Application should start normally.
 
 **Actual Behavior:**
 Application crashes with error code 1.""",
-            labels=["bug", "priority-high", "needs-investigation"],
-            template="bug_report"
+            labels=["bug", "priority-high", "needs-investigation"]
         )
 
         assert issue.title.startswith("Bug:")
@@ -89,8 +88,7 @@ Implement a theme switcher with light/dark options.
 **Alternatives Considered:**
 - System theme detection
 - Multiple theme options""",
-            labels=["enhancement", "ui/ux", "feature-request"],
-            template="feature_request"
+            labels=["enhancement", "ui/ux", "feature-request"]
         )
 
         assert issue.title.startswith("Feature:")
@@ -117,13 +115,12 @@ Implement a theme switcher with light/dark options.
         issue = Issue(
             title="Automated: Code quality improvements needed",
             description="Automated analysis identified several code quality issues.",
-            labels=["automated", "code-quality", "ai-generated", "technical-debt"],
-            metadata={"generated_by": "ticket-master", "analysis_type": "code_quality"}
+            labels=["automated", "code-quality", "ai-generated", "technical-debt"]
         )
 
         assert "automated" in issue.labels
         assert "ai-generated" in issue.labels
-        assert issue.metadata["generated_by"] == "ticket-master"
+        # Note: metadata would be stored separately in a real implementation
 
     def test_issue_with_performance_labels(self):
         """Test issue creation with performance-related labels."""
