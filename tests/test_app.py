@@ -99,7 +99,7 @@ class TestHealthCheckRoute:
 class TestGenerateIssuesRoute:
     """Test cases for the generate issues route."""
 
-    def setUp(self):
+    def setup_method(self):
         """Set up test fixtures."""
         self.test_repo = "test-owner/test-repo"
         self.form_data = {"github_repo": self.test_repo, "max_issues": 3}

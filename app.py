@@ -16,69 +16,17 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Import with fallback installation - Flask
 try:
-    from flask import Flask as Flask
-    from flask import flash as flash
-    from flask import jsonify as jsonify
-    from flask import redirect as redirect
-    from flask import render_template as render_template
-    from flask import request as request
-    from flask import url_for as url_for
+    from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
-    from flask import Flask as Flask
-    from flask import flash as flash
-    from flask import jsonify as jsonify
-    from flask import redirect as redirect
-    from flask import render_template as render_template
-    from flask import request as request
-    from flask import url_for as url_for
+    from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
-# Import the main CLI functions to reuse logic
-try:
-    from main import generate_sample_issues as generate_sample_issues
-    from main import load_config as load_config
-except ImportError:
-    from main import generate_sample_issues as generate_sample_issues
-    from main import load_config as load_config
-
-try:
-    from __init__ import Repository as Repository
-    from __init__ import __version__ as __version__
-except ImportError:
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "gitpython"]
-    )
-    from __init__ import Repository as Repository
-    from __init__ import __version__ as __version__
-
-try:
-    from colors import header as header
-    from colors import info as info
-    from colors import success as success
-except ImportError:
-    from colors import header as header
-    from colors import info as info
-    from colors import success as success
-
-try:
-    from github_utils import GitHubCloneError as GitHubCloneError
-    from github_utils import GitHubUtils as GitHubUtils
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    from github_utils import GitHubCloneError as GitHubCloneError
-    from github_utils import GitHubUtils as GitHubUtils
-
-try:
-    from issue import GitHubAuthError as GitHubAuthError
-    from issue import Issue as Issue
-except ImportError:
-    from issue import GitHubAuthError as GitHubAuthError
-    from issue import Issue as Issue
-
-try:
-    from repository import RepositoryError as RepositoryError
-except ImportError:
-    from repository import RepositoryError as RepositoryError
+# Simple imports from consolidated module and main
+from ticket_master_consolidated import (
+    Repository, __version__, header, info, success, GitHubCloneError, GitHubUtils,
+    GitHubAuthError, Issue, RepositoryError
+)
+from main import generate_sample_issues, load_config
 
 app = Flask(__name__)
 app.secret_key = os.getenv(

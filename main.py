@@ -16,9 +16,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Add src directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 # Import with fallback installation
 try:
     import yaml
@@ -28,66 +25,15 @@ except ImportError:
     )
     import yaml
 
-# Import with fallback installation - core modules
-try:
-    from __init__ import Issue as Issue
-    from __init__ import Repository as Repository
-    from __init__ import __version__ as __version__
-except ImportError:
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "gitpython"]
-    )
-    from __init__ import Issue as Issue
-    from __init__ import Repository as Repository
-    from __init__ import __version__ as __version__
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-try:
-    from colors import Colors as Colors
-    from colors import dim as dim
-    from colors import error as error
-    from colors import header as header
-    from colors import highlight as highlight
-    from colors import info as info
-    from colors import print_colored as print_colored
-    from colors import success as success
-    from colors import warning as warning
-except ImportError:
-    from colors import Colors as Colors
-    from colors import dim as dim
-    from colors import error as error
-    from colors import header as header
-    from colors import highlight as highlight
-    from colors import info as info
-    from colors import print_colored as print_colored
-    from colors import success as success
-    from colors import warning as warning
-
-try:
-    from github_utils import GitHubCloneError as GitHubCloneError
-    from github_utils import GitHubUtils as GitHubUtils
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    from github_utils import GitHubCloneError as GitHubCloneError
-    from github_utils import GitHubUtils as GitHubUtils
-
-try:
-    from issue import GitHubAuthError as GitHubAuthError
-    from issue import IssueError as IssueError
-except ImportError:
-    from issue import GitHubAuthError as GitHubAuthError
-    from issue import IssueError as IssueError
-
-try:
-    from llm import LLM as LLM
-    from llm import LLMError as LLMError
-except ImportError:
-    from llm import LLM as LLM
-    from llm import LLMError as LLMError
-
-try:
-    from repository import RepositoryError as RepositoryError
-except ImportError:
-    from repository import RepositoryError as RepositoryError
+# Simple imports from consolidated module
+from ticket_master_consolidated import (
+    Issue, Repository, __version__, Colors, dim, error, header, highlight, 
+    info, print_colored, success, warning, GitHubCloneError, GitHubUtils,
+    GitHubAuthError, IssueError, LLM, LLMError, RepositoryError
+)
 
 
 def setup_logging(level: str = "INFO") -> None:
@@ -316,7 +262,7 @@ def generate_issues_with_llm(
         # Use Ollama tools if provider is Ollama
         if provider == "ollama":
             try:
-                from ollama_tools import create_ollama_processor
+                from ticket_master_consolidated import create_ollama_processor
 
                 processor = create_ollama_processor(llm_config)
 
@@ -417,7 +363,7 @@ def generate_issues_with_standard_llm(
             return generate_sample_issues(analysis, config)
 
         # Use proper prompt template system
-        from prompt import Prompt
+        from ticket_master_consolidated import Prompt
 
         prompt_manager = Prompt()
         prompt_manager.create_builtin_templates()  # Ensure built-in templates are created
@@ -740,7 +686,7 @@ def create_issues_on_github(
     github_token = config["github"]["token"]
     if not dry_run and github_token and github_token != "dummy_token":
         try:
-            from ticket_master.issue import test_github_connection
+            from ticket_master_consolidated import test_github_connection
 
             connection_test = test_github_connection(github_token)
 
@@ -947,7 +893,7 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
 
             # Test GitHub connection
             try:
-                from issue import test_github_connection
+                from ticket_master_consolidated import test_github_connection
 
                 connection_result = test_github_connection(
                     github_config["token"]
@@ -1003,7 +949,7 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
 
         # Test LLM availability
         try:
-            from llm import LLM
+            from ticket_master_consolidated import LLM
 
             llm = LLM(provider, llm_config)
 
