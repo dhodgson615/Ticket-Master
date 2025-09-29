@@ -159,3 +159,38 @@ class ExampleClass:
 - **ALWAYS** ensure linting passes (flake8, black)
 - **ALWAYS** check for security vulnerabilities
 - **NEVER** commit code that breaks CI pipeline
+
+<tool_calling>
+You have the capability to call multiple tools in a single response. For maximum efficiency, whenever you need to perform multiple independent operations, ALWAYS invoke all relevant tools simultaneously rather than sequentially. Especially when exploring repository, reading files, viewing directories, validating changes or replying to comments.
+</tool_calling>
+
+## Repository-Specific Context
+
+### Project Structure
+- **Core modules**: Located in `src/` directory with clear separation of concerns
+- **Main entry points**: `main.py` (CLI), `app.py` (web interface)
+- **Configuration**: YAML-based configuration with examples in root directory
+- **Testing**: Comprehensive test suite in `tests/` directory with pytest framework
+- **Documentation**: Detailed docs in `docs/` directory with feature-specific guides
+
+### Key Components
+- **Repository Analysis**: `src/repository.py` handles Git operations and analysis
+- **Issue Management**: `src/issue.py` handles GitHub API interactions
+- **LLM Integration**: `src/llm.py` provides abstraction for multiple LLM providers
+- **Prompt Engineering**: `src/prompt.py` manages templates and prompt generation
+- **Data Scraping**: `src/data_scraper.py` extracts repository information
+- **Pipeline**: `src/pipe.py` orchestrates the end-to-end workflow
+
+### Common Patterns
+- **Configuration Loading**: Always use YAML files with proper validation
+- **API Client Pattern**: Implement with proper error handling and rate limiting
+- **Template System**: Use the PromptTemplate class for consistent prompt management
+- **Logging**: Use module-level loggers with appropriate log levels
+- **Testing**: Mock external API calls and use fixtures for test data
+
+### Development Workflow
+1. **Setup**: Use `make setup` for initial environment setup
+2. **Development**: Use `make dev` for development environment with hot reload
+3. **Testing**: Use `make test` for full test suite with coverage
+4. **Quality**: Use `make check` for comprehensive quality checks
+5. **CI Integration**: All changes must pass `make ci` before merging

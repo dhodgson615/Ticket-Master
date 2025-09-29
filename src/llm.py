@@ -734,8 +734,11 @@ class HuggingFaceBackend(LLMBackend):
         try:
             # Import with fallback installation
             try:
-                from transformers import (AutoModelForCausalLM, AutoTokenizer,
-                                          pipeline)
+                from transformers import (
+                    AutoModelForCausalLM,
+                    AutoTokenizer,
+                    pipeline,
+                )
             except ImportError:
                 subprocess.check_call(
                     [
@@ -748,8 +751,11 @@ class HuggingFaceBackend(LLMBackend):
                     ]
                 )
 
-                from transformers import (AutoModelForCausalLM, AutoTokenizer,
-                                          pipeline)
+                from transformers import (
+                    AutoModelForCausalLM,
+                    AutoTokenizer,
+                    pipeline,
+                )
 
             # Use pipeline for text generation
             self._pipeline = pipeline(
