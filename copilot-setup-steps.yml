@@ -1,0 +1,303 @@
+# Copilot Development Environment Setup
+# This file ensures Copilot has a consistent development environment every time
+# it starts working on the Ticket-Master repository.
+
+name: "Copilot Development Environment Setup"
+version: "1.0.0"
+description: "Standardized setup process for Copilot to establish development environment"
+
+# Environment Information
+environment:
+  repository: "dhodgson615/Ticket-Master"
+  project_type: "Python AI Tool"
+  description: "AI-powered GitHub issue generator using LLMs to analyze repositories"
+  primary_language: "Python"
+  framework: "Flask (web interface), CLI (primary interface)"
+  
+# Repository Structure and Layout
+repository_layout:
+  root_directory: "/home/runner/work/Ticket-Master/Ticket-Master"
+  key_directories:
+    - path: "src/"
+      description: "Core Python modules and source code"
+      contents:
+        - "__init__.py - Main module imports and exports"
+        - "repository.py - Git repository analysis and operations"
+        - "issue.py - GitHub issue creation and management"
+        - "llm.py - LLM abstraction layer for AI providers"
+        - "auth.py - GitHub authentication handling"
+        - "prompt.py - Prompt templates and management"
+        - "database.py - Data persistence and management"
+        - "pipe.py - Pipeline orchestration"
+    - path: "tests/"
+      description: "Comprehensive test suite (262+ passing tests)"
+    - path: "docs/"
+      description: "Project documentation and guides"
+    - path: ".github/"
+      description: "GitHub workflows and configurations"
+    - path: "examples/"
+      description: "Usage examples and demonstrations"
+      
+  key_files:
+    - path: "main.py"
+      description: "Primary CLI entry point with comprehensive argument parsing"
+    - path: "app.py"
+      description: "Flask web interface with modern UI"
+    - path: "config.yaml.example"
+      description: "Configuration template with all available options"
+    - path: "requirements.txt"
+      description: "Python dependencies including AI/LLM libraries"
+    - path: "Makefile"
+      description: "Development automation with 20+ targets"
+    - path: "quickstart.sh"
+      description: "Automated setup script for new users"
+
+# Setup Steps
+setup_steps:
+  
+  # Step 1: Environment Verification
+  - name: "Environment Verification"
+    description: "Verify system requirements and environment"
+    commands:
+      - command: "python3 --version"
+        description: "Check Python version (requires 3.9+)"
+        expected_output: "Python 3.x.x"
+      - command: "pip3 --version"
+        description: "Verify pip package manager"
+        expected_output: "pip x.x.x"
+      - command: "git --version"
+        description: "Verify Git is available"
+        expected_output: "git version x.x.x"
+      - command: "make --version"
+        description: "Verify Make is available for automation"
+        expected_output: "GNU Make x.x"
+    logging:
+      level: "INFO"
+      message: "System requirements verification completed"
+
+  # Step 2: Repository Status Check
+  - name: "Repository Status Assessment"
+    description: "Analyze current repository state and configuration"
+    commands:
+      - command: "pwd"
+        description: "Confirm working directory"
+        expected_output: "/home/runner/work/Ticket-Master/Ticket-Master"
+      - command: "ls -la"
+        description: "List repository contents"
+      - command: "git status --porcelain"
+        description: "Check Git working directory status"
+      - command: "git branch --show-current"
+        description: "Show current Git branch"
+      - command: "git log --oneline -5"
+        description: "Show recent commit history"
+    logging:
+      level: "INFO"
+      message: "Repository status assessment completed"
+
+  # Step 3: Dependency Installation
+  - name: "Dependency Installation"
+    description: "Install Python dependencies and setup configuration"
+    commands:
+      - command: "make setup"
+        description: "Install dependencies and create config file"
+        timeout: 300
+        expected_files:
+          - "config.yaml"
+        expected_output: "Setup complete"
+    post_install_verification:
+      - command: "python3 -c 'import sys; print(f\"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\")'"
+        description: "Verify Python environment"
+      - command: "python3 -c 'import yaml, requests, git; print(\"Core dependencies loaded\")'"
+        description: "Verify core dependencies"
+      - command: "ls config.yaml"
+        description: "Verify configuration file exists"
+    logging:
+      level: "INFO"
+      message: "Dependencies installed and configuration created"
+
+  # Step 4: Development Environment Setup
+  - name: "Development Environment Configuration"
+    description: "Configure development tools and validate setup"
+    commands:
+      - command: "make check"
+        description: "Run development quality checks (format, lint, typecheck, test)"
+        timeout: 180
+        continue_on_error: true
+        note: "Some checks may fail in fresh environment - this is expected"
+    validation_commands:
+      - command: "python3 main.py --help"
+        description: "Verify CLI interface is functional"
+        expected_output: "usage: main.py"
+      - command: "python3 -m pytest --version"
+        description: "Verify testing framework"
+        expected_output: "pytest"
+    logging:
+      level: "INFO"
+      message: "Development environment configured and validated"
+
+  # Step 5: Project Status and Capabilities
+  - name: "Project Capabilities Assessment"
+    description: "Analyze project features and current functionality"
+    information_gathering:
+      - file: "docs/CURRENT_FUNCTIONALITY.md"
+        description: "Comprehensive overview of implemented features"
+      - file: "README.md"
+        description: "Installation guide and project overview"
+      - file: "config.yaml.example"
+        description: "Available configuration options"
+    feature_analysis:
+      core_features:
+        - "Repository analysis with Git operations"
+        - "GitHub issue creation and management" 
+        - "LLM integration (Ollama, OpenAI, HuggingFace)"
+        - "CLI interface with comprehensive options"
+        - "Flask web interface"
+        - "YAML-based configuration system"
+        - "Comprehensive test suite (262+ tests)"
+        - "Docker support"
+      development_tools:
+        - "Make-based automation (20+ targets)"
+        - "Code formatting (black)"
+        - "Linting (flake8)"
+        - "Type checking (mypy)"
+        - "Testing (pytest with coverage)"
+        - "Security scanning (bandit)"
+        - "Pre-commit hooks"
+    logging:
+      level: "INFO"
+      message: "Project capabilities assessed and documented"
+
+# Development Guidelines
+development_guidelines:
+  code_quality:
+    - "Follow PEP 8 guidelines"
+    - "Include comprehensive docstrings (Google style)"
+    - "Use type hints for all functions"
+    - "Implement proper error handling"
+    - "Write tests for new functionality"
+    - "Maintain 80%+ code coverage"
+  
+  workflow:
+    - "Make incremental changes"
+    - "Use make targets for automation"
+    - "Run quality checks frequently"
+    - "Test changes thoroughly"
+    - "Update documentation as needed"
+  
+  architecture:
+    - "Modular design with separation of concerns"
+    - "Abstract base classes for extensibility"
+    - "Configuration-driven behavior"
+    - "Comprehensive error handling"
+    - "Logging at appropriate levels"
+
+# Available Make Targets
+make_targets:
+  setup_and_install:
+    - "make setup - One-command setup: install dependencies and copy config"
+    - "make install - Install Python dependencies only"
+    - "make config - Copy example configuration file"
+    - "make dev - Setup development environment"
+  
+  quality_and_testing:
+    - "make test - Run tests with coverage"
+    - "make test-fast - Run tests without coverage"
+    - "make lint - Run linting checks"
+    - "make typecheck - Run type checking with mypy"
+    - "make format - Format code with black"
+    - "make format-check - Check if code needs formatting"
+    - "make check - Run all checks (format, lint, typecheck, test)"
+  
+  utility:
+    - "make clean - Clean build artifacts and cache files"
+    - "make run-example - Run example command (dry run)"
+    - "make help - Show all available targets"
+  
+  ci_and_deployment:
+    - "make ci - CI pipeline: install, format-check, lint, typecheck, test"
+    - "make all - Clean, setup, and run all checks"
+
+# Environment Variables
+environment_variables:
+  required:
+    - name: "GITHUB_TOKEN"
+      description: "GitHub Personal Access Token for API access"
+      example: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      setup_note: "Required for issue creation and repository analysis"
+  
+  optional:
+    - name: "OPENAI_API_KEY" 
+      description: "OpenAI API key for GPT models"
+      example: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    - name: "FLASK_SECRET_KEY"
+      description: "Flask session security key"
+      default: "auto-generated"
+
+# Common Operations
+common_operations:
+  repository_analysis:
+    command: "python3 main.py owner/repo --dry-run"
+    description: "Analyze repository and preview issues (no creation)"
+    
+  issue_generation:
+    command: "python3 main.py owner/repo"
+    description: "Generate and create GitHub issues"
+    
+  web_interface:
+    command: "python3 app.py"
+    description: "Start Flask web interface"
+    url: "http://localhost:5000"
+    
+  configuration_validation:
+    command: "python3 main.py validate-config"
+    description: "Validate configuration file and test connections"
+
+# Troubleshooting
+troubleshooting:
+  common_issues:
+    - issue: "Dependencies installation fails"
+      solution: "Run 'make clean' then 'make setup'"
+    - issue: "GitHub API authentication fails"
+      solution: "Set GITHUB_TOKEN environment variable with valid token"
+    - issue: "Tests fail"
+      solution: "Check if all dependencies installed with 'make install'"
+    - issue: "Configuration errors"
+      solution: "Copy fresh config with 'make config' and edit as needed"
+
+# Success Indicators
+success_indicators:
+  - "Python dependencies installed successfully"
+  - "config.yaml file exists and is readable"
+  - "make help command shows all available targets"
+  - "python3 main.py --help shows CLI usage"
+  - "Basic import test passes: python3 -c 'import sys; sys.path.insert(0, \"src\"); from __init__ import Repository, Issue'"
+  - "Repository structure is accessible and organized"
+
+# Logging Configuration
+logging:
+  default_level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  locations:
+    - "Console output for immediate feedback"
+    - "Setup logs in this file's execution context"
+  
+# Final Setup Validation
+final_validation:
+  commands:
+    - command: "python3 main.py --version"
+      description: "Verify application version"
+      expected_output: "Ticket-Master"
+    - command: "make help"
+      description: "Verify Make targets are available"
+    - command: "ls -la config.yaml"
+      description: "Confirm configuration file exists"
+  
+  status_check:
+    message: "Copilot development environment setup completed successfully"
+    ready_indicators:
+      - "All dependencies installed"
+      - "Configuration file created"
+      - "Development tools available"
+      - "Repository structure understood"
+      - "Make targets functional"
+      - "CLI interface operational"

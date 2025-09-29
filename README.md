@@ -7,6 +7,18 @@
 A project that attempts to use AI to suggest GitHub issues with descriptions
 based on the contents of a Git repository
 
+## For Copilot Development
+
+If you're working as GitHub Copilot on this repository, please refer to [`copilot-setup-steps.yml`](copilot-setup-steps.yml) for the standardized development environment setup. This file contains:
+
+- Complete repository layout and structure information
+- Automated setup steps that ensure consistency every time
+- Development guidelines and available tools
+- Troubleshooting information and common operations
+- Environment variables and configuration details
+
+The setup file ensures that Copilot always has the same development environment and understands the project structure, tools, and workflow immediately upon starting work.
+
 ## Installation
 
 ### Quickstart Script (Recommended)
@@ -323,6 +335,7 @@ make typecheck
 
 ## Documentation
 
+- **[Copilot Setup Guide](copilot-setup-steps.yml)**: Standardized development environment setup for GitHub Copilot with repository layout, automated setup steps, and development guidelines
 - **[Current Functionality Overview](docs/CURRENT_FUNCTIONALITY.md)**: Comprehensive overview of all implemented features and capabilities
 - **[Future Plans and Roadmap](docs/FUTURE_PLANS.md)**: Detailed roadmap and planned features organized by development phases
 - **[Issue Generation Heuristics](docs/ISSUE_GENERATION_HEURISTICS.md)**: Technical specification for intelligent issue generation
