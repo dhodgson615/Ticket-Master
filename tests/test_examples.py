@@ -1,8 +1,19 @@
 """
 Test module for examples directory.
 
-This module provides comprehensive tests for the example scripts
+This module provides comprehensive tests for the example scripts,
 including ollama_demo.py functionality and error handling.
+
+Args:
+    None
+
+Returns:
+    None
+
+Examples:
+    To run all tests in this module, use:
+
+        pytest tests/test_examples.py
 """
 
 import os
