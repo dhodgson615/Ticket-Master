@@ -319,7 +319,7 @@ make typecheck
 - `main.py`: CLI interface and orchestration
 - `app.py`: Flask web interface with modern UI
 - `tests/`: Comprehensive test suite with 262+ passing tests
-- `.github/COPILOT_INSTRUCTIONS.md`: Detailed development guidelines
+- `.github/copilot-instructions.md`: Detailed development guidelines
 
 ## Documentation
 
