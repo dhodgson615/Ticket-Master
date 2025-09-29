@@ -8,15 +8,9 @@ including provider integration, response validation, and error handling.
 import unittest
 from unittest.mock import Mock, patch
 
-from src.ticket_master.llm import (
-    LLM,
-    LLMError,
-    LLMProvider,
-    LLMProviderError,
-    OllamaBackend,
-    OpenAIBackend,
-    MockBackend,
-)
+from src.ticket_master.llm import (LLM, LLMError, LLMProvider,
+                                   LLMProviderError, MockBackend,
+                                   OllamaBackend, OpenAIBackend)
 
 
 class TestLLMBackend(unittest.TestCase):
@@ -336,13 +330,17 @@ class TestLLMModelInstallation(unittest.TestCase):
 
         # Create a mock backend without install_model method
         mock_backend = Mock(spec=[])  # No install_model method
-        with patch("src.ticket_master.llm.OllamaBackend", return_value=mock_backend):
+        with patch(
+            "src.ticket_master.llm.OllamaBackend", return_value=mock_backend
+        ):
             llm = LLM(LLMProvider.OLLAMA, config)
 
             result = llm.install_model("test-model")
 
             self.assertFalse(result["success"])
-            self.assertIn("Backend does not support model installation", result["error"])
+            self.assertIn(
+                "Backend does not support model installation", result["error"]
+            )
 
 
 class TestLLMModelAvailability(unittest.TestCase):
@@ -388,9 +386,10 @@ class TestLLMModelAvailability(unittest.TestCase):
         config = {"host": "localhost", "port": 11434, "model": "test-model"}
         llm = LLM(LLMProvider.OLLAMA, config)
 
-        with patch.object(llm.backend, "get_model_info") as mock_get_info, patch.object(
-            llm, "install_model"
-        ) as mock_install:
+        with (
+            patch.object(llm.backend, "get_model_info") as mock_get_info,
+            patch.object(llm, "install_model") as mock_install,
+        ):
             # First call returns not available, second call returns available
             mock_get_info.side_effect = [
                 {"status": "not_found", "model": "test-model"},
@@ -495,11 +494,16 @@ class TestLLMFailureScenarios(unittest.TestCase):
 
         llm = LLM(LLMProvider.OLLAMA, config, fallback_configs)
 
-        with patch.object(llm.backend, "generate") as mock_primary_gen, patch.object(
-            llm.fallback_backends[0], "generate"
-        ) as mock_fallback_gen:
+        with (
+            patch.object(llm.backend, "generate") as mock_primary_gen,
+            patch.object(
+                llm.fallback_backends[0], "generate"
+            ) as mock_fallback_gen,
+        ):
             # Primary fails, fallback succeeds
-            mock_primary_gen.side_effect = LLMProviderError("Primary backend failed")
+            mock_primary_gen.side_effect = LLMProviderError(
+                "Primary backend failed"
+            )
             mock_fallback_gen.return_value = "Fallback response"
 
             result = llm.generate("Test prompt")
@@ -516,9 +520,12 @@ class TestLLMFailureScenarios(unittest.TestCase):
 
         llm = LLM(LLMProvider.OLLAMA, config, fallback_configs)
 
-        with patch.object(llm.backend, "generate") as mock_primary_gen, patch.object(
-            llm.fallback_backends[0], "generate"
-        ) as mock_fallback_gen:
+        with (
+            patch.object(llm.backend, "generate") as mock_primary_gen,
+            patch.object(
+                llm.fallback_backends[0], "generate"
+            ) as mock_fallback_gen,
+        ):
             # Both backends fail
             mock_primary_gen.side_effect = LLMProviderError("Primary failed")
             mock_fallback_gen.side_effect = LLMProviderError("Fallback failed")
@@ -577,7 +584,9 @@ class TestLLMFailureScenarios(unittest.TestCase):
         repetitive_response = "the the the the the the the the"
         validation = llm._validate_response(repetitive_response, "Test prompt")
 
-        self.assertIn("Response appears to be repetitive", validation["issues"])
+        self.assertIn(
+            "Response appears to be repetitive", validation["issues"]
+        )
         self.assertLess(validation["quality_score"], 1.0)
 
     def test_response_validation_error_patterns(self):
@@ -588,7 +597,9 @@ class TestLLMFailureScenarios(unittest.TestCase):
         error_response = "I'm sorry, I cannot help with this request as an AI."
         validation = llm._validate_response(error_response, "Test prompt")
 
-        self.assertIn("Response contains error patterns", validation["issues"][0])
+        self.assertIn(
+            "Response contains error patterns", validation["issues"][0]
+        )
         self.assertLess(validation["quality_score"], 1.0)
 
 
@@ -615,7 +626,9 @@ class TestOpenAIIntegration(unittest.TestCase):
 
         backend = OpenAIBackend(config)
 
-        self.assertEqual(backend.base_url, "https://custom.openai.proxy.com/v1")
+        self.assertEqual(
+            backend.base_url, "https://custom.openai.proxy.com/v1"
+        )
 
     @patch("src.ticket_master.llm.requests.post")
     def test_openai_generate_success(self, mock_post):
@@ -643,7 +656,9 @@ class TestOpenAIIntegration(unittest.TestCase):
 
         mock_response = Mock()
         mock_response.status_code = 401
-        mock_response.json.return_value = {"error": {"message": "Invalid API key"}}
+        mock_response.json.return_value = {
+            "error": {"message": "Invalid API key"}
+        }
         mock_response.raise_for_status.side_effect = Exception("HTTP 401")
         mock_post.return_value = mock_response
 

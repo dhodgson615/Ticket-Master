@@ -5,11 +5,11 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 try:
-    from git import Repo, GitCommandError
+    from git import GitCommandError, Repo
 except ImportError:
     import subprocess
     import sys
@@ -17,7 +17,7 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
-    from git import Repo, GitCommandError
+    from git import GitCommandError, Repo
 
 try:
     import requests

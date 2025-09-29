@@ -697,11 +697,8 @@ class HuggingFaceBackend(LLMBackend):
         try:
             # Import with fallback installation
             try:
-                from transformers import (
-                    pipeline,
-                    AutoTokenizer,
-                    AutoModelForCausalLM,
-                )
+                from transformers import (AutoModelForCausalLM, AutoTokenizer,
+                                          pipeline)
             except ImportError:
                 subprocess.check_call(
                     [
@@ -713,11 +710,8 @@ class HuggingFaceBackend(LLMBackend):
                         "torch>=2.0.0",
                     ]
                 )
-                from transformers import (
-                    pipeline,
-                    AutoTokenizer,
-                    AutoModelForCausalLM,
-                )
+                from transformers import (AutoModelForCausalLM, AutoTokenizer,
+                                          pipeline)
 
             # Use pipeline for text generation
             self._pipeline = pipeline(
@@ -788,8 +782,8 @@ class HuggingFaceBackend(LLMBackend):
             True if transformers and torch are available, False otherwise
         """
         try:
-            import transformers
             import torch
+            import transformers
 
             # Try loading a simple model to verify functionality
             return True

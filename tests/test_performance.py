@@ -7,20 +7,21 @@ when dealing with large repositories, many commits, and bulk operations.
 
 import os
 import sys
-import time
 import tempfile
+import time
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
 
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.repository import Repository, RepositoryError
 from ticket_master.data_scraper import DataScraper
 from ticket_master.github_utils import GitHubUtils
 from ticket_master.issue import Issue
+from ticket_master.repository import Repository, RepositoryError
 
 
 class TestLargeRepositoryPerformance(unittest.TestCase):
@@ -41,55 +42,65 @@ class TestLargeRepositoryPerformance(unittest.TestCase):
         # Mock a repository with many commits
         mock_repo = Mock()
         mock_repo_class.return_value = mock_repo
-        
+
         # Create mock commits (simulating 1000+ commits)
         mock_commits = []
         for i in range(1000):
             mock_commit = Mock()
             mock_commit.hexsha = f"commit_hash_{i:04d}"
             mock_commit.message = f"Commit message {i}"
-            mock_commit.authored_datetime = f"2024-01-{(i % 30) + 1:02d}T10:00:00"
+            mock_commit.authored_datetime = (
+                f"2024-01-{(i % 30) + 1:02d}T10:00:00"
+            )
             mock_commit.author.name = f"Author {i % 10}"
             mock_commit.author.email = f"author{i % 10}@example.com"
             mock_commits.append(mock_commit)
-        
+
         mock_repo.iter_commits.return_value = mock_commits
 
-        # Test repository analysis performance  
-        with patch('src.ticket_master.repository.Repository.__init__', return_value=None):
+        # Test repository analysis performance
+        with patch(
+            "src.ticket_master.repository.Repository.__init__",
+            return_value=None,
+        ):
             repo = Repository.__new__(Repository)
             repo.get_commit_history = Mock(return_value=mock_commits)
-            
+
             start_time = time.time()
             commit_history = repo.get_commit_history(max_commits=1000)
             analysis_time = time.time() - start_time
 
             # Performance assertions
             self.assertEqual(len(commit_history), 1000)
-            self.assertLess(analysis_time, 10.0, "Analysis took too long for 1000 commits")
+            self.assertLess(
+                analysis_time, 10.0, "Analysis took too long for 1000 commits"
+            )
 
     @patch("src.ticket_master.repository.git.Repo")
     def test_large_file_count_performance(self, mock_repo_class):
         """Test performance when analyzing repositories with many files."""
         mock_repo = Mock()
         mock_repo_class.return_value = mock_repo
-        
+
         # Mock many files in the repository
         mock_files = []
         for i in range(500):
-            mock_files.extend([
-                f"src/module_{i}/file_{j}.py" for j in range(10)
-            ])
-        
+            mock_files.extend(
+                [f"src/module_{i}/file_{j}.py" for j in range(10)]
+            )
+
         mock_repo.git.ls_files.return_value = "\n".join(mock_files)
 
-        with patch('src.ticket_master.repository.Repository.__init__', return_value=None):
+        with patch(
+            "src.ticket_master.repository.Repository.__init__",
+            return_value=None,
+        ):
             repo = Repository.__new__(Repository)
             repo.repo = mock_repo
-            
+
             start_time = time.time()
             # This would be part of file analysis
-            files = repo.repo.git.ls_files().split('\n')
+            files = repo.repo.git.ls_files().split("\n")
             analysis_time = time.time() - start_time
 
             self.assertEqual(len(files), 5000)
@@ -100,40 +111,46 @@ class TestLargeRepositoryPerformance(unittest.TestCase):
         """Test performance of bulk data processing operations."""
         mock_scraper = Mock()
         mock_scraper_class.return_value = mock_scraper
-        
+
         # Mock large dataset
         large_dataset = [
             {
                 "file": f"file_{i}.py",
                 "lines": 100 + (i % 500),
                 "complexity": i % 10,
-                "changes": i % 20
+                "changes": i % 20,
             }
             for i in range(1000)
         ]
-        
+
         mock_scraper.analyze_repository.return_value = large_dataset
 
         # Create scraper instance with proper initialization
-        with patch('src.ticket_master.data_scraper.DataScraper.__init__', return_value=None):
+        with patch(
+            "src.ticket_master.data_scraper.DataScraper.__init__",
+            return_value=None,
+        ):
             scraper = DataScraper.__new__(DataScraper)
             scraper.analyze_repository = mock_scraper.analyze_repository
-            
+
             start_time = time.time()
             result = scraper.analyze_repository("/fake/path")
             processing_time = time.time() - start_time
 
             self.assertEqual(len(result), 1000)
-            self.assertLess(processing_time, 15.0, "Bulk processing took too long")
+            self.assertLess(
+                processing_time, 15.0, "Bulk processing took too long"
+            )
 
     def test_memory_usage_optimization(self):
         """Test memory usage optimization for large datasets."""
+
         # Simulate processing large amounts of data in chunks
         def process_in_chunks(data, chunk_size=100):
             """Process data in chunks to optimize memory usage."""
             results = []
             for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
+                chunk = data[i : i + chunk_size]
                 # Process chunk
                 processed_chunk = [item * 2 for item in chunk]
                 results.extend(processed_chunk)
@@ -141,13 +158,15 @@ class TestLargeRepositoryPerformance(unittest.TestCase):
 
         # Test with large dataset
         large_data = list(range(10000))
-        
+
         start_time = time.time()
         result = process_in_chunks(large_data)
         processing_time = time.time() - start_time
 
         self.assertEqual(len(result), 10000)
-        self.assertLess(processing_time, 2.0, "Chunked processing took too long")
+        self.assertLess(
+            processing_time, 2.0, "Chunked processing took too long"
+        )
 
     @patch("git.Repo.clone_from")
     def test_large_repository_clone_performance(self, mock_clone):
@@ -156,7 +175,7 @@ class TestLargeRepositoryPerformance(unittest.TestCase):
         mock_clone.return_value = mock_repo
 
         github_utils = GitHubUtils()
-        
+
         start_time = time.time()
         # Test shallow clone for performance
         mock_clone("https://github.com/large/repo.git", "/tmp/test", depth=1)
@@ -185,9 +204,11 @@ class TestBulkOperationsPerformance(unittest.TestCase):
         for i in range(50):
             mock_issue = Mock()
             mock_issue.number = i + 1
-            mock_issue.html_url = f"https://github.com/test/repo/issues/{i + 1}"
+            mock_issue.html_url = (
+                f"https://github.com/test/repo/issues/{i + 1}"
+            )
             created_issues.append(mock_issue)
-        
+
         mock_repo.create_issue.side_effect = created_issues
 
         # Create many issues
@@ -195,7 +216,7 @@ class TestBulkOperationsPerformance(unittest.TestCase):
             {
                 "title": f"Automated Issue {i}",
                 "body": f"This is automated issue {i} for testing bulk creation.",
-                "labels": ["automated", "bulk-test"]
+                "labels": ["automated", "bulk-test"],
             }
             for i in range(50)
         ]
@@ -207,7 +228,7 @@ class TestBulkOperationsPerformance(unittest.TestCase):
             results.append(result)
             # Small delay to respect rate limits
             time.sleep(0.01)  # 10ms delay
-        
+
         bulk_creation_time = time.time() - start_time
 
         self.assertEqual(len(results), 50)
@@ -240,7 +261,9 @@ class TestBulkOperationsPerformance(unittest.TestCase):
 
         self.assertEqual(sequential_results, parallel_results)
         # Parallel should be faster (though with overhead, may not always be true for small tasks)
-        self.assertLess(parallel_time, sequential_time * 2)  # At least some improvement
+        self.assertLess(
+            parallel_time, sequential_time * 2
+        )  # At least some improvement
 
 
 class TestMemoryOptimization(unittest.TestCase):
@@ -249,7 +272,7 @@ class TestMemoryOptimization(unittest.TestCase):
     def test_large_file_streaming(self):
         """Test streaming large files instead of loading entirely into memory."""
         # Create a large temporary file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
             # Write 10MB of data
             for i in range(100000):
                 temp_file.write(f"Line {i}: " + "x" * 100 + "\n")
@@ -259,26 +282,29 @@ class TestMemoryOptimization(unittest.TestCase):
             # Test streaming read vs full read
             start_time = time.time()
             line_count = 0
-            with open(temp_file_path, 'r') as f:
+            with open(temp_file_path, "r") as f:
                 for line in f:  # Stream line by line
                     line_count += 1
             streaming_time = time.time() - start_time
 
             self.assertEqual(line_count, 100000)
-            self.assertLess(streaming_time, 10.0, "Streaming read took too long")
+            self.assertLess(
+                streaming_time, 10.0, "Streaming read took too long"
+            )
 
         finally:
             os.unlink(temp_file_path)
 
     def test_generator_vs_list_memory_usage(self):
         """Test generator usage for memory optimization."""
+
         def generate_large_dataset():
             """Generator that yields items instead of creating a large list."""
             for i in range(10000):
                 yield {
                     "id": i,
                     "data": f"item_{i}",
-                    "metadata": {"index": i, "processed": False}
+                    "metadata": {"index": i, "processed": False},
                 }
 
         def process_with_generator(generator):
@@ -295,18 +321,20 @@ class TestMemoryOptimization(unittest.TestCase):
         processing_time = time.time() - start_time
 
         self.assertEqual(count, 10000)
-        self.assertLess(processing_time, 5.0, "Generator processing took too long")
+        self.assertLess(
+            processing_time, 5.0, "Generator processing took too long"
+        )
 
     def test_cache_optimization(self):
         """Test caching for performance optimization."""
         # Simple cache implementation
         cache = {}
-        
+
         def expensive_operation(n):
             """Simulate expensive operation that can benefit from caching."""
             if n in cache:
                 return cache[n]
-            
+
             # Simulate expensive computation
             time.sleep(0.01)
             result = n * n * n
@@ -333,7 +361,7 @@ class TestScalabilityLimits(unittest.TestCase):
         """Test analysis with maximum reasonable number of commits."""
         # Test with very large number of commits
         max_commits = 10000
-        
+
         # Mock commits efficiently
         def mock_commit_generator():
             for i in range(max_commits):
@@ -347,7 +375,9 @@ class TestScalabilityLimits(unittest.TestCase):
         generation_time = time.time() - start_time
 
         self.assertEqual(len(commits), max_commits)
-        self.assertLess(generation_time, 5.0, "Commit generation took too long")
+        self.assertLess(
+            generation_time, 5.0, "Commit generation took too long"
+        )
 
     def test_file_system_limits(self):
         """Test handling of file system limits and edge cases."""
@@ -357,7 +387,7 @@ class TestScalabilityLimits(unittest.TestCase):
             file_count = 1000
             for i in range(file_count):
                 file_path = os.path.join(temp_dir, f"file_{i:04d}.txt")
-                with open(file_path, 'w') as f:
+                with open(file_path, "w") as f:
                     f.write(f"Content of file {i}")
 
             # Test file listing performance
@@ -370,6 +400,7 @@ class TestScalabilityLimits(unittest.TestCase):
 
     def test_network_timeout_simulation(self):
         """Test handling of network timeouts in bulk operations."""
+
         def simulate_network_request(delay=0.1):
             """Simulate network request with delay."""
             time.sleep(delay)
@@ -384,7 +415,7 @@ class TestScalabilityLimits(unittest.TestCase):
                 results.append(result)
             except Exception as e:
                 results.append({"status": "error", "error": str(e)})
-        
+
         total_time = time.time() - start_time
 
         self.assertEqual(len(results), 10)

@@ -3,22 +3,19 @@ Tests for Ollama integration tools.
 """
 
 import json
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any
-
 # Add src directory to path for imports
 import sys
+import unittest
 from pathlib import Path
+from typing import Any, Dict
+from unittest.mock import MagicMock, Mock, patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.ollama_tools import (
-    OllamaPromptProcessor,
-    OllamaPromptValidator,
-    OllamaToolsError,
-    create_ollama_processor,
-)
+from ticket_master.ollama_tools import (OllamaPromptProcessor,
+                                        OllamaPromptValidator,
+                                        OllamaToolsError,
+                                        create_ollama_processor)
 from ticket_master.prompt import PromptTemplate, PromptType
 
 
@@ -541,7 +538,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         """Test model installation with progress tracking."""
         mock_client = Mock()
         mock_ollama.Client.return_value = mock_client
-        
+
         # Mock progress responses during installation
         progress_responses = [
             {"status": "pulling manifest"},
@@ -555,7 +552,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
             {"status": "removing any unused layers"},
             {"status": "success"},
         ]
-        
+
         mock_client.pull.return_value = iter(progress_responses)
 
         processor = OllamaPromptProcessor(model="test-model")
@@ -597,13 +594,14 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
 
         # Simulate multiple concurrent requests using proper method signature
         import threading
+
         results = []
-        
+
         def make_request():
             template = PromptTemplate(
-                name="test", 
-                prompt_type=PromptType.ISSUE_GENERATION, 
-                base_template="Test prompt"
+                name="test",
+                prompt_type=PromptType.ISSUE_GENERATION,
+                base_template="Test prompt",
             )
             result = processor.process_prompt(template, {})
             results.append(result)
@@ -627,7 +625,9 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         """Test memory optimization when handling large prompts."""
         mock_client = Mock()
         mock_ollama.Client.return_value = mock_client
-        mock_client.generate.return_value = {"response": "Large prompt response"}
+        mock_client.generate.return_value = {
+            "response": "Large prompt response"
+        }
 
         processor = OllamaPromptProcessor(model="test-model")
 
@@ -636,7 +636,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         template = PromptTemplate(
             name="large_test",
             prompt_type=PromptType.ISSUE_GENERATION,
-            base_template=large_content
+            base_template=large_content,
         )
 
         result = processor.process_prompt(template, {})
@@ -657,7 +657,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
             {"response": "a "},
             {"response": "streaming "},
             {"response": "response."},
-            {"done": True}
+            {"done": True},
         ]
         mock_client.generate.return_value = iter(streaming_chunks)
 
@@ -665,7 +665,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         template = PromptTemplate(
             name="stream_test",
             prompt_type=PromptType.ISSUE_GENERATION,
-            base_template="Test prompt"
+            base_template="Test prompt",
         )
         result = processor.process_prompt(template, {}, stream=True)
 
@@ -677,7 +677,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         """Test retrieving detailed model information."""
         mock_client = Mock()
         mock_ollama.Client.return_value = mock_client
-        
+
         mock_model_info = {
             "name": "llama3.2:latest",
             "size": 4109182736,
@@ -686,20 +686,21 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
             "details": {
                 "families": ["llama"],
                 "parameter_size": "8B",
-                "quantization_level": "Q4_0"
-            }
+                "quantization_level": "Q4_0",
+            },
         }
         mock_client.show.return_value = mock_model_info
 
         processor = OllamaPromptProcessor(model="llama3.2")
-        
+
         # Mock the get_model_info method if it exists
-        with patch.object(processor, 'get_model_info', return_value={
-            "success": True,
-            "model_info": mock_model_info
-        }) as mock_get_info:
+        with patch.object(
+            processor,
+            "get_model_info",
+            return_value={"success": True, "model_info": mock_model_info},
+        ) as mock_get_info:
             result = mock_get_info()
-            
+
             self.assertTrue(result["success"])
             self.assertEqual(result["model_info"]["name"], "llama3.2:latest")
             self.assertIn("details", result["model_info"])
@@ -714,11 +715,11 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         mock_client.generate.side_effect = [
             Exception("Connection timeout"),
             Exception("Connection refused"),
-            {"response": "Success after retries"}
+            {"response": "Success after retries"},
         ]
 
         processor = OllamaPromptProcessor(model="test-model")
-        
+
         # This would be part of retry logic implementation
         max_retries = 3
         for attempt in range(max_retries):
@@ -747,13 +748,13 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
             "top_p": 0.9,
             "top_k": 40,
             "max_tokens": 500,
-            "stop": ["\n\n"]
+            "stop": ["\n\n"],
         }
 
         template = PromptTemplate(
             name="custom_test",
             prompt_type=PromptType.ISSUE_GENERATION,
-            base_template="Test prompt"
+            base_template="Test prompt",
         )
         result = processor.process_prompt(template, {}, **custom_options)
 
@@ -786,18 +787,21 @@ class TestOllamaErrorRecovery(unittest.TestCase):
         """Test handling of model loading timeouts."""
         mock_client = Mock()
         mock_ollama.Client.return_value = mock_client
-        
+
         # Simulate timeout during model loading
         import socket
-        mock_client.generate.side_effect = socket.timeout("Model loading timeout")
+
+        mock_client.generate.side_effect = socket.timeout(
+            "Model loading timeout"
+        )
 
         processor = OllamaPromptProcessor(model="large-model")
         template = PromptTemplate(
             name="timeout_test",
             prompt_type=PromptType.ISSUE_GENERATION,
-            base_template="Test prompt"
+            base_template="Test prompt",
         )
-        
+
         with self.assertRaises(socket.timeout):
             processor.process_prompt(template, {})
 
@@ -812,7 +816,7 @@ class TestOllamaErrorRecovery(unittest.TestCase):
         template = PromptTemplate(
             name="memory_test",
             prompt_type=PromptType.ISSUE_GENERATION,
-            base_template="Test prompt"
+            base_template="Test prompt",
         )
         result = processor.process_prompt(template, {})
 
@@ -824,7 +828,9 @@ class TestOllamaErrorRecovery(unittest.TestCase):
         """Test handling of invalid or malformed prompts."""
         mock_client = Mock()
         mock_ollama.Client.return_value = mock_client
-        mock_client.generate.return_value = {"response": "Invalid prompt handled"}
+        mock_client.generate.return_value = {
+            "response": "Invalid prompt handled"
+        }
 
         processor = OllamaPromptProcessor(model="test-model")
 
@@ -839,7 +845,7 @@ class TestOllamaErrorRecovery(unittest.TestCase):
             template = PromptTemplate(
                 name=name,
                 prompt_type=PromptType.ISSUE_GENERATION,
-                base_template=content
+                base_template=content,
             )
             result = processor.process_prompt(template, {})
             # Should either succeed with response or fail gracefully

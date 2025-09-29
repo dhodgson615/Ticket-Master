@@ -14,26 +14,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from src.ticket_master.data_scraper import DataScraper, DataScraperError
-from src.ticket_master.database import (
-    Database,
-    DatabaseError,
-    ServerDatabase,
-    UserDatabase,
-)
-from src.ticket_master.llm import (
-    LLM,
-    LLMError,
-    LLMProvider,
-    OllamaBackend,
-    HuggingFaceBackend,
-)
+from src.ticket_master.database import (Database, DatabaseError,
+                                        ServerDatabase, UserDatabase)
+from src.ticket_master.llm import (LLM, HuggingFaceBackend, LLMError,
+                                   LLMProvider, OllamaBackend)
 from src.ticket_master.pipe import Pipe, PipeError, PipelineStep, PipeStage
-from src.ticket_master.prompt import (
-    Prompt,
-    PromptError,
-    PromptTemplate,
-    PromptType,
-)
+from src.ticket_master.prompt import (Prompt, PromptError, PromptTemplate,
+                                      PromptType)
 
 
 class TestUserDatabase(unittest.TestCase):

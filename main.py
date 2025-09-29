@@ -29,21 +29,12 @@ except ImportError:
     import yaml
 
 from ticket_master import Issue, Repository, __version__
+from ticket_master.colors import (Colors, dim, error, header, highlight, info,
+                                  print_colored, success, warning)
+from ticket_master.github_utils import GitHubCloneError, GitHubUtils
 from ticket_master.issue import GitHubAuthError, IssueError
 from ticket_master.llm import LLM, LLMError
 from ticket_master.repository import RepositoryError
-from ticket_master.github_utils import GitHubUtils, GitHubCloneError
-from ticket_master.colors import (
-    success,
-    error,
-    warning,
-    info,
-    header,
-    highlight,
-    dim,
-    print_colored,
-    Colors,
-)
 
 
 def setup_logging(level: str = "INFO") -> None:

@@ -7,43 +7,20 @@ including ANSI color codes, terminal support detection, and formatting functions
 
 import os
 import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 # Add src directory to path for imports
 sys.path.insert(0, str(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from ticket_master.colors import (
-    Colors,
-    supports_color,
-    enable_colors,
-    is_color_enabled,
-    colorize,
-    success,
-    error,
-    warning,
-    info,
-    header,
-    highlight,
-    dim,
-    progress_bar,
-    print_colored,
-    # Global color variables
-    RED,
-    GREEN,
-    YELLOW,
-    BLUE,
-    MAGENTA,
-    CYAN,
-    WHITE,
-    GRAY,
-    BOLD,
-    DIM,
-    ITALIC,
-    UNDERLINE,
-    RESET,
-    END,
-)
+from ticket_master.colors import (BLUE, BOLD, CYAN,  # Global color variables
+                                  DIM, END, GRAY, GREEN, ITALIC, MAGENTA, RED,
+                                  RESET, UNDERLINE, WHITE, YELLOW, Colors,
+                                  colorize, dim, enable_colors, error, header,
+                                  highlight, info, is_color_enabled,
+                                  print_colored, progress_bar, success,
+                                  supports_color, warning)
 
 
 class TestColors:
@@ -110,69 +87,69 @@ class TestGlobalColorVariables:
 class TestSupportsColor:
     """Test cases for supports_color function."""
 
-    @patch('sys.stdout')
+    @patch("sys.stdout")
     def test_supports_color_no_tty(self, mock_stdout):
         """Test that supports_color returns False when not in a TTY."""
         mock_stdout.isatty.return_value = False
         assert supports_color() is False
 
-    @patch('sys.stdout')
+    @patch("sys.stdout")
     def test_supports_color_no_isatty_method(self, mock_stdout):
         """Test that supports_color handles missing isatty method."""
         del mock_stdout.isatty
         assert supports_color() is False
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'TERM': 'dumb'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"TERM": "dumb"})
     def test_supports_color_dumb_terminal(self, mock_stdout):
         """Test that supports_color returns False for dumb terminals."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is False
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'TERM': 'unknown'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"TERM": "unknown"})
     def test_supports_color_unknown_terminal(self, mock_stdout):
         """Test that supports_color returns False for unknown terminals."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is False
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'TERM': 'xterm-256color'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"TERM": "xterm-256color"})
     def test_supports_color_256color_terminal(self, mock_stdout):
         """Test that supports_color returns True for 256color terminals."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is True
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'TERM': 'xterm-color'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"TERM": "xterm-color"})
     def test_supports_color_color_terminal(self, mock_stdout):
         """Test that supports_color returns True for color terminals."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is True
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'TERM': 'xterm-truecolor'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"TERM": "xterm-truecolor"})
     def test_supports_color_truecolor_terminal(self, mock_stdout):
         """Test that supports_color returns True for truecolor terminals."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is True
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'NO_COLOR': '1', 'TERM': 'xterm-256color'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"NO_COLOR": "1", "TERM": "xterm-256color"})
     def test_supports_color_no_color_env(self, mock_stdout):
         """Test that NO_COLOR environment variable disables colors."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is False
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'FORCE_COLOR': '1', 'TERM': 'dumb'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"FORCE_COLOR": "1", "TERM": "dumb"})
     def test_supports_color_force_color_env(self, mock_stdout):
         """Test that FORCE_COLOR environment variable enables colors."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is True
 
-    @patch('sys.stdout')
-    @patch.dict(os.environ, {'TERM': 'xterm'})
+    @patch("sys.stdout")
+    @patch.dict(os.environ, {"TERM": "xterm"})
     def test_supports_color_default_true(self, mock_stdout):
         """Test that supports_color defaults to True for modern terminals."""
         mock_stdout.isatty.return_value = True
@@ -201,7 +178,7 @@ class TestColorControl:
         """Test that is_color_enabled returns the current state."""
         enable_colors(True)
         assert is_color_enabled() is True
-        
+
         enable_colors(False)
         assert is_color_enabled() is False
 
@@ -392,7 +369,7 @@ class TestProgressBar:
 class TestPrintColored:
     """Test cases for print_colored function."""
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_print_colored_basic(self, mock_print):
         """Test print_colored function basic usage."""
         enable_colors(True)
@@ -400,15 +377,15 @@ class TestPrintColored:
         expected = f"{Colors.BOLD}{Colors.RED}test message{Colors.RESET}"
         mock_print.assert_called_once_with(expected)
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_print_colored_with_kwargs(self, mock_print):
         """Test print_colored function with additional kwargs."""
         enable_colors(True)
-        print_colored("test message", Colors.GREEN, end='\n', sep=' ')
+        print_colored("test message", Colors.GREEN, end="\n", sep=" ")
         expected = f"{Colors.GREEN}test message{Colors.RESET}"
-        mock_print.assert_called_once_with(expected, end='\n', sep=' ')
+        mock_print.assert_called_once_with(expected, end="\n", sep=" ")
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_print_colored_non_string_input(self, mock_print):
         """Test print_colored function with non-string input."""
         enable_colors(True)
@@ -416,7 +393,7 @@ class TestPrintColored:
         expected = f"{Colors.BLUE}123{Colors.RESET}"
         mock_print.assert_called_once_with(expected)
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_print_colored_colors_disabled(self, mock_print):
         """Test print_colored function when colors are disabled."""
         enable_colors(False)
@@ -430,9 +407,9 @@ class TestFormattingFunctionsColorsDisabled:
     def test_all_formatting_functions_colors_disabled(self):
         """Test that all formatting functions return plain text when colors are disabled."""
         enable_colors(False)
-        
+
         test_text = "test message"
-        
+
         assert success(test_text) == test_text
         assert success(test_text, bold=True) == test_text
         assert error(test_text) == test_text
@@ -454,7 +431,7 @@ class TestEdgeCases:
     def test_empty_string_formatting(self):
         """Test formatting functions with empty strings."""
         enable_colors(True)
-        
+
         assert success("") == f"{Colors.GREEN}{Colors.RESET}"
         assert error("") == f"{Colors.RED}{Colors.RESET}"
         assert warning("") == f"{Colors.YELLOW}{Colors.RESET}"
@@ -463,7 +440,7 @@ class TestEdgeCases:
     def test_multiline_string_formatting(self):
         """Test formatting functions with multiline strings."""
         enable_colors(True)
-        
+
         multiline = "line1\nline2\nline3"
         result = success(multiline)
         expected = f"{Colors.GREEN}line1\nline2\nline3{Colors.RESET}"
@@ -472,7 +449,7 @@ class TestEdgeCases:
     def test_unicode_string_formatting(self):
         """Test formatting functions with unicode strings."""
         enable_colors(True)
-        
+
         unicode_text = "测试 🌈 Ñiño"
         result = success(unicode_text)
         expected = f"{Colors.GREEN}测试 🌈 Ñiño{Colors.RESET}"
@@ -481,12 +458,12 @@ class TestEdgeCases:
     def test_progress_bar_edge_cases(self):
         """Test progress bar with edge cases."""
         enable_colors(True)
-        
+
         # Test with completed > total
         result = progress_bar(15, 10, width=10)
         expected = f"[{Colors.GREEN}██████████{Colors.RESET}] 150.0%"
         assert result == expected
-        
+
         # Test with very small width
         result = progress_bar(1, 2, width=1)
         expected = f"[░] 50.0%"

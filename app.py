@@ -13,27 +13,22 @@ from pathlib import Path
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from flask import (
-    Flask,
-    render_template,
-    request,
-    flash,  # noqa: E402
-    redirect,
-    url_for,
-    jsonify,
-)
-
-from ticket_master import Repository, __version__  # noqa: E402
-from ticket_master.issue import Issue, GitHubAuthError  # noqa: E402
-from ticket_master.repository import RepositoryError  # noqa: E402
-from ticket_master.github_utils import GitHubUtils, GitHubCloneError  # noqa: E402
+from flask import flash  # noqa: E402
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 # Import the main CLI functions to reuse logic
-from main import load_config, generate_sample_issues  # noqa: E402
+from main import generate_sample_issues, load_config  # noqa: E402
+from ticket_master import Repository, __version__  # noqa: E402
 from ticket_master.colors import header, info, success  # noqa: E402
+from ticket_master.github_utils import (GitHubCloneError,  # noqa: E402
+                                        GitHubUtils)
+from ticket_master.issue import GitHubAuthError, Issue  # noqa: E402
+from ticket_master.repository import RepositoryError  # noqa: E402
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-key-please-change-in-production")
+app.secret_key = os.getenv(
+    "FLASK_SECRET_KEY", "dev-key-please-change-in-production"
+)
 
 
 @app.route("/")
@@ -92,7 +87,8 @@ def generate_issues():
             # Use provided local path
             if not os.path.exists(repository_path):
                 flash(
-                    f"Local repository path does not exist: {repository_path}", "error"
+                    f"Local repository path does not exist: {repository_path}",
+                    "error",
                 )
                 return redirect(url_for("index"))
             repo_path = repository_path
@@ -104,7 +100,10 @@ def generate_issues():
                     github_repo, token=github_token if not is_public else None
                 )
                 repo_path = temp_repo_path
-                flash(f"Repository cloned successfully from {github_repo}", "success")
+                flash(
+                    f"Repository cloned successfully from {github_repo}",
+                    "success",
+                )
             except GitHubCloneError as e:
                 flash(f"Failed to clone repository: {e}", "error")
                 return redirect(url_for("index"))
@@ -132,7 +131,9 @@ def generate_issues():
                 return redirect(url_for("index"))
 
             try:
-                github_issue = Issue(token=github_token, repository=github_repo)
+                github_issue = Issue(
+                    token=github_token, repository=github_repo
+                )
 
                 for issue in issues[:max_issues]:
                     try:

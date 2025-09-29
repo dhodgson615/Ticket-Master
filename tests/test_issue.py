@@ -3,7 +3,6 @@ Tests for the Issue class.
 """
 
 import os
-
 # Add src to path for imports
 import sys
 from pathlib import Path
@@ -64,7 +63,7 @@ Application should start normally.
 
 **Actual Behavior:**
 Application crashes with error code 1.""",
-            labels=["bug", "priority-high", "needs-investigation"]
+            labels=["bug", "priority-high", "needs-investigation"],
         )
 
         assert issue.title.startswith("Bug:")
@@ -88,7 +87,7 @@ Implement a theme switcher with light/dark options.
 **Alternatives Considered:**
 - System theme detection
 - Multiple theme options""",
-            labels=["enhancement", "ui/ux", "feature-request"]
+            labels=["enhancement", "ui/ux", "feature-request"],
         )
 
         assert issue.title.startswith("Feature:")
@@ -101,8 +100,13 @@ Implement a theme switcher with light/dark options.
         issue = Issue(
             title="Security: Potential XSS vulnerability in user input",
             description="User input is not properly sanitized, leading to potential XSS attacks.",
-            labels=["security", "vulnerability", "priority-critical", "needs-patch"],
-            assignees=["security-team"]
+            labels=[
+                "security",
+                "vulnerability",
+                "priority-critical",
+                "needs-patch",
+            ],
+            assignees=["security-team"],
         )
 
         assert "security" in issue.labels
@@ -115,7 +119,12 @@ Implement a theme switcher with light/dark options.
         issue = Issue(
             title="Automated: Code quality improvements needed",
             description="Automated analysis identified several code quality issues.",
-            labels=["automated", "code-quality", "ai-generated", "technical-debt"]
+            labels=[
+                "automated",
+                "code-quality",
+                "ai-generated",
+                "technical-debt",
+            ],
         )
 
         assert "automated" in issue.labels
@@ -127,8 +136,13 @@ Implement a theme switcher with light/dark options.
         issue = Issue(
             title="Performance: Slow query in user dashboard",
             description="Database query in user dashboard takes >5 seconds to execute.",
-            labels=["performance", "database", "optimization", "priority-medium"],
-            milestone="v2.1.0"
+            labels=[
+                "performance",
+                "database",
+                "optimization",
+                "priority-medium",
+            ],
+            milestone="v2.1.0",
         )
 
         assert "performance" in issue.labels
@@ -142,7 +156,7 @@ Implement a theme switcher with light/dark options.
             title="Testing: Add unit tests for authentication module",
             description="Authentication module lacks comprehensive unit test coverage.",
             labels=["testing", "unit-tests", "coverage", "quality-assurance"],
-            assignees=["qa-team"]
+            assignees=["qa-team"],
         )
 
         assert "testing" in issue.labels
@@ -164,21 +178,21 @@ class TestIssueGitHubIntegration:
         mock_github.get_repo.return_value = mock_repo
         mock_created_issue = Mock()
         mock_created_issue.number = 123
-        mock_created_issue.html_url = "https://github.com/owner/repo/issues/123"
+        mock_created_issue.html_url = (
+            "https://github.com/owner/repo/issues/123"
+        )
         mock_repo.create_issue.return_value = mock_created_issue
 
         # Create issue
         issue = Issue(
             title="Test Issue",
             description="Test description",
-            labels=["bug", "priority-high"]
+            labels=["bug", "priority-high"],
         )
 
         # This would be part of issue creation method
         result = mock_repo.create_issue(
-            title=issue.title,
-            body=issue.description,
-            labels=issue.labels
+            title=issue.title, body=issue.description, labels=issue.labels
         )
 
         assert result.number == 123
@@ -200,7 +214,7 @@ class TestIssueGitHubIntegration:
             description="Detailed feature description with template",
             labels=["enhancement", "feature-request"],
             assignees=["developer1", "developer2"],
-            milestone="v1.5.0"
+            milestone="v1.5.0",
         )
 
         result = mock_repo.create_issue(
@@ -208,7 +222,7 @@ class TestIssueGitHubIntegration:
             body=issue.description,
             labels=issue.labels,
             assignees=issue.assignees,
-            milestone=issue.milestone
+            milestone=issue.milestone,
         )
 
         mock_repo.create_issue.assert_called_once_with(
@@ -216,7 +230,7 @@ class TestIssueGitHubIntegration:
             body=issue.description,
             labels=issue.labels,
             assignees=issue.assignees,
-            milestone=issue.milestone
+            milestone=issue.milestone,
         )
 
     @patch("ticket_master.issue.Github")
@@ -233,7 +247,7 @@ class TestIssueGitHubIntegration:
             mock_issue = Mock()
             mock_issue.number = i + 1
             mock_issues.append(mock_issue)
-        
+
         mock_repo.create_issue.side_effect = mock_issues
 
         # Create multiple issues
@@ -241,7 +255,7 @@ class TestIssueGitHubIntegration:
             {
                 "title": f"Issue {i}",
                 "description": f"Description {i}",
-                "labels": ["automated", "batch-created"]
+                "labels": ["automated", "batch-created"],
             }
             for i in range(5)
         ]
@@ -251,7 +265,7 @@ class TestIssueGitHubIntegration:
             for i, issue_data in enumerate(issues_data):
                 result = mock_repo.create_issue(**issue_data)
                 created_issues.append(result)
-                
+
                 # Add delay between requests to respect rate limits
                 if i < len(issues_data) - 1:
                     mock_sleep(1)
@@ -339,7 +353,9 @@ class TestIssueErrorHandling:
         mock_github_class.return_value = mock_github
         mock_repo = Mock()
         mock_github.get_repo.return_value = mock_repo
-        mock_repo.create_issue.side_effect = requests.ConnectionError("Network error")
+        mock_repo.create_issue.side_effect = requests.ConnectionError(
+            "Network error"
+        )
 
         with pytest.raises(requests.ConnectionError):
             mock_repo.create_issue(title="Test", body="Test")

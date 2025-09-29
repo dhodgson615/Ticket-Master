@@ -4,7 +4,6 @@ Tests for the Repository class.
 
 import os
 import shutil
-
 # Add src to path for imports
 import sys
 import tempfile

@@ -10,13 +10,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from main import (
-    analyze_repository,
-    create_issues_on_github,
-    generate_issues_with_llm,
-    generate_sample_issues,
-    load_config,
-)
+from main import (analyze_repository, create_issues_on_github,
+                  generate_issues_with_llm, generate_sample_issues,
+                  load_config)
 
 
 class TestEndToEndIntegration(unittest.TestCase):

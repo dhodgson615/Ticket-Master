@@ -12,11 +12,9 @@ from pathlib import Path
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.ollama_tools import (
-    create_ollama_processor,
-    OllamaPromptValidator,
-    OllamaToolsError
-)
+from ticket_master.ollama_tools import (OllamaPromptValidator,
+                                        OllamaToolsError,
+                                        create_ollama_processor)
 from ticket_master.prompt import PromptTemplate, PromptType
 
 
@@ -27,11 +25,7 @@ def main():
     print("=" * 60)
 
     # Configuration
-    config = {
-        "host": "localhost",
-        "port": 11434,
-        "model": "llama3.2"
-    }
+    config = {"host": "localhost", "port": 11434, "model": "llama3.2"}
 
     try:
         # Create Ollama processor
@@ -51,7 +45,9 @@ def main():
                     print(f"   ✓ Model '{availability['model']}' is available")
                 else:
                     print(f"   ⚠ Model '{availability['model']}' not found")
-                    print(f"     Available models: {availability.get('available_models', [])}")
+                    print(
+                        f"     Available models: {availability.get('available_models', [])}"
+                    )
                     print("     You can install it with: ollama pull llama3.2")
             else:
                 print("   ⚠ Ollama client not available")
@@ -89,7 +85,7 @@ Format the response as JSON with this structure:
 ]
 
 Issues:"""
-            }
+            },
         )
 
         # Validate the template
@@ -108,7 +104,7 @@ Issues:"""
         variables = {
             "num": 3,
             "project": "Ticket-Master",
-            "focus_area": "documentation and testing"
+            "focus_area": "documentation and testing",
         }
 
         var_validation = validator.validate_variables(template, variables)
@@ -119,31 +115,40 @@ Issues:"""
 
         # Process the prompt (this would normally require Ollama to be running)
         print("\n4. Processing prompt with Ollama...")
-        print("   Note: This requires Ollama to be running with the specified model")
+        print(
+            "   Note: This requires Ollama to be running with the specified model"
+        )
 
         try:
             result = processor.process_prompt(
-                template,
-                variables,
-                temperature=0.7,
-                top_k=40
+                template, variables, temperature=0.7, top_k=40
             )
 
             print("   ✓ Prompt processed successfully!")
             print(f"   Response length: {len(result['response'])} characters")
-            print(f"   Processing time: {result['metadata']['processing_time']:.2f} seconds")
+            print(
+                f"   Processing time: {result['metadata']['processing_time']:.2f} seconds"
+            )
             print(f"   Model used: {result['metadata']['model']}")
 
             # Show first part of response
-            response_preview = result["response"][:200] + "..." if len(result["response"]) > 200 else result["response"]
+            response_preview = (
+                result["response"][:200] + "..."
+                if len(result["response"]) > 200
+                else result["response"]
+            )
             print(f"   Response preview: {response_preview}")
 
         except OllamaToolsError as e:
             print(f"   ⚠ Could not process prompt: {e}")
-            print("   This is expected if Ollama is not running or model is not available")
+            print(
+                "   This is expected if Ollama is not running or model is not available"
+            )
 
         # Demo repository analysis issue generation
-        print("\n5. Demonstrating issue generation from repository analysis...")
+        print(
+            "\n5. Demonstrating issue generation from repository analysis..."
+        )
 
         # Sample analysis data (normally from Repository class)
         analysis_data = {
@@ -153,19 +158,24 @@ Issues:"""
                 "files_modified": 8,
                 "files_added": 3,
                 "total_insertions": 250,
-                "total_deletions": 100
+                "total_deletions": 100,
             },
             "commits": [
-                {"short_hash": "a1b2c3d", "summary": "Add new authentication system"},
-                {"short_hash": "e4f5g6h", "summary": "Fix database connection issues"},
-                {"short_hash": "i7j8k9l", "summary": "Update documentation"}
-            ]
+                {
+                    "short_hash": "a1b2c3d",
+                    "summary": "Add new authentication system",
+                },
+                {
+                    "short_hash": "e4f5g6h",
+                    "summary": "Fix database connection issues",
+                },
+                {"short_hash": "i7j8k9l", "summary": "Update documentation"},
+            ],
         }
 
         try:
             issues = processor.generate_issues_from_analysis(
-                analysis_data,
-                max_issues=3
+                analysis_data, max_issues=3
             )
 
             print(f"   ✓ Generated {len(issues)} issues from analysis")
@@ -186,19 +196,27 @@ Issues:"""
             base_template="Analyze: {code_snippet}",
             provider_variations={
                 "ollama": "Provide a brief analysis of this code: {code_snippet}"
-            }
+            },
         )
 
         batch_prompts = [
-            {"template": simple_template, "variables": {"code_snippet": "def hello(): print('world')"}},
-            {"template": simple_template, "variables": {"code_snippet": "class MyClass: pass"}},
-            {"template": simple_template, "variables": {"code_snippet": "import sys; sys.exit(0)"}}
+            {
+                "template": simple_template,
+                "variables": {"code_snippet": "def hello(): print('world')"},
+            },
+            {
+                "template": simple_template,
+                "variables": {"code_snippet": "class MyClass: pass"},
+            },
+            {
+                "template": simple_template,
+                "variables": {"code_snippet": "import sys; sys.exit(0)"},
+            },
         ]
 
         try:
             batch_results = processor.batch_process_prompts(
-                batch_prompts,
-                temperature=0.3
+                batch_prompts, temperature=0.3
             )
 
             print(f"   ✓ Processed {len(batch_results)} prompts in batch")
@@ -206,7 +224,11 @@ Issues:"""
                 if "error" in result:
                     print(f"   Prompt {i}: Failed - {result['error']}")
                 else:
-                    response_preview = result["response"][:50] + "..." if len(result["response"]) > 50 else result["response"]
+                    response_preview = (
+                        result["response"][:50] + "..."
+                        if len(result["response"]) > 50
+                        else result["response"]
+                    )
                     print(f"   Prompt {i}: {response_preview}")
 
         except Exception as e:
@@ -224,6 +246,7 @@ Issues:"""
     except Exception as e:
         print(f"\nDemo failed with error: {e}")
         import traceback
+
         traceback.print_exc()
 
 

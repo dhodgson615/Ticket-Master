@@ -6,11 +6,9 @@ from typing import Any, Dict, List, Optional
 
 try:
     from github import Auth, Github
-    from github.GithubException import (
-        BadCredentialsException,
-        GithubException,
-        RateLimitExceededException,
-    )
+    from github.GithubException import (BadCredentialsException,
+                                        GithubException,
+                                        RateLimitExceededException)
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]

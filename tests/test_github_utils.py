@@ -1,12 +1,13 @@
 """Tests for GitHub utilities module."""
 
 import os
-import tempfile
 import shutil
-from unittest.mock import Mock, patch, MagicMock
+import tempfile
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
 
-from src.ticket_master.github_utils import GitHubUtils, GitHubCloneError
+from src.ticket_master.github_utils import GitHubCloneError, GitHubUtils
 
 
 class TestGitHubUtils:
@@ -293,7 +294,7 @@ class TestGitHubAPIIntegration:
     def test_rate_limit_handling(self, mock_github_class):
         """Test handling of GitHub API rate limits."""
         from github import RateLimitExceededException
-        
+
         mock_github = Mock()
         mock_github_class.return_value = mock_github
         mock_repo = Mock()
@@ -363,7 +364,7 @@ class TestGitHubAPIIntegration:
     @patch("github.Github")
     def test_repository_access_permissions(self, mock_github_class):
         """Test repository access with different permission levels."""
-        from github import UnknownObjectException, GithubException
+        from github import GithubException, UnknownObjectException
 
         mock_github = Mock()
         mock_github_class.return_value = mock_github
@@ -415,16 +416,18 @@ class TestGitHubUtilsAdvanced:
     def test_handle_binary_files_in_analysis(self):
         """Test handling binary files during repository analysis."""
         # Create a temporary file with binary content
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as temp_file:
-            temp_file.write(b'\x00\x01\x02\x03\x04\x05')
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=".bin"
+        ) as temp_file:
+            temp_file.write(b"\x00\x01\x02\x03\x04\x05")
             temp_file_path = temp_file.name
 
         try:
             # Test that binary file detection works
-            with open(temp_file_path, 'rb') as f:
+            with open(temp_file_path, "rb") as f:
                 content = f.read()
                 # Simple binary detection - contains null bytes
-                is_binary = b'\x00' in content
+                is_binary = b"\x00" in content
                 assert is_binary
 
         finally:
@@ -433,7 +436,7 @@ class TestGitHubUtilsAdvanced:
     def test_handle_huge_files_memory_optimization(self):
         """Test handling huge files without loading entire content into memory."""
         # Create a large temporary file
-        with tempfile.NamedTemporaryFile(delete=False, mode='w') as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, mode="w") as temp_file:
             # Write a large amount of data
             for i in range(1000):
                 temp_file.write(f"Line {i}: " + "x" * 100 + "\n")
@@ -443,8 +446,8 @@ class TestGitHubUtilsAdvanced:
             # Test reading file in chunks rather than all at once
             chunk_size = 1024
             total_size = 0
-            
-            with open(temp_file_path, 'r') as f:
+
+            with open(temp_file_path, "r") as f:
                 while True:
                     chunk = f.read(chunk_size)
                     if not chunk:
@@ -474,7 +477,9 @@ class TestGitHubUtilsAdvanced:
         assert normalized_path.startswith("/")
 
         # Test path joining
-        base_path = "/tmp" if mock_system.return_value != "Windows" else "C:\\temp"
+        base_path = (
+            "/tmp" if mock_system.return_value != "Windows" else "C:\\temp"
+        )
         sub_path = "test_repo"
         full_path = os.path.join(base_path, sub_path)
         assert sub_path in full_path
@@ -485,19 +490,22 @@ class TestGitHubUtilsAdvanced:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Initialize as git repo but keep it empty
             import git
+
             repo = git.Repo.init(temp_dir)
-            
+
             # Add a commit to avoid "reference does not exist" error
             # Create an empty commit
             repo.index.commit("Initial empty commit", allow_empty=True)
-            
+
             # Test that analysis handles repos with minimal commits gracefully
             commits = list(repo.iter_commits())
-            self.assertGreaterEqual(len(commits), 1)  # At least the initial commit
-            
+            self.assertGreaterEqual(
+                len(commits), 1
+            )  # At least the initial commit
+
             # Test that directory contains minimal files
             files = os.listdir(temp_dir)
-            non_git_files = [f for f in files if not f.startswith('.git')]
+            non_git_files = [f for f in files if not f.startswith(".git")]
             self.assertEqual(len(non_git_files), 0)  # Only .git directory
 
 
@@ -507,7 +515,7 @@ class TestSecurityScenarios:
     def test_malicious_repository_url_validation(self):
         """Test validation of potentially malicious repository URLs."""
         github_utils = GitHubUtils()
-        
+
         # Test malicious URLs that should be rejected
         malicious_urls = [
             "file:///etc/passwd",
@@ -516,7 +524,7 @@ class TestSecurityScenarios:
             "javascript:alert('xss')",
             "../../../etc/passwd",
         ]
-        
+
         for url in malicious_urls:
             with pytest.raises(ValueError):
                 github_utils.parse_github_url(url)
@@ -524,7 +532,7 @@ class TestSecurityScenarios:
     def test_path_traversal_prevention(self):
         """Test prevention of path traversal attacks."""
         github_utils = GitHubUtils()
-        
+
         # Test paths that could lead to path traversal
         dangerous_paths = [
             "../../../etc/passwd",
@@ -532,7 +540,7 @@ class TestSecurityScenarios:
             "/../../../../etc/passwd",
             "repo/../../../secret",
         ]
-        
+
         for path in dangerous_paths:
             # Normalize and validate path doesn't escape intended directory
             normalized = os.path.normpath(path)
@@ -545,11 +553,11 @@ class TestSecurityScenarios:
     def test_token_exposure_prevention(self, mock_github_class):
         """Test that tokens are not exposed in logs or error messages."""
         token = "ghp_sensitive_token_123456789"
-        
+
         mock_github = Mock()
         mock_github_class.return_value = mock_github
         mock_github.get_user.side_effect = Exception("Authentication failed")
-        
+
         try:
             # Simulate authentication error
             mock_github.get_user()

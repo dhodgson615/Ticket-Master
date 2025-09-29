@@ -7,11 +7,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.auth import (
-    Authentication,
-    AuthenticationError,
-    GitHubAuthError,
-)
+from ticket_master.auth import (Authentication, AuthenticationError,
+                                GitHubAuthError)
 
 
 class TestAuthentication:
@@ -279,11 +276,8 @@ class TestAuthenticationErrorHandling:
 
 def test_basic_import():
     """Test that the Authentication class can be imported."""
-    from ticket_master.auth import (
-        Authentication,
-        AuthenticationError,
-        GitHubAuthError,
-    )
+    from ticket_master.auth import (Authentication, AuthenticationError,
+                                    GitHubAuthError)
 
     assert Authentication is not None
     assert AuthenticationError is not None
