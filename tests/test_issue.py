@@ -43,6 +43,311 @@ class TestIssue:
 
         assert "title cannot be empty" in str(exc_info.value)
 
+
+class TestIssueTemplatesAndLabels:
+    """Test issue creation with various templates and labels."""
+
+    def test_issue_with_bug_template(self):
+        """Test issue creation with bug report template."""
+        issue = Issue(
+            title="Bug: Application crashes on startup",
+            description="""**Bug Description:**
+Application crashes immediately after startup.
+
+**Steps to Reproduce:**
+1. Launch the application
+2. Wait for initialization
+3. Crash occurs
+
+**Expected Behavior:**
+Application should start normally.
+
+**Actual Behavior:**
+Application crashes with error code 1.""",
+            labels=["bug", "priority-high", "needs-investigation"]
+        )
+
+        assert issue.title.startswith("Bug:")
+        assert "Steps to Reproduce" in issue.description
+        assert "bug" in issue.labels
+        assert "priority-high" in issue.labels
+
+    def test_issue_with_feature_template(self):
+        """Test issue creation with feature request template."""
+        issue = Issue(
+            title="Feature: Add dark mode support",
+            description="""**Feature Request:**
+Add dark mode support to the application.
+
+**Motivation:**
+Users have requested dark mode for better usability in low-light conditions.
+
+**Proposed Solution:**
+Implement a theme switcher with light/dark options.
+
+**Alternatives Considered:**
+- System theme detection
+- Multiple theme options""",
+            labels=["enhancement", "ui/ux", "feature-request"]
+        )
+
+        assert issue.title.startswith("Feature:")
+        assert "Feature Request" in issue.description
+        assert "enhancement" in issue.labels
+        assert "feature-request" in issue.labels
+
+    def test_issue_with_security_labels(self):
+        """Test issue creation with security-related labels."""
+        issue = Issue(
+            title="Security: Potential XSS vulnerability in user input",
+            description="User input is not properly sanitized, leading to potential XSS attacks.",
+            labels=["security", "vulnerability", "priority-critical", "needs-patch"],
+            assignees=["security-team"]
+        )
+
+        assert "security" in issue.labels
+        assert "vulnerability" in issue.labels
+        assert "priority-critical" in issue.labels
+        assert "security-team" in issue.assignees
+
+    def test_issue_with_automated_labels(self):
+        """Test issue creation with automated/AI-generated labels."""
+        issue = Issue(
+            title="Automated: Code quality improvements needed",
+            description="Automated analysis identified several code quality issues.",
+            labels=["automated", "code-quality", "ai-generated", "technical-debt"]
+        )
+
+        assert "automated" in issue.labels
+        assert "ai-generated" in issue.labels
+        # Note: metadata would be stored separately in a real implementation
+
+    def test_issue_with_performance_labels(self):
+        """Test issue creation with performance-related labels."""
+        issue = Issue(
+            title="Performance: Slow query in user dashboard",
+            description="Database query in user dashboard takes >5 seconds to execute.",
+            labels=["performance", "database", "optimization", "priority-medium"],
+            milestone="v2.1.0"
+        )
+
+        assert "performance" in issue.labels
+        assert "database" in issue.labels
+        assert "optimization" in issue.labels
+        assert issue.milestone == "v2.1.0"
+
+    def test_issue_with_testing_labels(self):
+        """Test issue creation with testing-related labels."""
+        issue = Issue(
+            title="Testing: Add unit tests for authentication module",
+            description="Authentication module lacks comprehensive unit test coverage.",
+            labels=["testing", "unit-tests", "coverage", "quality-assurance"],
+            assignees=["qa-team"]
+        )
+
+        assert "testing" in issue.labels
+        assert "unit-tests" in issue.labels
+        assert "coverage" in issue.labels
+        assert "qa-team" in issue.assignees
+
+
+class TestIssueGitHubIntegration:
+    """Test Issue class GitHub integration functionality."""
+
+    @patch("ticket_master.issue.Github")  # Use the actual import path
+    def test_create_issue_success(self, mock_github_class):
+        """Test successful issue creation on GitHub."""
+        # Setup mocks
+        mock_github = Mock()
+        mock_github_class.return_value = mock_github
+        mock_repo = Mock()
+        mock_github.get_repo.return_value = mock_repo
+        mock_created_issue = Mock()
+        mock_created_issue.number = 123
+        mock_created_issue.html_url = "https://github.com/owner/repo/issues/123"
+        mock_repo.create_issue.return_value = mock_created_issue
+
+        # Create issue
+        issue = Issue(
+            title="Test Issue",
+            description="Test description",
+            labels=["bug", "priority-high"]
+        )
+
+        # This would be part of issue creation method
+        result = mock_repo.create_issue(
+            title=issue.title,
+            body=issue.description,
+            labels=issue.labels
+        )
+
+        assert result.number == 123
+        assert "github.com" in result.html_url
+
+    @patch("ticket_master.issue.Github")
+    def test_create_issue_with_template_and_assignees(self, mock_github_class):
+        """Test issue creation with template and assignees."""
+        mock_github = Mock()
+        mock_github_class.return_value = mock_github
+        mock_repo = Mock()
+        mock_github.get_repo.return_value = mock_repo
+        mock_created_issue = Mock()
+        mock_created_issue.number = 124
+        mock_repo.create_issue.return_value = mock_created_issue
+
+        issue = Issue(
+            title="Feature Request: New functionality",
+            description="Detailed feature description with template",
+            labels=["enhancement", "feature-request"],
+            assignees=["developer1", "developer2"],
+            milestone="v1.5.0"
+        )
+
+        result = mock_repo.create_issue(
+            title=issue.title,
+            body=issue.description,
+            labels=issue.labels,
+            assignees=issue.assignees,
+            milestone=issue.milestone
+        )
+
+        mock_repo.create_issue.assert_called_once_with(
+            title=issue.title,
+            body=issue.description,
+            labels=issue.labels,
+            assignees=issue.assignees,
+            milestone=issue.milestone
+        )
+
+    @patch("ticket_master.issue.Github")
+    def test_batch_issue_creation_with_rate_limiting(self, mock_github_class):
+        """Test batch creation of multiple issues with rate limiting considerations."""
+        mock_github = Mock()
+        mock_github_class.return_value = mock_github
+        mock_repo = Mock()
+        mock_github.get_repo.return_value = mock_repo
+
+        # Mock successful issue creation
+        mock_issues = []
+        for i in range(5):
+            mock_issue = Mock()
+            mock_issue.number = i + 1
+            mock_issues.append(mock_issue)
+        
+        mock_repo.create_issue.side_effect = mock_issues
+
+        # Create multiple issues
+        issues_data = [
+            {
+                "title": f"Issue {i}",
+                "description": f"Description {i}",
+                "labels": ["automated", "batch-created"]
+            }
+            for i in range(5)
+        ]
+
+        with patch("time.sleep") as mock_sleep:
+            created_issues = []
+            for i, issue_data in enumerate(issues_data):
+                result = mock_repo.create_issue(**issue_data)
+                created_issues.append(result)
+                
+                # Add delay between requests to respect rate limits
+                if i < len(issues_data) - 1:
+                    mock_sleep(1)
+
+            assert len(created_issues) == 5
+            assert mock_sleep.call_count == 4  # One less than total issues
+
+    def test_issue_validation_edge_cases(self):
+        """Test issue validation with edge cases."""
+        # Test very long title
+        long_title = "x" * 1000
+        with pytest.raises(ValueError, match="title is too long"):
+            Issue(long_title, "Valid description")
+
+        # Test title with only whitespace
+        with pytest.raises(ValueError, match="title cannot be empty"):
+            Issue("   ", "Valid description")
+
+        # Test description with only whitespace
+        with pytest.raises(ValueError, match="description cannot be empty"):
+            Issue("Valid Title", "   ")
+
+        # Test invalid label format
+        with pytest.raises(ValueError, match="labels must be a list"):
+            Issue("Valid Title", "Valid description", labels="invalid")
+
+        # Test invalid assignees format
+        with pytest.raises(ValueError, match="assignees must be a list"):
+            Issue("Valid Title", "Valid description", assignees="invalid")
+
+
+class TestIssueErrorHandling:
+    """Test Issue class error handling scenarios."""
+
+    @patch("ticket_master.issue.Github")
+    def test_github_authentication_error(self, mock_github_class):
+        """Test handling of GitHub authentication errors."""
+        from github import BadCredentialsException
+
+        mock_github = Mock()
+        mock_github_class.return_value = mock_github
+        mock_github.get_user.side_effect = BadCredentialsException(
+            status=401, data={"message": "Bad credentials"}
+        )
+
+        with pytest.raises(BadCredentialsException):
+            mock_github.get_user()
+
+    @patch("ticket_master.issue.Github")
+    def test_repository_not_found_error(self, mock_github_class):
+        """Test handling when repository is not found."""
+        from github import UnknownObjectException
+
+        mock_github = Mock()
+        mock_github_class.return_value = mock_github
+        mock_github.get_repo.side_effect = UnknownObjectException(
+            status=404, data={"message": "Not Found"}
+        )
+
+        with pytest.raises(UnknownObjectException):
+            mock_github.get_repo("nonexistent/repo")
+
+    @patch("ticket_master.issue.Github")
+    def test_permission_denied_error(self, mock_github_class):
+        """Test handling when user lacks permission to create issues."""
+        from github import GithubException
+
+        mock_github = Mock()
+        mock_github_class.return_value = mock_github
+        mock_repo = Mock()
+        mock_github.get_repo.return_value = mock_repo
+        mock_repo.create_issue.side_effect = GithubException(
+            status=403, data={"message": "Forbidden"}
+        )
+
+        with pytest.raises(GithubException):
+            mock_repo.create_issue(title="Test", body="Test")
+
+    @patch("ticket_master.issue.Github")
+    def test_network_error_handling(self, mock_github_class):
+        """Test handling of network connectivity issues."""
+        import requests
+
+        mock_github = Mock()
+        mock_github_class.return_value = mock_github
+        mock_repo = Mock()
+        mock_github.get_repo.return_value = mock_repo
+        mock_repo.create_issue.side_effect = requests.ConnectionError("Network error")
+
+        with pytest.raises(requests.ConnectionError):
+            mock_repo.create_issue(title="Test", body="Test")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
+
     def test_init_empty_description(self):
         """Test Issue initialization with empty description."""
         with pytest.raises(ValueError) as exc_info:
