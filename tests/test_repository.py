@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from repository import Repository, RepositoryError
+from ticket_master_consolidated import Repository, RepositoryError
 
 
 class TestRepository:

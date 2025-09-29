@@ -23,40 +23,14 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-# Third-party imports (these will auto-install if needed)
-try:
-    import yaml
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML>=6.0.1"])
-    import yaml
-
-try:
-    import git
-    from git import InvalidGitRepositoryError, Repo
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"])
-    import git
-    from git import InvalidGitRepositoryError, Repo
-
-try:
-    from github import Auth, Github
-    from github.GithubException import BadCredentialsException, GithubException, RateLimitExceededException
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"])
-    from github import Auth, Github
-    from github.GithubException import BadCredentialsException, GithubException, RateLimitExceededException
-
-try:
-    import requests
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    import requests
-
-try:
-    import ollama
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "ollama<0.4.0,>=0.3.0"])
-    import ollama
+# Third-party imports
+import yaml
+import git
+from git import InvalidGitRepositoryError, Repo
+from github import Auth, Github
+from github.GithubException import BadCredentialsException, GithubException, RateLimitExceededException
+import requests
+import ollama
 
 # Version information
 __version__ = "0.1.0"

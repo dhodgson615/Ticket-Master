@@ -7,14 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-try:
-    from auth import Authentication as Authentication
-    from auth import AuthenticationError as AuthenticationError
-    from auth import GitHubAuthError as GitHubAuthError
-except ImportError:
-    from auth import Authentication as Authentication
-    from auth import AuthenticationError as AuthenticationError
-    from auth import GitHubAuthError as GitHubAuthError
+from ticket_master_consolidated import Authentication, AuthenticationError, GitHubAuthError
 
 
 class TestAuthentication:

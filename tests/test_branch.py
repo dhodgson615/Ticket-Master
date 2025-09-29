@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, Mock
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from branch import Branch, BranchError
+from ticket_master_consolidated import Branch, BranchError
 
 
 class TestBranch(unittest.TestCase):

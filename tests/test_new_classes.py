@@ -17,11 +17,11 @@ from unittest.mock import MagicMock, Mock, patch
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from data_scraper import DataScraper, DataScraperError
-from database import Database, DatabaseError, ServerDatabase, UserDatabase
-from llm import LLM, HuggingFaceBackend, LLMError, LLMProvider, OllamaBackend
-from pipe import Pipe, PipeError, PipelineStep, PipeStage
-from prompt import Prompt, PromptError, PromptTemplate, PromptType
+from ticket_master_consolidated import DataScraper, DataScraperError
+from ticket_master_consolidated import Database, DatabaseError, ServerDatabase, UserDatabase
+from ticket_master_consolidated import LLM, HuggingFaceBackend, LLMError, LLMProvider, OllamaBackend
+from ticket_master_consolidated import Pipe, PipeError, PipelineStep, PipeStage
+from ticket_master_consolidated import Prompt, PromptError, PromptTemplate, PromptType
 
 
 class TestUserDatabase(unittest.TestCase):

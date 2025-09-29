@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from llm import (LLM, LLMError, LLMProvider, LLMProviderError, MockBackend,
+from ticket_master_consolidated import (LLM, LLMError, LLMProvider, LLMProviderError, MockBackend,
                  OllamaBackend, OpenAIBackend)
 
 

@@ -13,9 +13,9 @@ from unittest.mock import Mock, patch
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from pipe import (Pipe, PipeError, PipeExecutionError, PipelineStep, PipeStage,
+from ticket_master_consolidated import (Pipe, PipeError, PipeExecutionError, PipelineStep, PipeStage,
                   PipeValidationError)
-from prompt import PromptTemplate, PromptType
+from ticket_master_consolidated import PromptTemplate, PromptType
 
 
 class TestPipelineStep(unittest.TestCase):

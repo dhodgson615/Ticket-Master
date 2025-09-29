@@ -14,7 +14,7 @@ from unittest.mock import Mock
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from pull_request import PullRequest, PullRequestError
+from ticket_master_consolidated import PullRequest, PullRequestError
 
 
 class TestPullRequest(unittest.TestCase):

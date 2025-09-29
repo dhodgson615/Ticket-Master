@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, mock_open, patch
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from data_scraper import DataScraper, DataScraperError
+from ticket_master_consolidated import DataScraper, DataScraperError
 
 
 class TestDataScraper(unittest.TestCase):

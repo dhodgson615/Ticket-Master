@@ -12,8 +12,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from issue import GitHubAuthError, Issue, IssueError
-from issue import test_github_connection as connection_test
+from ticket_master_consolidated import GitHubAuthError, Issue, IssueError
+from ticket_master_consolidated import test_github_connection as connection_test
 
 
 class TestIssue:

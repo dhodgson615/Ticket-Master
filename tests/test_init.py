@@ -1,7 +1,7 @@
 """
-Test module for __init__.py module.
+Test module for ticket_master_consolidated module.
 
-This module tests the initialization and import behavior.
+This module tests the consolidated module and import behavior.
 """
 
 import sys
@@ -12,108 +12,102 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
-class TestInit(unittest.TestCase):
-    """Test __init__.py functionality."""
+class TestConsolidated(unittest.TestCase):
+    """Test ticket_master_consolidated functionality."""
 
     def test_version_info(self):
         """Test version information is available."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "__version__"))
-        self.assertTrue(hasattr(src, "__author__"))
-        self.assertTrue(hasattr(src, "__description__"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "__version__"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "__author__"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "__description__"))
 
-        self.assertIsInstance(src.__version__, str)
-        self.assertIsInstance(src.__author__, str)
-        self.assertIsInstance(src.__description__, str)
+        self.assertIsInstance(ticket_master_consolidated.__version__, str)
+        self.assertIsInstance(ticket_master_consolidated.__author__, str)
+        self.assertIsInstance(ticket_master_consolidated.__description__, str)
 
     def test_import_authentication(self):
         """Test Authentication imports."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Authentication"))
-        self.assertTrue(hasattr(src, "AuthenticationError"))
-        self.assertTrue(hasattr(src, "GitHubAuthError"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Authentication"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "AuthenticationError"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "GitHubAuthError"))
 
     def test_import_branch(self):
         """Test Branch import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Branch"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Branch"))
 
     def test_import_commit(self):
         """Test Commit import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Commit"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Commit"))
 
     def test_import_data_scraper(self):
         """Test DataScraper import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "DataScraper"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "DataScraper"))
 
     def test_import_database(self):
         """Test Database imports."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Database"))
-        self.assertTrue(hasattr(src, "ServerDatabase"))
-        self.assertTrue(hasattr(src, "UserDatabase"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Database"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "ServerDatabase"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "UserDatabase"))
 
     def test_import_github_utils(self):
         """Test GitHubUtils import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "GitHubUtils"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "GitHubUtils"))
 
     def test_import_issue(self):
         """Test Issue import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Issue"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Issue"))
 
     def test_import_llm(self):
         """Test LLM import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "LLM"))
-
-    def test_import_ollama_tools(self):
-        """Test OllamaTools import."""
-        import src
-
-        self.assertTrue(hasattr(src, "OllamaTools"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "LLM"))
 
     def test_import_pipe(self):
         """Test Pipe imports."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Pipe"))
-        self.assertTrue(hasattr(src, "PipelineStep"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Pipe"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "PipelineStep"))
 
     def test_import_prompt(self):
         """Test Prompt imports."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Prompt"))
-        self.assertTrue(hasattr(src, "PromptTemplate"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Prompt"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "PromptTemplate"))
 
     def test_import_pull_request(self):
         """Test PullRequest import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "PullRequest"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "PullRequest"))
 
     def test_import_repository(self):
         """Test Repository import."""
-        import src
+        import ticket_master_consolidated
 
-        self.assertTrue(hasattr(src, "Repository"))
+        self.assertTrue(hasattr(ticket_master_consolidated, "Repository"))
 
     def test_all_imports_work(self):
         """Test that all imports can be used."""
-        import src
+        import ticket_master_consolidated
 
         # Test that we can access classes without errors
         classes_to_test = [
@@ -132,8 +126,8 @@ class TestInit(unittest.TestCase):
         ]
 
         for class_name in classes_to_test:
-            self.assertTrue(hasattr(src, class_name))
-            cls = getattr(src, class_name)
+            self.assertTrue(hasattr(ticket_master_consolidated, class_name))
+            cls = getattr(ticket_master_consolidated, class_name)
             self.assertTrue(callable(cls))
 
 
