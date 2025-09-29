@@ -7,7 +7,6 @@ including ANSI color codes, terminal support detection, and formatting functions
 
 import os
 import sys
-from io import StringIO
 from unittest.mock import patch, MagicMock
 import pytest
 
