@@ -264,7 +264,6 @@ def progress_bar(
     percent = completed / total
     filled = int(width * percent)
     remaining = width - filled
-
     bar_filled = colorize("█" * filled, color)
     bar_empty = "░" * remaining
     percentage = f"{percent:.1%}"

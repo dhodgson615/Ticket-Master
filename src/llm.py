@@ -121,6 +121,7 @@ class OllamaBackend(LLMBackend):
 
             self.client = ollama.Client(host=self.base_url)
             self._ollama_available = True
+
         except ImportError:
             self.logger.warning(
                 "Official ollama client not available, falling back to requests"
@@ -145,6 +146,7 @@ class OllamaBackend(LLMBackend):
             if self._ollama_available and self.client:
                 # Use official ollama client
                 return self._generate_with_client(prompt, **kwargs)
+
             else:
                 # Fall back to direct HTTP requests
                 return self._generate_with_requests(prompt, **kwargs)
@@ -161,12 +163,16 @@ class OllamaBackend(LLMBackend):
             options = {}
             if "temperature" in kwargs:
                 options["temperature"] = kwargs["temperature"]
+
             if "max_tokens" in kwargs:
                 options["num_predict"] = kwargs["max_tokens"]
+
             elif "num_predict" in kwargs:
                 options["num_predict"] = kwargs["num_predict"]
+
             if "top_k" in kwargs:
                 options["top_k"] = kwargs["top_k"]
+
             if "top_p" in kwargs:
                 options["top_p"] = kwargs["top_p"]
 
@@ -181,6 +187,7 @@ class OllamaBackend(LLMBackend):
 
         except ollama.ResponseError as e:
             raise LLMProviderError(f"Ollama API error: {e}")
+
         except Exception as e:
             raise LLMProviderError(f"Ollama client error: {e}")
 
@@ -199,6 +206,7 @@ class OllamaBackend(LLMBackend):
                 json=payload,
                 timeout=kwargs.get("timeout", 60),
             )
+
             response.raise_for_status()
 
             result = response.json()
@@ -206,6 +214,7 @@ class OllamaBackend(LLMBackend):
 
         except requests.RequestException as e:
             raise LLMProviderError(f"Ollama API error: {e}")
+
         except (KeyError, json.JSONDecodeError) as e:
             raise LLMProviderError(f"Invalid Ollama response format: {e}")
 
@@ -220,10 +229,12 @@ class OllamaBackend(LLMBackend):
                 # Use official client
                 models = self.client.list()
                 return isinstance(models, dict) and "models" in models
+
             else:
                 # Fall back to HTTP check
                 response = requests.get(f"{self.base_url}/api/tags", timeout=5)
                 return response.status_code == 200
+
         except Exception:
             return False
 
@@ -238,6 +249,7 @@ class OllamaBackend(LLMBackend):
                 # Use official client for detailed model info
                 try:
                     model_info = self.client.show(self.model)
+
                     return {
                         "name": self.model,
                         "provider": "ollama",
@@ -248,12 +260,15 @@ class OllamaBackend(LLMBackend):
                         "system": model_info.get("system", ""),
                         "modified_at": model_info.get("modified_at", ""),
                     }
+
                 except Exception:
                     # Fall back to list check
                     models = self.client.list()
+
                     available_models = [
                         m["name"] for m in models.get("models", [])
                     ]
+
                     if any(
                         self.model in model_name
                         for model_name in available_models
@@ -264,6 +279,7 @@ class OllamaBackend(LLMBackend):
                             "status": "available",
                             "available_models": available_models,
                         }
+
                     else:
                         return {
                             "name": self.model,
@@ -276,9 +292,11 @@ class OllamaBackend(LLMBackend):
                 response = requests.get(
                     f"{self.base_url}/api/tags", timeout=10
                 )
+
                 response.raise_for_status()
 
                 models = response.json().get("models", [])
+
                 current_model = next(
                     (model for model in models if model["name"] == self.model),
                     None,
@@ -323,15 +341,18 @@ class OllamaBackend(LLMBackend):
             if self._ollama_available and self.client:
                 # Use official client
                 response = self.client.pull(target_model)
+
                 return {
                     "success": True,
                     "model": target_model,
                     "status": "installed",
                     "response": response,
                 }
+
             else:
                 # Fall back to HTTP requests
                 payload = {"name": target_model}
+
                 response = requests.post(
                     f"{self.base_url}/api/pull",
                     json=payload,
@@ -350,6 +371,7 @@ class OllamaBackend(LLMBackend):
                             if data.get("status"):
                                 last_line = data["status"]
                                 self.logger.debug(f"Pull status: {last_line}")
+
                         except json.JSONDecodeError:
                             continue
 
@@ -361,12 +383,14 @@ class OllamaBackend(LLMBackend):
                     self.logger.info(
                         f"Successfully installed model: {target_model}"
                     )
+
                     return {
                         "success": True,
                         "model": target_model,
                         "status": "installed",
                         "message": last_line,
                     }
+
                 else:
                     return {
                         "success": False,
@@ -378,6 +402,7 @@ class OllamaBackend(LLMBackend):
         except Exception as e:
             error_msg = f"Failed to install model {target_model}: {e}"
             self.logger.error(error_msg)
+
             return {
                 "success": False,
                 "model": target_model,
@@ -409,13 +434,14 @@ class OllamaBackend(LLMBackend):
                     ],
                     "count": len(models),
                 }
+
             else:
                 # Fall back to HTTP requests
                 response = requests.get(
                     f"{self.base_url}/api/tags", timeout=10
                 )
-                response.raise_for_status()
 
+                response.raise_for_status()
                 models_data = response.json()
                 models = models_data.get("models", [])
 
@@ -497,6 +523,7 @@ class OpenAIBackend(LLMBackend):
                 headers=headers,
                 timeout=kwargs.get("timeout", 60),
             )
+
             response.raise_for_status()
 
             result = response.json()
@@ -517,11 +544,15 @@ class OpenAIBackend(LLMBackend):
                         "message", str(e)
                     )
                     raise LLMProviderError(f"OpenAI API error: {error_msg}")
+
                 except (json.JSONDecodeError, AttributeError):
                     pass
+
             raise LLMProviderError(f"OpenAI API request failed: {e}")
+
         except (KeyError, json.JSONDecodeError) as e:
             raise LLMProviderError(f"Invalid OpenAI response format: {e}")
+
         except Exception as e:
             raise LLMProviderError(f"OpenAI API request failed: {e}")
 
@@ -544,9 +575,12 @@ class OpenAIBackend(LLMBackend):
             response = requests.get(
                 f"{self.base_url}/models", headers=headers, timeout=10
             )
+
             return response.status_code == 200
+
         except requests.RequestException:
             return False
+
         except Exception:
             return False
 
@@ -578,6 +612,7 @@ class OpenAIBackend(LLMBackend):
 
             if response.status_code == 200:
                 model_data = response.json()
+
                 return {
                     "name": model_data.get("id", self.model),
                     "provider": "openai",
@@ -585,6 +620,7 @@ class OpenAIBackend(LLMBackend):
                     "created": model_data.get("created", "unknown"),
                     "status": "available",
                 }
+
             else:
                 return {
                     "name": self.model,
@@ -594,6 +630,7 @@ class OpenAIBackend(LLMBackend):
 
         except requests.RequestException as e:
             self.logger.warning(f"Failed to get model info: {e}")
+
             return {
                 "name": self.model,
                 "provider": "openai",
@@ -710,6 +747,7 @@ class HuggingFaceBackend(LLMBackend):
                         "torch>=2.0.0",
                     ]
                 )
+
                 from transformers import (AutoModelForCausalLM, AutoTokenizer,
                                           pipeline)
 
@@ -726,6 +764,7 @@ class HuggingFaceBackend(LLMBackend):
 
         except Exception as e:
             self.logger.error(f"Failed to load HuggingFace model: {e}")
+
             raise LLMProviderError(
                 f"Failed to load HuggingFace model {self.model_name}: {e}"
             )
@@ -764,10 +803,13 @@ class HuggingFaceBackend(LLMBackend):
             # Extract generated text
             if responses and len(responses) > 0:
                 generated_text = responses[0].get("generated_text", "").strip()
+
                 # Remove the original prompt if it's included
                 if generated_text.startswith(prompt):
                     generated_text = generated_text[len(prompt) :].strip()
+
                 return generated_text
+
             else:
                 return ""
 
@@ -787,9 +829,11 @@ class HuggingFaceBackend(LLMBackend):
 
             # Try loading a simple model to verify functionality
             return True
+
         except ImportError:
             self.logger.debug("HuggingFace dependencies not available")
             return False
+
         except Exception as e:
             self.logger.debug(f"HuggingFace backend not available: {e}")
             return False
@@ -806,6 +850,7 @@ class HuggingFaceBackend(LLMBackend):
                 from huggingface_hub import model_info
 
                 info = model_info(self.model_name)
+
                 return {
                     "name": self.model_name,
                     "provider": "huggingface",
@@ -819,6 +864,7 @@ class HuggingFaceBackend(LLMBackend):
                     ),
                     "device": self.device,
                 }
+
             except ImportError:
                 # Fallback without huggingface_hub
                 return {
@@ -829,6 +875,7 @@ class HuggingFaceBackend(LLMBackend):
                     ),
                     "device": self.device,
                 }
+
         except Exception as e:
             self.logger.warning(f"Failed to get HuggingFace model info: {e}")
             return {
@@ -874,6 +921,7 @@ class LLM:
         if isinstance(provider, str):
             try:
                 provider = LLMProvider(provider.lower())
+
             except ValueError:
                 raise LLMError(f"Unsupported LLM provider: {provider}")
 
@@ -885,18 +933,23 @@ class LLM:
 
         # Initialize fallback backends
         self.fallback_backends: List[LLMBackend] = []
+
         if fallback_configs:
             for fallback_config in fallback_configs:
                 fallback_provider = fallback_config.get("provider")
+
                 if fallback_provider:
                     try:
                         fallback_provider = LLMProvider(
                             fallback_provider.lower()
                         )
+
                         fallback_backend = self._create_backend(
                             fallback_provider, fallback_config
                         )
+
                         self.fallback_backends.append(fallback_backend)
+
                     except (ValueError, LLMError) as e:
                         self.logger.warning(
                             f"Failed to initialize fallback backend: {e}"
@@ -927,12 +980,16 @@ class LLM:
         """
         if provider == LLMProvider.OLLAMA:
             return OllamaBackend(config)
+
         elif provider == LLMProvider.OPENAI:
             return OpenAIBackend(config)
+
         elif provider == LLMProvider.HUGGINGFACE:
             return HuggingFaceBackend(config)
+
         elif provider == LLMProvider.MOCK:
             return MockBackend(config)
+
         else:
             raise LLMError(
                 f"Backend not implemented for provider: {provider.value}"
@@ -1004,10 +1061,12 @@ class LLM:
                         f"Successfully generated response using {backend.__class__.__name__} "
                         f"(attempt {attempt + 1}/{max_retries})"
                     )
+
                     return result
 
                 except LLMProviderError as e:
                     last_error = e
+
                     self.logger.warning(
                         f"Attempt {attempt + 1}/{max_retries} failed for "
                         f"{backend.__class__.__name__}: {e}"
@@ -1057,6 +1116,7 @@ class LLM:
                 validation["issues"].append(
                     "Response appears to be repetitive"
                 )
+
                 validation["quality_score"] *= 0.5
 
         # Check for common error patterns
@@ -1071,6 +1131,7 @@ class LLM:
         ]
 
         response_lower = response.lower()
+
         found_patterns = [
             pattern
             for pattern in error_patterns
@@ -1081,6 +1142,7 @@ class LLM:
             validation["issues"].append(
                 f"Response contains error patterns: {found_patterns}"
             )
+
             validation["quality_score"] *= 0.7
 
         validation["checks"]["length"] = len(response)
@@ -1151,6 +1213,7 @@ class LLM:
         if target_provider == "ollama":
             if hasattr(self.backend, "install_model"):
                 return self.backend.install_model(target_model)
+
             else:
                 return {
                     "success": False,
@@ -1158,6 +1221,7 @@ class LLM:
                     "provider": target_provider,
                     "model": target_model,
                 }
+
         else:
             return {
                 "success": False,
@@ -1182,6 +1246,7 @@ class LLM:
         if target_provider == "ollama":
             if hasattr(self.backend, "list_available_models"):
                 return self.backend.list_available_models()
+
             else:
                 return {
                     "success": False,
@@ -1189,6 +1254,7 @@ class LLM:
                     "models": [],
                     "count": 0,
                 }
+
         else:
             return {
                 "success": False,
@@ -1210,11 +1276,11 @@ class LLM:
             Dictionary containing availability status and installation results if applicable
         """
         target_model = model_name or self.metadata.get("model", "llama2")
-
         self.logger.info(f"Checking availability of model: {target_model}")
 
         # Get current model info
         model_info = self.backend.get_model_info()
+
         is_available = model_info.get("status") not in [
             "not_found",
             "model_not_found",
@@ -1234,6 +1300,7 @@ class LLM:
             self.logger.info(
                 f"Model {target_model} not available, attempting auto-install..."
             )
+
             install_result = self.install_model(target_model)
             result["installation"] = install_result
 

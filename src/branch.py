@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     pass
+
 except ImportError:
     import subprocess
     import sys
@@ -14,6 +15,7 @@ except ImportError:
 
 try:
     from commit import Commit as Commit
+
 except ImportError:
     from commit import Commit as Commit
 
@@ -76,16 +78,19 @@ class Branch:
         if self.is_remote:
             parts = self.name.split("/", 1)
             self.remote_name = parts[0] if len(parts) > 1 else None
+
         else:
             self.remote_name = None
 
         # Get head commit
         try:
             self.head_commit = Commit(git_branch.commit)
+
         except Exception as e:
             self.logger.warning(
                 f"Could not get head commit for branch {self.name}: {e}"
             )
+
             self.head_commit = None
 
     def get_commits(self, max_count: int = 50) -> List[Commit]:
@@ -106,6 +111,7 @@ class Branch:
                 max_count=max_count, skip=0
             ):
                 commits.append(Commit(git_commit))
+
             return commits
 
         except Exception as e:
@@ -156,6 +162,7 @@ class Branch:
         """
         if self.head_commit:
             return self.head_commit.date
+
         return None
 
     def is_merged(self, target_branch: "Branch") -> bool:
@@ -204,12 +211,14 @@ class Branch:
             tracking = self.git_branch.tracking_branch()
             if tracking:
                 return Branch(tracking, self.repo_obj, False)
+
             return None
 
         except Exception as e:
             self.logger.warning(
                 f"Could not get tracking branch for {self.name}: {e}"
             )
+
             return None
 
     def to_dict(self) -> Dict[str, Any]:
@@ -238,9 +247,11 @@ class Branch:
     def __str__(self) -> str:
         """String representation of the branch."""
         prefix = "* " if self.is_active else "  "
+
         remote_info = (
             f" (remote: {self.remote_name})" if self.is_remote else ""
         )
+
         return f"{prefix}{self.name}{remote_info}"
 
     def __repr__(self) -> str:
@@ -254,6 +265,7 @@ class Branch:
         """Check equality with another branch."""
         if not isinstance(other, Branch):
             return False
+
         return self.name == other.name and self.is_remote == other.is_remote
 
     def __hash__(self) -> int:

@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 try:
     from git import GitCommandError, Repo
+
 except ImportError:
     import subprocess
     import sys
@@ -17,10 +18,12 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
+
     from git import GitCommandError, Repo
 
 try:
     import requests
+
 except ImportError:
     import subprocess
     import sys
@@ -28,6 +31,7 @@ except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "requests>=2.31.0"]
     )
+
     import requests
 
 
@@ -60,19 +64,23 @@ class GitHubUtils:
                 "Accept": "application/vnd.github.v3+json",
                 "User-Agent": "Ticket-Master/0.1.0",
             }
+
             response = requests.get(url, headers=headers, timeout=10)
 
             if response.status_code == 200:
                 repo_data = response.json()
                 return not repo_data.get("private", True)
+
             elif response.status_code == 404:
                 # Repository not found or private
                 return False
+
             elif response.status_code == 403:
                 # Rate limited - try cloning approach as fallback
                 self.logger.info(
                     f"GitHub API rate limited, attempting to clone {github_repo} to test public access"
                 )
+
                 try:
                     # Try to clone without authentication to test if it's public
                     clone_url = f"https://github.com/{github_repo}.git"
@@ -84,16 +92,21 @@ class GitHubUtils:
                         text=True,
                         timeout=30,
                     )
+
                     return result.returncode == 0
+
                 except Exception as e:
                     self.logger.warning(
                         f"Could not determine repository visibility via clone test: {e}"
                     )
+
                     return False
+
             else:
                 self.logger.warning(
                     f"Unexpected response code {response.status_code} when checking repository visibility"
                 )
+
                 return False
 
         except Exception as e:
@@ -113,10 +126,12 @@ class GitHubUtils:
         """
         try:
             url = f"https://api.github.com/repos/{github_repo}"
+
             headers = {
                 "Accept": "application/vnd.github.v3+json",
                 "User-Agent": "Ticket-Master/0.1.0",
             }
+
             response = requests.get(url, headers=headers, timeout=10)
 
             if response.status_code == 200:
@@ -132,11 +147,13 @@ class GitHubUtils:
                     "language": repo_data.get("language"),
                     "size": repo_data.get("size", 0),
                 }
+
             elif response.status_code == 403:
                 # Rate limited - return minimal info and let clone attempt determine accessibility
                 self.logger.info(
                     "GitHub API rate limited, will attempt direct clone"
                 )
+
                 return {
                     "name": github_repo.split("/")[-1],
                     "full_name": github_repo,
@@ -148,6 +165,7 @@ class GitHubUtils:
                     "language": None,
                     "size": 0,
                 }
+
             else:
                 return None
 
@@ -172,18 +190,21 @@ class GitHubUtils:
             ("http://", "https://")
         ):
             parts = github_input.strip().split("/")
+
             if len(parts) == 2 and all(part.strip() for part in parts):
                 return f"{parts[0]}/{parts[1]}"
 
         # Parse URL formats
         if github_input.startswith(("http://", "https://")):
             parsed = urlparse(github_input)
+
             if parsed.netloc.lower() not in ("github.com", "www.github.com"):
                 raise ValueError(
                     f"URL must be from github.com, got: {parsed.netloc}"
                 )
 
             path_parts = [part for part in parsed.path.split("/") if part]
+
             if len(path_parts) >= 2:
                 return f"{path_parts[0]}/{path_parts[1]}"
 
@@ -214,6 +235,7 @@ class GitHubUtils:
         try:
             # Get repository info to determine clone URL
             repo_info = self.get_repository_info(github_repo)
+
             if not repo_info:
                 raise GitHubCloneError(
                     f"Repository {github_repo} not found or not accessible"
@@ -223,6 +245,7 @@ class GitHubUtils:
             if token and repo_info["private"]:
                 # Use authenticated HTTPS URL for private repos
                 clone_url = f"https://{token}@github.com/{github_repo}.git"
+
             else:
                 # Use public HTTPS URL
                 clone_url = repo_info["clone_url"]
@@ -231,11 +254,13 @@ class GitHubUtils:
             if local_path:
                 target_path = Path(local_path).resolve()
                 target_path.mkdir(parents=True, exist_ok=True)
+
             else:
                 # Create temporary directory
                 temp_dir = tempfile.mkdtemp(
                     prefix=f"ticket-master-{github_repo.replace('/', '-')}-"
                 )
+
                 target_path = Path(temp_dir)
                 self._temp_dirs.append(temp_dir)
                 self.logger.info(f"Created temporary directory: {target_path}")
@@ -258,8 +283,10 @@ class GitHubUtils:
                     f"Authentication failed for {github_repo}. "
                     "Repository may be private and require GITHUB_TOKEN."
                 )
+
             else:
                 raise GitHubCloneError(f"Failed to clone {github_repo}: {e}")
+
         except Exception as e:
             raise GitHubCloneError(
                 f"Unexpected error cloning {github_repo}: {e}"
@@ -271,18 +298,22 @@ class GitHubUtils:
             try:
                 if os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir)
+
                     self.logger.debug(
                         f"Cleaned up temporary directory: {temp_dir}"
                     )
+
             except Exception as e:
                 self.logger.warning(
                     f"Failed to cleanup temporary directory {temp_dir}: {e}"
                 )
+
         self._temp_dirs.clear()
 
     def __del__(self):
         """Cleanup on deletion."""
         try:
             self.cleanup_temp_directories()
+
         except Exception:
             pass  # Ignore errors during cleanup in destructor

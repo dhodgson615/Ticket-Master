@@ -169,10 +169,13 @@ class UserDatabase(Database):
         """
         try:
             self._connection = sqlite3.connect(str(self.db_path))
+
             self._connection.row_factory = (
                 sqlite3.Row
             )  # Enable column access by name
+
             self.logger.info(f"Connected to user database: {self.db_path}")
+
         except sqlite3.Error as e:
             raise ConnectionError(f"Failed to connect to user database: {e}")
 
@@ -183,6 +186,7 @@ class UserDatabase(Database):
                 self._connection.close()
                 self._connection = None
                 self.logger.info("Disconnected from user database")
+
             except sqlite3.Error as e:
                 self.logger.warning(f"Error closing database connection: {e}")
 
@@ -210,6 +214,7 @@ class UserDatabase(Database):
                 # Convert dict params to tuple for named parameters
                 if isinstance(params, dict):
                     cursor.execute(query, params)
+
                 else:
                     cursor.execute(query, params)
             else:
@@ -245,8 +250,10 @@ class UserDatabase(Database):
                 # Convert dict params to list for positional parameters in this case
                 if isinstance(params, dict):
                     cursor.execute(command, params)
+
                 else:
                     cursor.execute(command, params)
+
             else:
                 cursor.execute(command)
 
@@ -310,6 +317,7 @@ class UserDatabase(Database):
             try:
                 self.execute_command(table_sql)
                 self.logger.debug("Created/verified table")
+
             except DatabaseError as e:
                 self.logger.error(f"Failed to create table: {e}")
                 raise
@@ -331,7 +339,9 @@ class UserDatabase(Database):
                 "SELECT value FROM user_preferences WHERE key = :key",
                 {"key": key},
             )
+
             return results[0]["value"] if results else default
+
         except DatabaseError:
             return default
 
@@ -404,6 +414,7 @@ class UserDatabase(Database):
 
             if results:
                 return json.loads(results[0]["cache_data"])
+
             return None
 
         except (DatabaseError, json.JSONDecodeError):
@@ -473,6 +484,7 @@ class ServerDatabase(Database):
         self.logger.warning(
             "ServerDatabase query execution is not implemented"
         )
+
         return []
 
     def execute_command(
@@ -494,6 +506,7 @@ class ServerDatabase(Database):
         self.logger.warning(
             "ServerDatabase command execution is not implemented"
         )
+
         return 0
 
     def create_tables(self) -> None:

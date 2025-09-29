@@ -17,20 +17,27 @@ from typing import Any, Dict, List, Optional, Union
 
 try:
     pass
+
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
 
 try:
-    from database import DatabaseError as DatabaseError, UserDatabase as UserDatabase
+    from database import DatabaseError as DatabaseError
+    from database import UserDatabase as UserDatabase
+
 except ImportError:
-    from database import DatabaseError as DatabaseError, UserDatabase as UserDatabase
+    from database import DatabaseError as DatabaseError
+    from database import UserDatabase as UserDatabase
 
 try:
-    from repository import Repository as Repository, RepositoryError as RepositoryError
+    from repository import Repository as Repository
+    from repository import RepositoryError as RepositoryError
+
 except ImportError:
-    from repository import Repository as Repository, RepositoryError as RepositoryError
+    from repository import Repository as Repository
+    from repository import RepositoryError as RepositoryError
 
 
 class DataScraperError(Exception):
@@ -250,6 +257,7 @@ class DataScraper:
 
                     # Analyze file type
                     file_ext = item.suffix.lower()
+
                     structure["file_types"][file_ext] = (
                         structure["file_types"].get(file_ext, 0) + 1
                     )
@@ -369,6 +377,7 @@ class DataScraper:
                                 item, "r", encoding="utf-8", errors="ignore"
                             ) as f:
                                 lines = sum(1 for line in f)
+
                             analysis["programming_languages"][lang][
                                 "total_lines"
                             ] += lines

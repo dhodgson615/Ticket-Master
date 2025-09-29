@@ -13,14 +13,20 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 try:
-    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator, OllamaToolsError as OllamaToolsError, create_ollama_processor as create_ollama_processor
+    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator
+    from ollama_tools import OllamaToolsError as OllamaToolsError
+    from ollama_tools import create_ollama_processor as create_ollama_processor
 except ImportError:
-    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator, OllamaToolsError as OllamaToolsError, create_ollama_processor as create_ollama_processor
+    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator
+    from ollama_tools import OllamaToolsError as OllamaToolsError
+    from ollama_tools import create_ollama_processor as create_ollama_processor
 
 try:
-    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
+    from prompt import PromptTemplate as PromptTemplate
+    from prompt import PromptType as PromptType
 except ImportError:
-    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
+    from prompt import PromptTemplate as PromptTemplate
+    from prompt import PromptType as PromptType
 
 
 def main():

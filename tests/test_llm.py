@@ -13,9 +13,8 @@ from unittest.mock import Mock, patch
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from llm import (LLM, LLMError, LLMProvider,
-                LLMProviderError, MockBackend,
-                OllamaBackend, OpenAIBackend)
+from llm import (LLM, LLMError, LLMProvider, LLMProviderError, MockBackend,
+                 OllamaBackend, OpenAIBackend)
 
 
 class TestLLMBackend(unittest.TestCase):
@@ -335,9 +334,7 @@ class TestLLMModelInstallation(unittest.TestCase):
 
         # Create a mock backend without install_model method
         mock_backend = Mock(spec=[])  # No install_model method
-        with patch(
-            "llm.OllamaBackend", return_value=mock_backend
-        ):
+        with patch("llm.OllamaBackend", return_value=mock_backend):
             llm = LLM(LLMProvider.OLLAMA, config)
 
             result = llm.install_model("test-model")

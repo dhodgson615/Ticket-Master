@@ -12,8 +12,7 @@ from pathlib import Path
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from prompt import (Prompt, PromptError, PromptTemplate,
-                   PromptType)
+from prompt import Prompt, PromptError, PromptTemplate, PromptType
 
 
 class TestPromptTemplate(unittest.TestCase):

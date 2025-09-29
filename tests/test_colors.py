@@ -14,13 +14,12 @@ import pytest
 # Add src directory to path for imports
 sys.path.insert(0, str(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from colors import (BLUE, BOLD, CYAN,  # Global color variables
-                                  DIM, END, GRAY, GREEN, ITALIC, MAGENTA, RED,
-                                  RESET, UNDERLINE, WHITE, YELLOW, Colors,
-                                  colorize, dim, enable_colors, error, header,
-                                  highlight, info, is_color_enabled,
-                                  print_colored, progress_bar, success,
-                                  supports_color, warning)
+from colors import CYAN  # Global color variables
+from colors import (BLUE, BOLD, DIM, END, GRAY, GREEN, ITALIC, MAGENTA, RED,
+                    RESET, UNDERLINE, WHITE, YELLOW, Colors, colorize, dim,
+                    enable_colors, error, header, highlight, info,
+                    is_color_enabled, print_colored, progress_bar, success,
+                    supports_color, warning)
 
 
 class TestColors:

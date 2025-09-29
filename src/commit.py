@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 try:
     from git import NULL_TREE
     from git import Commit as GitCommit
+
 except ImportError:
     import subprocess
     import sys

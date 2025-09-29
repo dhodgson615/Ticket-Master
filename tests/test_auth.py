@@ -8,9 +8,13 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 try:
-    from auth import Authentication as Authentication, AuthenticationError as AuthenticationError, GitHubAuthError as GitHubAuthError
+    from auth import Authentication as Authentication
+    from auth import AuthenticationError as AuthenticationError
+    from auth import GitHubAuthError as GitHubAuthError
 except ImportError:
-    from auth import Authentication as Authentication, AuthenticationError as AuthenticationError, GitHubAuthError as GitHubAuthError
+    from auth import Authentication as Authentication
+    from auth import AuthenticationError as AuthenticationError
+    from auth import GitHubAuthError as GitHubAuthError
 
 
 class TestAuthentication:
@@ -278,8 +282,7 @@ class TestAuthenticationErrorHandling:
 
 def test_basic_import():
     """Test that the Authentication class can be imported."""
-    from auth import (Authentication, AuthenticationError,
-                                    GitHubAuthError)
+    from auth import Authentication, AuthenticationError, GitHubAuthError
 
     assert Authentication is not None
     assert AuthenticationError is not None

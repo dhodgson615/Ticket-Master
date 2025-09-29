@@ -270,8 +270,7 @@ class TestFunctionDefaults:
 
     def test_formatting_function_defaults(self):
         """Test formatting functions with default parameters."""
-        from colors import (error, header, highlight, info,
-                                          success, warning)
+        from colors import error, header, highlight, info, success, warning
 
         # Test that all functions work with just text
         test_text = "test"

@@ -22,9 +22,11 @@ except ImportError:
     import ollama
 
 try:
-    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
+    from prompt import PromptTemplate as PromptTemplate
+    from prompt import PromptType as PromptType
 except ImportError:
-    from prompt import PromptTemplate as PromptTemplate, PromptType as PromptType
+    from prompt import PromptTemplate as PromptTemplate
+    from prompt import PromptType as PromptType
 
 
 class OllamaToolsError(Exception):

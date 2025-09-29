@@ -9,25 +9,25 @@ try:
     from github.GithubException import (BadCredentialsException,
                                         GithubException,
                                         RateLimitExceededException)
+
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
     )
 
     from github import Github
-
-    from github.GithubException import (
-        GithubException,
-        RateLimitExceededException,
-    )
+    from github.GithubException import (GithubException,
+                                        RateLimitExceededException)
 
 try:
     from auth import Authentication as Authentication
+
 except ImportError:
     from auth import Authentication as Authentication
 
 try:
     from auth import GitHubAuthError as AuthGitHubAuthError
+
 except ImportError:
     from auth import GitHubAuthError as AuthGitHubAuthError
 
@@ -81,6 +81,7 @@ class Issue:
         """
         if not title or not title.strip():
             raise ValueError("Issue title cannot be empty")
+
         if not description or not description.strip():
             raise ValueError("Issue description cannot be empty")
 
@@ -96,6 +97,7 @@ class Issue:
             self.logger.warning(
                 f"Title length ({len(self.title)}) exceeds GitHub limit (256)"
             )
+
             self.title = self.title[:253] + "..."
 
         self.logger.info(f"Created issue: {self.title[:50]}...")
@@ -126,6 +128,7 @@ class Issue:
         try:
             auth = Authentication(token)
             return auth.create_client()
+
         except AuthGitHubAuthError as e:
             # Re-raise as the expected GitHubAuthError for backward compatibility
             raise GitHubAuthError(str(e))
@@ -157,9 +160,11 @@ class Issue:
             if self.labels:
                 # Validate labels exist in repository
                 repo_labels = [label.name for label in repo.get_labels()]
+
                 valid_labels = [
                     label for label in self.labels if label in repo_labels
                 ]
+
                 invalid_labels = [
                     label for label in self.labels if label not in repo_labels
                 ]
@@ -182,6 +187,7 @@ class Issue:
                 try:
                     milestones = repo.get_milestones()
                     milestone_obj = None
+
                     for ms in milestones:
                         if ms.title == self.milestone:
                             milestone_obj = ms
@@ -189,10 +195,12 @@ class Issue:
 
                     if milestone_obj:
                         issue_kwargs["milestone"] = milestone_obj
+
                     else:
                         self.logger.warning(
                             f"Milestone '{self.milestone}' not found in repository"
                         )
+
                 except Exception as e:
                     self.logger.warning(f"Error setting milestone: {e}")
 
@@ -217,12 +225,15 @@ class Issue:
             self.logger.info(
                 f"Successfully created issue #{created_issue.number}: {self.title}"
             )
+
             return issue_info
 
         except RateLimitExceededException as e:
             raise IssueError(f"GitHub API rate limit exceeded: {e}")
+
         except GithubException as e:
             raise IssueError(f"GitHub API error: {e}")
+
         except Exception as e:
             raise IssueError(f"Failed to create issue: {e}")
 
@@ -268,6 +279,7 @@ class Issue:
             for label in self.labels:
                 if not label.strip():
                     warnings.append("Empty label detected")
+
                 elif len(label) > 50:
                     warnings.append(
                         f"Label '{label}' is very long (>50 characters)"
@@ -414,6 +426,7 @@ class Issue:
                         time.sleep(rate_limit_delay)
 
                     result = issue.create_on_github(repo_name, token)
+
                     created_issues.append(
                         {
                             "issue": issue,
@@ -434,6 +447,7 @@ class Issue:
                         "batch": batch_start // batch_size + 1,
                         "index": batch_start + i,
                     }
+
                     failed_issues.append(error_info)
                     errors.append(
                         f"Issue {batch_start + i + 1} ({issue.title}): {e}"
@@ -537,6 +551,7 @@ class Issue:
                 error_msg = (
                     f"Failed to create Issue object from template {i + 1}: {e}"
                 )
+
                 creation_errors.append(error_msg)
                 logger.error(error_msg)
 
@@ -577,5 +592,6 @@ def test_github_connection(token: Optional[str] = None) -> Dict[str, Any]:
     try:
         auth = Authentication(token)
         return auth.test_connection()
+
     except Exception as e:
         return {"authenticated": False, "error": str(e)}

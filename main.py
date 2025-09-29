@@ -30,31 +30,59 @@ except ImportError:
 
 # Import with fallback installation - core modules
 try:
-    from __init__ import Issue as Issue, Repository as Repository, __version__ as __version__
+    from __init__ import Issue as Issue
+    from __init__ import Repository as Repository
+    from __init__ import __version__ as __version__
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "gitpython"])
-    from __init__ import Issue as Issue, Repository as Repository, __version__ as __version__
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "gitpython"]
+    )
+    from __init__ import Issue as Issue
+    from __init__ import Repository as Repository
+    from __init__ import __version__ as __version__
 
 try:
-    from colors import Colors as Colors, dim as dim, error as error, header as header, highlight as highlight, info as info, print_colored as print_colored, success as success, warning as warning
+    from colors import Colors as Colors
+    from colors import dim as dim
+    from colors import error as error
+    from colors import header as header
+    from colors import highlight as highlight
+    from colors import info as info
+    from colors import print_colored as print_colored
+    from colors import success as success
+    from colors import warning as warning
 except ImportError:
-    from colors import Colors as Colors, dim as dim, error as error, header as header, highlight as highlight, info as info, print_colored as print_colored, success as success, warning as warning
+    from colors import Colors as Colors
+    from colors import dim as dim
+    from colors import error as error
+    from colors import header as header
+    from colors import highlight as highlight
+    from colors import info as info
+    from colors import print_colored as print_colored
+    from colors import success as success
+    from colors import warning as warning
 
 try:
-    from github_utils import GitHubCloneError as GitHubCloneError, GitHubUtils as GitHubUtils
+    from github_utils import GitHubCloneError as GitHubCloneError
+    from github_utils import GitHubUtils as GitHubUtils
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    from github_utils import GitHubCloneError as GitHubCloneError, GitHubUtils as GitHubUtils
+    from github_utils import GitHubCloneError as GitHubCloneError
+    from github_utils import GitHubUtils as GitHubUtils
 
 try:
-    from issue import GitHubAuthError as GitHubAuthError, IssueError as IssueError
+    from issue import GitHubAuthError as GitHubAuthError
+    from issue import IssueError as IssueError
 except ImportError:
-    from issue import GitHubAuthError as GitHubAuthError, IssueError as IssueError
+    from issue import GitHubAuthError as GitHubAuthError
+    from issue import IssueError as IssueError
 
 try:
-    from llm import LLM as LLM, LLMError as LLMError
+    from llm import LLM as LLM
+    from llm import LLMError as LLMError
 except ImportError:
-    from llm import LLM as LLM, LLMError as LLMError
+    from llm import LLM as LLM
+    from llm import LLMError as LLMError
 
 try:
     from repository import RepositoryError as RepositoryError

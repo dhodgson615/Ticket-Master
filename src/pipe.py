@@ -10,9 +10,11 @@ except ImportError:
     from llm import LLM as LLM
 
 try:
-    from prompt import Prompt as Prompt, PromptTemplate as PromptTemplate
+    from prompt import Prompt as Prompt
+    from prompt import PromptTemplate as PromptTemplate
 except ImportError:
-    from prompt import Prompt as Prompt, PromptTemplate as PromptTemplate
+    from prompt import Prompt as Prompt
+    from prompt import PromptTemplate as PromptTemplate
 
 
 class PipeError(Exception):

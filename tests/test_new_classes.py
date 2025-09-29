@@ -18,13 +18,10 @@ from unittest.mock import MagicMock, Mock, patch
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from data_scraper import DataScraper, DataScraperError
-from database import (Database, DatabaseError,
-                     ServerDatabase, UserDatabase)
-from llm import (LLM, HuggingFaceBackend, LLMError,
-                LLMProvider, OllamaBackend)
+from database import Database, DatabaseError, ServerDatabase, UserDatabase
+from llm import LLM, HuggingFaceBackend, LLMError, LLMProvider, OllamaBackend
 from pipe import Pipe, PipeError, PipelineStep, PipeStage
-from prompt import (Prompt, PromptError, PromptTemplate,
-                   PromptType)
+from prompt import Prompt, PromptError, PromptTemplate, PromptType
 
 
 class TestUserDatabase(unittest.TestCase):

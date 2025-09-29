@@ -14,8 +14,7 @@ from pathlib import Path
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from database import (Database, DatabaseError,
-                     ServerDatabase, UserDatabase)
+from database import Database, DatabaseError, ServerDatabase, UserDatabase
 
 
 class TestUserDatabase(unittest.TestCase):

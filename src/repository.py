@@ -15,7 +15,7 @@ except ImportError:
     )
 
     import git
-    from git import Repo, InvalidGitRepositoryError
+    from git import InvalidGitRepositoryError, Repo
 
 try:
     from branch import Branch as Branch

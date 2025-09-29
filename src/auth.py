@@ -15,10 +15,12 @@ from typing import Any, Dict, Optional
 try:
     from github import Auth, Github
     from github.GithubException import BadCredentialsException
+
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
     )
+
     from github import Auth, Github
     from github.GithubException import BadCredentialsException
 
