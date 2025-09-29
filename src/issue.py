@@ -6,11 +6,9 @@ from typing import Any, Dict, List, Optional
 
 try:
     from github import Auth, Github
-    from github.GithubException import (
-        BadCredentialsException,
-        GithubException,
-        RateLimitExceededException,
-    )
+    from github.GithubException import (BadCredentialsException,
+                                        GithubException,
+                                        RateLimitExceededException)
 
 except ImportError:
     subprocess.check_call(
@@ -18,10 +16,8 @@ except ImportError:
     )
 
     from github import Github
-    from github.GithubException import (
-        GithubException,
-        RateLimitExceededException,
-    )
+    from github.GithubException import (GithubException,
+                                        RateLimitExceededException)
 
 try:
     from auth import Authentication as Authentication

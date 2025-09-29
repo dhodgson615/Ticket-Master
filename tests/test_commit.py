@@ -170,10 +170,12 @@ class TestCommitErrorHandling(unittest.TestCase):
         mock_commit.committer.email = "test@example.com"
         mock_commit.committed_date = 1672574400
         mock_commit.parents = []
-        
+
         # Make stats property raise an exception
-        mock_commit.stats = property(lambda self: exec('raise Exception("Stats error")'))
-        
+        mock_commit.stats = property(
+            lambda self: exec('raise Exception("Stats error")')
+        )
+
         # This should still work, just without stats
         commit = Commit(mock_commit)
         self.assertEqual(commit.hash, "abc123")
@@ -190,25 +192,25 @@ class TestCommitErrorHandling(unittest.TestCase):
         mock_commit.committer.email = "test@example.com"
         mock_commit.committed_date = 1672574400
         mock_commit.parents = []
-        
+
         # Mock stats
         stats_mock = Mock()
         stats_mock.total = {"insertions": 15, "deletions": 5}
         stats_mock.files = {
             "file1.py": {"insertions": 10, "deletions": 2},
-            "file2.py": {"insertions": 5, "deletions": 3}
+            "file2.py": {"insertions": 5, "deletions": 3},
         }
         mock_commit.stats = stats_mock
-        
+
         commit = Commit(mock_commit)
-        
+
         # Test the get_file_changes method if it exists
-        if hasattr(commit, 'get_file_changes'):
+        if hasattr(commit, "get_file_changes"):
             changes = commit.get_file_changes()
             self.assertIsInstance(changes, list)
-        
+
         # Test file modification detection
-        if hasattr(commit, 'modifies_file'):
+        if hasattr(commit, "modifies_file"):
             # Should return True for files in the commit
             self.assertTrue(commit.modifies_file("file1.py"))
             # Should return False for files not in the commit
@@ -226,23 +228,26 @@ class TestCommitErrorHandling(unittest.TestCase):
         mock_commit.committer.email = "test@example.com"
         mock_commit.committed_date = 1672574400
         mock_commit.parents = []
-        
+
         # Mock large stats to test impact
         stats_mock = Mock()
         stats_mock.total = {"insertions": 500, "deletions": 200}
         stats_mock.files = {}
         for i in range(20):  # Many files modified
-            stats_mock.files[f"file{i}.py"] = {"insertions": 25, "deletions": 10}
+            stats_mock.files[f"file{i}.py"] = {
+                "insertions": 25,
+                "deletions": 10,
+            }
         mock_commit.stats = stats_mock
-        
+
         commit = Commit(mock_commit)
-        
+
         # Test impact assessment methods if they exist
-        if hasattr(commit, 'is_large_change'):
+        if hasattr(commit, "is_large_change"):
             # Should be considered a large change
             self.assertTrue(commit.is_large_change())
-        
-        if hasattr(commit, 'get_impact_score'):
+
+        if hasattr(commit, "get_impact_score"):
             score = commit.get_impact_score()
             self.assertIsInstance(score, (int, float))
             self.assertGreater(score, 0)
@@ -263,26 +268,28 @@ class TestCommitUtilityMethods(unittest.TestCase):
         mock_commit.committer.email = "dev@example.com"
         mock_commit.committed_date = 1672574400
         mock_commit.parents = []
-        
+
         stats_mock = Mock()
         stats_mock.total = {"insertions": 25, "deletions": 8}
         stats_mock.files = {"auth.py": {"insertions": 25, "deletions": 8}}
         mock_commit.stats = stats_mock
-        
+
         commit = Commit(mock_commit)
-        
+
         # Test short hash
-        if hasattr(commit, 'short_hash'):
+        if hasattr(commit, "short_hash"):
             short = commit.short_hash
             self.assertLess(len(short), len(commit.hash))
-        
+
         # Test formatted message
-        if hasattr(commit, 'format_message'):
+        if hasattr(commit, "format_message"):
             formatted = commit.format_message()
             self.assertIsInstance(formatted, str)
-        
+
         # Test summary extraction
-        self.assertEqual(commit.summary, "Fix: resolve critical bug in authentication")
+        self.assertEqual(
+            commit.summary, "Fix: resolve critical bug in authentication"
+        )
 
 
 if __name__ == "__main__":

@@ -167,19 +167,19 @@ class TestPullRequest(unittest.TestCase):
         mock_commit1.commit.author.name = "Author 1"
         mock_commit1.commit.author.email = "author1@example.com"
         mock_commit1.commit.author.date = datetime(2023, 1, 1, 10, 0, 0)
-        
+
         mock_commit2 = Mock()
         mock_commit2.sha = "def456"
         mock_commit2.commit.message = "Second commit"
         mock_commit2.commit.author.name = "Author 2"
         mock_commit2.commit.author.email = "author2@example.com"
         mock_commit2.commit.author.date = datetime(2023, 1, 1, 11, 0, 0)
-        
+
         self.mock_pr.get_commits.return_value = [mock_commit1, mock_commit2]
-        
+
         pr = PullRequest(self.mock_pr)
         commits = pr.get_commits()
-        
+
         self.assertEqual(len(commits), 2)
         self.assertEqual(commits[0].hash, "abc123")
         self.assertEqual(commits[0].message, "First commit")
@@ -189,9 +189,9 @@ class TestPullRequest(unittest.TestCase):
     def test_get_commits_error(self):
         """Test get_commits with error."""
         self.mock_pr.get_commits.side_effect = Exception("API Error")
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         with self.assertRaises(PullRequestError):
             pr.get_commits()
 
@@ -205,7 +205,7 @@ class TestPullRequest(unittest.TestCase):
         mock_file1.deletions = 5
         mock_file1.changes = 15
         mock_file1.patch = "@@ -1,3 +1,4 @@\n+added line\n original line"
-        
+
         mock_file2 = Mock()
         mock_file2.filename = "file2.py"
         mock_file2.status = "added"
@@ -213,12 +213,12 @@ class TestPullRequest(unittest.TestCase):
         mock_file2.deletions = 0
         mock_file2.changes = 20
         mock_file2.patch = "@@ -0,0 +1,5 @@\n+new file content"
-        
+
         self.mock_pr.get_files.return_value = [mock_file1, mock_file2]
-        
+
         pr = PullRequest(self.mock_pr)
         files = pr.get_changed_files()
-        
+
         self.assertEqual(len(files), 2)
         self.assertEqual(files[0]["filename"], "file1.py")
         self.assertEqual(files[0]["status"], "modified")
@@ -228,9 +228,9 @@ class TestPullRequest(unittest.TestCase):
     def test_get_changed_files_error(self):
         """Test get_changed_files with error."""
         self.mock_pr.get_files.side_effect = Exception("API Error")
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         with self.assertRaises(PullRequestError):
             pr.get_changed_files()
 
@@ -244,7 +244,7 @@ class TestPullRequest(unittest.TestCase):
         mock_review1.state = "APPROVED"
         mock_review1.body = "Looks good!"
         mock_review1.submitted_at = datetime(2023, 1, 2, 10, 0, 0)
-        
+
         mock_review2 = Mock()
         mock_review2.id = 2
         mock_review2.user.login = "reviewer2"
@@ -252,12 +252,12 @@ class TestPullRequest(unittest.TestCase):
         mock_review2.state = "CHANGES_REQUESTED"
         mock_review2.body = "Needs fixes"
         mock_review2.submitted_at = datetime(2023, 1, 2, 11, 0, 0)
-        
+
         self.mock_pr.get_reviews.return_value = [mock_review1, mock_review2]
-        
+
         pr = PullRequest(self.mock_pr)
         reviews = pr.get_reviews()
-        
+
         self.assertEqual(len(reviews), 2)
         self.assertEqual(reviews[0]["reviewer"], "reviewer1")
         self.assertEqual(reviews[0]["state"], "APPROVED")
@@ -267,9 +267,9 @@ class TestPullRequest(unittest.TestCase):
     def test_get_reviews_error(self):
         """Test get_reviews with error."""
         self.mock_pr.get_reviews.side_effect = Exception("API Error")
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         with self.assertRaises(PullRequestError):
             pr.get_reviews()
 
@@ -283,7 +283,7 @@ class TestPullRequest(unittest.TestCase):
         mock_comment1.body = "This is a comment"
         mock_comment1.created_at = datetime(2023, 1, 2, 10, 0, 0)
         mock_comment1.updated_at = datetime(2023, 1, 2, 10, 0, 0)
-        
+
         mock_comment2 = Mock()
         mock_comment2.id = 2
         mock_comment2.user.login = "commenter2"
@@ -291,12 +291,15 @@ class TestPullRequest(unittest.TestCase):
         mock_comment2.body = "Another comment"
         mock_comment2.created_at = datetime(2023, 1, 2, 11, 0, 0)
         mock_comment2.updated_at = datetime(2023, 1, 2, 11, 30, 0)
-        
-        self.mock_pr.get_issue_comments.return_value = [mock_comment1, mock_comment2]
-        
+
+        self.mock_pr.get_issue_comments.return_value = [
+            mock_comment1,
+            mock_comment2,
+        ]
+
         pr = PullRequest(self.mock_pr)
         comments = pr.get_comments()
-        
+
         self.assertEqual(len(comments), 2)
         self.assertEqual(comments[0]["author"], "commenter1")
         self.assertEqual(comments[0]["body"], "This is a comment")
@@ -306,34 +309,34 @@ class TestPullRequest(unittest.TestCase):
     def test_get_comments_error(self):
         """Test get_comments with error."""
         self.mock_pr.get_issue_comments.side_effect = Exception("API Error")
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         with self.assertRaises(PullRequestError):
             pr.get_comments()
 
     def test_is_mergeable_true(self):
         """Test is_mergeable when PR is mergeable."""
         self.mock_pr.mergeable = True
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertTrue(pr.is_mergeable())
 
     def test_is_mergeable_false(self):
         """Test is_mergeable when PR is not mergeable."""
         self.mock_pr.mergeable = False
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertFalse(pr.is_mergeable())
 
     def test_is_mergeable_none(self):
         """Test is_mergeable when mergeable status is None."""
         self.mock_pr.mergeable = None
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertFalse(pr.is_mergeable())
 
     def test_is_approved_with_approvals(self):
@@ -343,11 +346,11 @@ class TestPullRequest(unittest.TestCase):
         mock_review1.state = "APPROVED"
         mock_review2 = Mock()
         mock_review2.state = "COMMENTED"
-        
+
         self.mock_pr.get_reviews.return_value = [mock_review1, mock_review2]
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertTrue(pr.is_approved())
 
     def test_is_approved_without_approvals(self):
@@ -357,27 +360,27 @@ class TestPullRequest(unittest.TestCase):
         mock_review1.state = "COMMENTED"
         mock_review2 = Mock()
         mock_review2.state = "CHANGES_REQUESTED"
-        
+
         self.mock_pr.get_reviews.return_value = [mock_review1, mock_review2]
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertFalse(pr.is_approved())
 
     def test_is_approved_no_reviews(self):
         """Test is_approved when PR has no reviews."""
         self.mock_pr.get_reviews.return_value = []
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertFalse(pr.is_approved())
 
     def test_is_approved_error(self):
         """Test is_approved with error getting reviews."""
         self.mock_pr.get_reviews.side_effect = Exception("API Error")
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertFalse(pr.is_approved())
 
 
@@ -392,7 +395,7 @@ class TestPullRequestError(unittest.TestCase):
     def test_pull_request_error_message(self):
         """Test PullRequestError message."""
         error_msg = "Test error message"
-        
+
         try:
             raise PullRequestError(error_msg)
         except PullRequestError as e:
@@ -428,33 +431,33 @@ class TestPullRequestEdgeCases(unittest.TestCase):
     def test_pr_with_email(self):
         """Test PR when user has email."""
         self.mock_pr.user.email = "test@example.com"
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertEqual(pr.author_email, "test@example.com")
 
     def test_pr_merged(self):
         """Test PR that is merged."""
         self.mock_pr.merged = True
         self.mock_pr.merged_at = datetime(2023, 1, 2, 12, 0, 0)
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertTrue(pr.merged)
         self.assertEqual(pr.merged_at, datetime(2023, 1, 2, 12, 0, 0))
 
     def test_pr_draft(self):
         """Test draft PR."""
         self.mock_pr.draft = True
-        
+
         pr = PullRequest(self.mock_pr)
-        
+
         self.assertTrue(pr.draft)
 
     def test_pr_with_different_states(self):
         """Test PR with different states."""
         states = ["open", "closed", "merged"]
-        
+
         for state in states:
             self.mock_pr.state = state
             pr = PullRequest(self.mock_pr)
