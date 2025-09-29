@@ -682,7 +682,7 @@ class TestIssueErrorHandling:
 class TestGitHubConnection:
     """Test GitHub connection testing functionality."""
 
-    @patch(".auth.Authentication.test_connection")
+    @patch("auth.Authentication.test_connection")
     def test_test_github_connection_success(self, mock_test_connection):
         """Test successful GitHub connection test."""
         mock_test_connection.return_value = {
@@ -709,7 +709,7 @@ class TestGitHubConnection:
         assert result["user"]["login"] == "test_user"
         assert result["rate_limit"]["core"]["remaining"] == 4999
 
-    @patch(".auth.Authentication.test_connection")
+    @patch("auth.Authentication.test_connection")
     def test_test_github_connection_failure(self, mock_test_connection):
         """Test failed GitHub connection test."""
         mock_test_connection.return_value = {
