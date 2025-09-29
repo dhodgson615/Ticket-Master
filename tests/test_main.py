@@ -333,8 +333,8 @@ class TestValidateConfigCommand(unittest.TestCase):
 
         result = main.validate_config_command()
 
-        # Should still return 0 but print validation messages
-        self.assertEqual(result, 0)
+        # Should return 1 (error) for invalid configuration
+        self.assertEqual(result, 1)
         mock_load_config.assert_called_once()
         mock_print.assert_called()
 
