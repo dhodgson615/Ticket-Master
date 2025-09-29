@@ -265,6 +265,19 @@ class Authentication:
             return {"valid": False, "error": str(e)}
         except Exception as e:
             return {"valid": False, "error": f"Unexpected error: {e}"}
+    
+    def __str__(self) -> str:
+        """String representation of the Authentication instance."""
+        has_token = bool(self.token or os.getenv("GITHUB_TOKEN"))
+        return f"Authentication(has_token={has_token})"
+
+    def __repr__(self) -> str:
+        """Developer representation of the Authentication instance."""
+        has_token = bool(self.token or os.getenv("GITHUB_TOKEN"))
+        return (
+            f"Authentication(token_set={bool(self.token)}, "
+            f"env_token_set={bool(os.getenv('GITHUB_TOKEN'))}, has_token={has_token})"
+        )
 
 
 # ==================== REPOSITORY MODULE ====================
@@ -280,18 +293,119 @@ class CommitError(Exception):
 class Commit:
     """Represents a Git commit with associated metadata."""
     
-    def __init__(self, commit_data: Dict[str, Any]) -> None:
-        """Initialize Commit from commit data dictionary."""
-        self.hash = commit_data.get("hash", "")
-        self.short_hash = commit_data.get("short_hash", "")
-        self.author = commit_data.get("author", {})
-        self.committer = commit_data.get("committer", {})
-        self.message = commit_data.get("message", "")
-        self.summary = commit_data.get("summary", "")
-        self.date = commit_data.get("date", datetime.now())
-        self.files_changed = commit_data.get("files_changed", 0)
-        self.insertions = commit_data.get("insertions", 0)
-        self.deletions = commit_data.get("deletions", 0)
+    def __init__(self, commit_data) -> None:
+        """Initialize Commit from git commit object or commit data dictionary."""
+        if hasattr(commit_data, 'hexsha'):
+            # Git commit object
+            self.git_commit = commit_data
+            self.hash = commit_data.hexsha
+            self.short_hash = commit_data.hexsha[:8]
+            
+            # Author info
+            self.author = {
+                "name": getattr(commit_data.author, 'name', 'Unknown'),
+                "email": getattr(commit_data.author, 'email', 'unknown@example.com')
+            }
+            
+            # Committer info
+            self.committer = {
+                "name": getattr(commit_data.committer, 'name', 'Unknown'), 
+                "email": getattr(commit_data.committer, 'email', 'unknown@example.com')
+            }
+            
+            self.message = getattr(commit_data, 'message', '')
+            self.summary = getattr(commit_data, 'summary', self.message.split('\n')[0])
+            
+            # Date handling
+            if hasattr(commit_data, 'committed_datetime'):
+                self.date = commit_data.committed_datetime
+            elif hasattr(commit_data, 'committed_date'):
+                from datetime import datetime
+                self.date = datetime.fromtimestamp(commit_data.committed_date)
+            else:
+                self.date = datetime.now()
+            
+            # Stats
+            try:
+                if hasattr(commit_data, 'stats'):
+                    stats = commit_data.stats
+                    if hasattr(stats, 'total'):
+                        self.insertions = stats.total.get('insertions', 0)
+                        self.deletions = stats.total.get('deletions', 0)
+                        self.files_changed = len(getattr(stats, 'files', {}))
+                    else:
+                        self.insertions = 0
+                        self.deletions = 0
+                        self.files_changed = 0
+                else:
+                    self.insertions = 0
+                    self.deletions = 0
+                    self.files_changed = 0
+            except:
+                self.insertions = 0
+                self.deletions = 0
+                self.files_changed = 0
+                
+        else:
+            # Dictionary data (legacy compatibility)
+            self.git_commit = None
+            self.hash = commit_data.get("hash", "")
+            self.short_hash = commit_data.get("short_hash", "")
+            self.author = commit_data.get("author", {})
+            self.committer = commit_data.get("committer", {})
+            self.message = commit_data.get("message", "")
+            self.summary = commit_data.get("summary", "")
+            self.date = commit_data.get("date", datetime.now())
+            self.files_changed = commit_data.get("files_changed", 0)
+            self.insertions = commit_data.get("insertions", 0)
+            self.deletions = commit_data.get("deletions", 0)
+    
+    def is_merge_commit(self) -> bool:
+        """Check if this is a merge commit."""
+        if self.git_commit and hasattr(self.git_commit, 'parents'):
+            return len(self.git_commit.parents) > 1
+        return "merge" in self.message.lower()
+    
+    def get_parents(self) -> List[str]:
+        """Get parent commit hashes."""
+        if self.git_commit and hasattr(self.git_commit, 'parents'):
+            return [parent.hexsha for parent in self.git_commit.parents]
+        return []
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert commit to dictionary representation."""
+        return {
+            "hash": self.hash,
+            "short_hash": self.short_hash,
+            "author": self.author,
+            "committer": self.committer,
+            "message": self.message,
+            "summary": self.summary,
+            "date": self.date.isoformat() if self.date else None,
+            "files_changed": self.files_changed,
+            "insertions": self.insertions,
+            "deletions": self.deletions,
+        }
+    
+    def __str__(self) -> str:
+        """String representation of commit."""
+        return f"{self.short_hash}: {self.summary}"
+
+    def __repr__(self) -> str:
+        """Detailed string representation of commit."""
+        date_str = self.date.strftime('%Y-%m-%d %H:%M:%S') if self.date else 'Unknown'
+        return (
+            f"Commit(hash='{self.short_hash}', "
+            f"author='{self.author.get('name', 'Unknown')}', "
+            f"date='{date_str}', "
+            f"files_changed={self.files_changed})"
+        )
+    
+    def __eq__(self, other) -> bool:
+        """Check equality with another commit."""
+        if not isinstance(other, Commit):
+            return False
+        return self.hash == other.hash
 
 class BranchError(Exception):
     """Custom exception for branch-related errors."""
@@ -300,12 +414,73 @@ class BranchError(Exception):
 class Branch:
     """Represents a Git branch with associated metadata."""
     
-    def __init__(self, name: str, is_active: bool = False, 
-                 last_commit: Optional[str] = None) -> None:
-        """Initialize Branch with name and metadata."""
-        self.name = name
-        self.is_active = is_active
-        self.last_commit = last_commit
+    def __init__(self, git_branch, repo_obj=None, is_active: bool = False) -> None:
+        """Initialize Branch from a GitPython branch object or simple parameters."""
+        # Handle both old-style (git_branch object) and new-style (simple params) initialization
+        if hasattr(git_branch, 'name'):
+            # Old-style: git_branch is a git object
+            self.git_branch = git_branch
+            self.repo_obj = repo_obj
+            self.name = git_branch.name
+            self.is_active = is_active
+            
+            # Check if it's a remote branch
+            class_name = getattr(git_branch.__class__, "__name__", "")
+            self.is_remote = "RemoteReference" in class_name or "/" in self.name
+            
+            # Extract remote information for remote branches
+            if self.is_remote:
+                parts = self.name.split("/", 1)
+                self.remote_name = parts[0] if len(parts) > 1 else "origin"
+            else:
+                self.remote_name = None
+                
+            # Get head commit if available
+            try:
+                if hasattr(git_branch, 'commit'):
+                    self.head_commit = git_branch.commit
+                else:
+                    self.head_commit = None
+            except:
+                self.head_commit = None
+        else:
+            # New-style: simple parameters (for backward compatibility)
+            self.name = str(git_branch)  # git_branch is actually the name
+            self.is_active = repo_obj if isinstance(repo_obj, bool) else is_active
+            self.is_remote = False
+            self.remote_name = None
+            self.head_commit = None
+            self.git_branch = None
+            self.repo_obj = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert branch to dictionary representation."""
+        return {
+            "name": self.name,
+            "is_active": self.is_active,
+            "is_remote": self.is_remote,
+            "remote_name": self.remote_name,
+            "head_commit": self.head_commit.hexsha if self.head_commit else None,
+        }
+    
+    def __str__(self) -> str:
+        """String representation of the branch."""
+        prefix = "* " if self.is_active else "  "
+        remote_info = f" (remote: {self.remote_name})" if self.is_remote else ""
+        return f"{prefix}{self.name}{remote_info}"
+
+    def __repr__(self) -> str:
+        """Detailed string representation of the branch."""
+        return (
+            f"Branch(name='{self.name}', is_active={self.is_active}, "
+            f"is_remote={self.is_remote}, remote_name='{self.remote_name}')"
+        )
+    
+    def __eq__(self, other) -> bool:
+        """Check equality with another branch."""
+        if not isinstance(other, Branch):
+            return False
+        return self.name == other.name and self.is_remote == other.is_remote
 
 class PullRequestError(Exception):
     """Custom exception for pull request-related errors."""
@@ -1126,20 +1301,39 @@ class Database:
     
     def __init__(self, db_path: str) -> None:
         """Initialize database connection."""
-        self.db_path = db_path
+        from pathlib import Path
+        self.db_path = Path(db_path)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.connection = None
+        self._connected = False
         self._init_database()
     
     def _init_database(self) -> None:
         """Initialize database connection and create tables."""
         try:
-            self.connection = sqlite3.connect(self.db_path)
-            self.connection.row_factory = sqlite3.Row
+            self.connect()
             self._create_tables()
             self.logger.info(f"Database initialized at {self.db_path}")
         except Exception as e:
             raise Exception(f"Failed to initialize database: {e}")
+    
+    def connect(self) -> None:
+        """Connect to the database."""
+        if not self._connected:
+            self.connection = sqlite3.connect(str(self.db_path))
+            self.connection.row_factory = sqlite3.Row
+            self._connected = True
+    
+    def disconnect(self) -> None:
+        """Disconnect from the database."""
+        if self.connection:
+            self.connection.close()
+            self.connection = None
+            self._connected = False
+    
+    def is_connected(self) -> bool:
+        """Check if database is connected."""
+        return self._connected and self.connection is not None
     
     def _create_tables(self) -> None:
         """Create database tables."""
@@ -1147,12 +1341,19 @@ class Database:
     
     def close(self) -> None:
         """Close database connection."""
-        if self.connection:
-            self.connection.close()
-            self.connection = None
+        self.disconnect()
 
 class UserDatabase(Database):
     """Database for user-related data."""
+    
+    def __init__(self, db_path: Optional[str] = None) -> None:
+        """Initialize user database with optional custom path."""
+        if db_path is None:
+            from pathlib import Path
+            db_path = Path.home() / ".ticket_master" / "user_data.db"
+            # Create directory if it doesn't exist
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+        super().__init__(str(db_path))
     
     def _create_tables(self) -> None:
         """Create user tables."""
