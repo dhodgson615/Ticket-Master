@@ -489,15 +489,125 @@ class PullRequestError(Exception):
 class PullRequest:
     """Represents a GitHub pull request with associated metadata."""
     
-    def __init__(self, pr_data: Dict[str, Any]) -> None:
-        """Initialize PullRequest from PR data dictionary."""
-        self.number = pr_data.get("number", 0)
-        self.title = pr_data.get("title", "")
-        self.body = pr_data.get("body", "")
-        self.state = pr_data.get("state", "")
-        self.author = pr_data.get("author", "")
-        self.created_at = pr_data.get("created_at", datetime.now())
-        self.updated_at = pr_data.get("updated_at", datetime.now())
+    def __init__(self, pr_data) -> None:
+        """Initialize PullRequest from GitHub PR object or data dictionary."""
+        if hasattr(pr_data, 'number'):
+            # GitHub PR object
+            self.pr_obj = pr_data
+            self.number = pr_data.number
+            self.title = getattr(pr_data, 'title', '')
+            self.body = getattr(pr_data, 'body', '')
+            self.state = getattr(pr_data, 'state', '')
+            
+            # Author info
+            if hasattr(pr_data, 'user') and pr_data.user:
+                self.author = getattr(pr_data.user, 'login', '')
+                self.author_name = getattr(pr_data.user, 'name', '')
+                self.author_email = getattr(pr_data.user, 'email', None)
+            else:
+                self.author = ''
+                self.author_name = ''
+                self.author_email = None
+                
+            # Additional properties
+            self.draft = getattr(pr_data, 'draft', False)
+            self.commits = getattr(pr_data, 'commits', 0)
+            self.changed_files = getattr(pr_data, 'changed_files', 0)
+            self.additions = getattr(pr_data, 'additions', 0)
+            self.deletions = getattr(pr_data, 'deletions', 0)
+            self.created_at = getattr(pr_data, 'created_at', datetime.now())
+            self.updated_at = getattr(pr_data, 'updated_at', datetime.now())
+            self.merged_at = getattr(pr_data, 'merged_at', None)
+            self.merged = getattr(pr_data, 'merged', False)
+            self.mergeable = getattr(pr_data, 'mergeable', None)
+            
+            # Branch info
+            if hasattr(pr_data, 'head') and pr_data.head:
+                self.head_ref = getattr(pr_data.head, 'ref', '')
+            else:
+                self.head_ref = ''
+                
+            if hasattr(pr_data, 'base') and pr_data.base:
+                self.base_ref = getattr(pr_data.base, 'ref', '')
+            else:
+                self.base_ref = ''
+                
+        else:
+            # Dictionary data (legacy compatibility)
+            self.pr_obj = None
+            self.number = pr_data.get("number", 0)
+            self.title = pr_data.get("title", "")
+            self.body = pr_data.get("body", "")
+            self.state = pr_data.get("state", "")
+            self.author = pr_data.get("author", "")
+            self.author_name = pr_data.get("author_name", "")
+            self.author_email = pr_data.get("author_email", None)
+            self.draft = pr_data.get("draft", False)
+            self.commits = pr_data.get("commits", 0)
+            self.changed_files = pr_data.get("changed_files", 0)
+            self.additions = pr_data.get("additions", 0)
+            self.deletions = pr_data.get("deletions", 0)
+            self.created_at = pr_data.get("created_at", datetime.now())
+            self.updated_at = pr_data.get("updated_at", datetime.now())
+            self.merged_at = pr_data.get("merged_at", None)
+            self.merged = pr_data.get("merged", False)
+            self.mergeable = pr_data.get("mergeable", None)
+            self.head_ref = pr_data.get("head_ref", "")
+            self.base_ref = pr_data.get("base_ref", "")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert pull request to dictionary representation."""
+        return {
+            "number": self.number,
+            "title": self.title,
+            "body": self.body,
+            "description": self.body,  # Alias for body
+            "state": self.state,
+            "author": self.author,
+            "author_name": self.author_name,
+            "author_email": self.author_email,
+            "draft": self.draft,
+            "commits": self.commits,
+            "changed_files": self.changed_files,
+            "additions": self.additions,
+            "deletions": self.deletions,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "merged_at": self.merged_at.isoformat() if self.merged_at else None,
+            "merged": self.merged,
+            "mergeable": self.mergeable,
+            "head_ref": self.head_ref,
+            "base_ref": self.base_ref,
+            "source_branch": self.head_ref,  # Alias for head_ref
+            "target_branch": self.base_ref,  # Alias for base_ref
+        }
+    
+    def __str__(self) -> str:
+        """String representation of pull request."""
+        return f"#{self.number}: {self.title}"
+
+    def __repr__(self) -> str:
+        """Detailed string representation of pull request."""
+        return (
+            f"PullRequest(number={self.number}, title='{self.title}', "
+            f"state='{self.state}', author='{self.author}')"
+        )
+    
+    def __eq__(self, other) -> bool:
+        """Check equality with another pull request."""
+        if not isinstance(other, PullRequest):
+            return False
+        return self.number == other.number
+    
+    def is_mergeable(self) -> Optional[bool]:
+        """Check if pull request is mergeable."""
+        return self.mergeable
+    
+    def is_approved(self) -> bool:
+        """Check if pull request is approved."""
+        # This would require GitHub API to check reviews
+        # For now, return a default based on state
+        return self.state == "approved" or self.merged
 
 class Repository:
     """Handles Git repository operations and analysis."""
@@ -650,6 +760,51 @@ class Repository:
             
         except Exception as e:
             raise RepositoryError(f"Failed to analyze file changes: {e}")
+    
+    def get_file_content(self, file_path: str) -> Optional[str]:
+        """Get content of a file from the repository."""
+        try:
+            full_path = self.path / file_path
+            if full_path.exists() and full_path.is_file():
+                return full_path.read_text(encoding='utf-8', errors='ignore')
+            return None
+        except Exception as e:
+            self.logger.error(f"Failed to read file {file_path}: {e}")
+            return None
+    
+    def is_ignored(self, file_path: str) -> bool:
+        """Check if a file is ignored by .gitignore."""
+        try:
+            # Use git check-ignore command to check if file is ignored
+            import subprocess
+            result = subprocess.run(
+                ['git', 'check-ignore', file_path],
+                cwd=str(self.path),
+                capture_output=True,
+                text=True
+            )
+            # git check-ignore returns 0 if file is ignored, 1 if not
+            return result.returncode == 0
+        except Exception as e:
+            self.logger.debug(f"Failed to check if {file_path} is ignored: {e}")
+            return False
+    
+    def __str__(self) -> str:
+        """String representation of the repository."""
+        try:
+            branch = self.repo.active_branch.name
+        except:
+            branch = "detached"
+        return f"Repository(path='{self.path}', branch='{branch}')"
+
+    def __repr__(self) -> str:
+        """Detailed string representation of the repository."""
+        try:
+            branch = self.repo.active_branch.name
+            head_commit = self.repo.head.commit.hexsha[:8]
+            return f"Repository(path='{self.path}', branch='{branch}', head='{head_commit}')"
+        except:
+            return f"Repository(path='{self.path}', status='invalid')"
 
 
 # ==================== ISSUE MODULE ====================
