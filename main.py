@@ -316,7 +316,7 @@ def generate_issues_with_llm(
         # Use Ollama tools if provider is Ollama
         if provider == "ollama":
             try:
-                from ticket_master.ollama_tools import create_ollama_processor
+                from ollama_tools import create_ollama_processor
 
                 processor = create_ollama_processor(llm_config)
 
@@ -417,7 +417,7 @@ def generate_issues_with_standard_llm(
             return generate_sample_issues(analysis, config)
 
         # Use proper prompt template system
-        from ticket_master.prompt import Prompt
+        from prompt import Prompt
 
         prompt_manager = Prompt()
         prompt_manager.create_builtin_templates()  # Ensure built-in templates are created
@@ -947,7 +947,7 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
 
             # Test GitHub connection
             try:
-                from ticket_master.issue import test_github_connection
+                from issue import test_github_connection
 
                 connection_result = test_github_connection(
                     github_config["token"]
@@ -1003,7 +1003,7 @@ def validate_config_command(config_path: Optional[str] = None) -> int:
 
         # Test LLM availability
         try:
-            from ticket_master.llm import LLM
+            from llm import LLM
 
             llm = LLM(provider, llm_config)
 
