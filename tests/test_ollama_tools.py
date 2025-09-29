@@ -12,11 +12,11 @@ from unittest.mock import MagicMock, Mock, patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.ollama_tools import (OllamaPromptProcessor,
+from ollama_tools import (OllamaPromptProcessor,
                                         OllamaPromptValidator,
                                         OllamaToolsError,
                                         create_ollama_processor)
-from ticket_master.prompt import PromptTemplate, PromptType
+from prompt import PromptTemplate, PromptType
 
 
 class TestOllamaPromptProcessor(unittest.TestCase):
@@ -24,12 +24,12 @@ class TestOllamaPromptProcessor(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("ticket_master.ollama_tools.ollama"):
+        with patch(".ollama_tools.ollama"):
             self.processor = OllamaPromptProcessor(
                 host="localhost", port=11434, model="llama3.2"
             )
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_init(self, mock_ollama):
         """Test processor initialization."""
         mock_client = Mock()
@@ -42,7 +42,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
         self.assertEqual(processor.model, "test-model")
         mock_ollama.Client.assert_called_with(host="http://testhost:8080")
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_process_prompt_success(self, mock_ollama):
         """Test successful prompt processing."""
         # Setup mocks
@@ -84,7 +84,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
         self.assertIn("processing_time", result["metadata"])
         self.assertEqual(result["raw_response"], mock_response)
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_process_prompt_with_options(self, mock_ollama):
         """Test prompt processing with additional options."""
         mock_client = Mock()
@@ -116,7 +116,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
             # If no options were passed, that's also acceptable
             pass
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_process_prompt_api_error(self, mock_ollama):
         """Test handling of Ollama API errors."""
         mock_client = Mock()
@@ -172,7 +172,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
             self.assertEqual(results[1]["response"], "Response 2")
             self.assertIn("error", results[2])
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_generate_issues_from_analysis(self, mock_ollama):
         """Test issue generation from repository analysis."""
         # Setup processor with mocked prompt manager
@@ -219,7 +219,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
             ],
         }
 
-        with patch("ticket_master.prompt.Prompt") as mock_prompt_class:
+        with patch(".prompt.Prompt") as mock_prompt_class:
             mock_prompt = Mock()
             mock_template = Mock()
             mock_template.render.return_value = "Rendered prompt"
@@ -281,7 +281,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
         self.assertEqual(issues[1]["title"], "Second Issue")
         self.assertEqual(issues[1]["labels"], ["enhancement", "documentation"])
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_check_model_availability(self, mock_ollama):
         """Test model availability checking."""
         mock_client = Mock()
@@ -299,7 +299,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
         self.assertEqual(result["model"], "llama3.2")
         self.assertEqual(len(result["available_models"]), 2)
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_install_model(self, mock_ollama):
         """Test model installation."""
         mock_client = Mock()
@@ -314,7 +314,7 @@ class TestOllamaPromptProcessor(unittest.TestCase):
         self.assertEqual(result["model"], "test-model")
         mock_client.pull.assert_called_once_with("test-model")
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_get_model_info(self, mock_ollama):
         """Test getting model information."""
         mock_client = Mock()
@@ -490,7 +490,7 @@ class TestOllamaPromptValidator(unittest.TestCase):
 class TestOllamaFactoryFunction(unittest.TestCase):
     """Test factory functions."""
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_create_ollama_processor(self, mock_ollama):
         """Test factory function for creating OllamaPromptProcessor."""
         config = {"host": "testhost", "port": 8080, "model": "test-model"}
@@ -500,7 +500,7 @@ class TestOllamaFactoryFunction(unittest.TestCase):
         self.assertIsInstance(processor, OllamaPromptProcessor)
         self.assertEqual(processor.model, "test-model")
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_create_ollama_processor_defaults(self, mock_ollama):
         """Test factory function with default values."""
         config = {}
@@ -516,12 +516,12 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        with patch("ticket_master.ollama_tools.ollama"):
+        with patch(".ollama_tools.ollama"):
             self.processor = OllamaPromptProcessor(
                 host="localhost", port=11434, model="llama3.2"
             )
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_model_switching(self, mock_ollama):
         """Test switching between different models."""
         mock_client = Mock()
@@ -533,7 +533,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
 
         self.assertEqual(processor.model, "llama3.1")
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_model_installation_with_progress(self, mock_ollama):
         """Test model installation with progress tracking."""
         mock_client = Mock()
@@ -561,7 +561,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertEqual(result["model"], "test-model")
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_model_installation_failure_scenarios(self, mock_ollama):
         """Test various model installation failure scenarios."""
         mock_client = Mock()
@@ -583,7 +583,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertIn("Model not found", str(result.get("error", "")))
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_concurrent_request_handling(self, mock_ollama):
         """Test handling of concurrent requests to Ollama."""
         mock_client = Mock()
@@ -620,7 +620,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         for result in results:
             self.assertTrue(result["success"])
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_memory_optimization_large_prompts(self, mock_ollama):
         """Test memory optimization when handling large prompts."""
         mock_client = Mock()
@@ -644,7 +644,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         self.assertTrue(result["success"])
         mock_client.generate.assert_called_once()
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_response_streaming_handling(self, mock_ollama):
         """Test handling of streaming responses from Ollama."""
         mock_client = Mock()
@@ -672,7 +672,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
         # Should handle streaming and combine chunks
         self.assertTrue(result["success"])
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_model_info_detailed(self, mock_ollama):
         """Test retrieving detailed model information."""
         mock_client = Mock()
@@ -705,7 +705,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
             self.assertEqual(result["model_info"]["name"], "llama3.2:latest")
             self.assertIn("details", result["model_info"])
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_connection_retry_logic(self, mock_ollama):
         """Test connection retry logic for unreliable networks."""
         mock_client = Mock()
@@ -733,7 +733,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
 
         self.assertEqual(result["response"], "Success after retries")
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_custom_generation_parameters(self, mock_ollama):
         """Test custom generation parameters for fine-tuned control."""
         mock_client = Mock()
@@ -767,7 +767,7 @@ class TestOllamaAdvancedIntegration(unittest.TestCase):
 class TestOllamaErrorRecovery(unittest.TestCase):
     """Test Ollama error recovery and failure scenarios."""
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_server_unavailable_graceful_degradation(self, mock_ollama):
         """Test graceful degradation when Ollama server is unavailable."""
         # Mock Ollama not available
@@ -782,7 +782,7 @@ class TestOllamaErrorRecovery(unittest.TestCase):
             # If an exception is raised, it should be handled gracefully
             pass
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_model_loading_timeout_handling(self, mock_ollama):
         """Test handling of model loading timeouts."""
         mock_client = Mock()
@@ -805,7 +805,7 @@ class TestOllamaErrorRecovery(unittest.TestCase):
         with self.assertRaises(socket.timeout):
             processor.process_prompt(template, {})
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_insufficient_memory_handling(self, mock_ollama):
         """Test handling when system has insufficient memory for model."""
         mock_client = Mock()
@@ -823,7 +823,7 @@ class TestOllamaErrorRecovery(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertIn("error", result)
 
-    @patch("ticket_master.ollama_tools.ollama")
+    @patch(".ollama_tools.ollama")
     def test_invalid_prompt_handling(self, mock_ollama):
         """Test handling of invalid or malformed prompts."""
         mock_client = Mock()

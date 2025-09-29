@@ -4,8 +4,15 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from .llm import LLM
-from .prompt import Prompt, PromptTemplate
+try:
+    from llm import LLM as LLM
+except ImportError:
+    from llm import LLM as LLM
+
+try:
+    from prompt import Prompt as Prompt, PromptTemplate as PromptTemplate
+except ImportError:
+    from prompt import Prompt as Prompt, PromptTemplate as PromptTemplate
 
 
 class PipeError(Exception):

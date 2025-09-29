@@ -12,7 +12,10 @@ except ImportError:
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
 
-from .commit import Commit
+try:
+    from commit import Commit as Commit
+except ImportError:
+    from commit import Commit as Commit
 
 
 class BranchError(Exception):

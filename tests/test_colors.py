@@ -14,7 +14,7 @@ import pytest
 # Add src directory to path for imports
 sys.path.insert(0, str(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from ticket_master.colors import (BLUE, BOLD, CYAN,  # Global color variables
+from colors import (BLUE, BOLD, CYAN,  # Global color variables
                                   DIM, END, GRAY, GREEN, ITALIC, MAGENTA, RED,
                                   RESET, UNDERLINE, WHITE, YELLOW, Colors,
                                   colorize, dim, enable_colors, error, header,

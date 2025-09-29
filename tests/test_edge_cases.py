@@ -21,7 +21,7 @@ class TestEdgeCases:
 
     def test_empty_string_handling(self):
         """Test that modules handle empty strings gracefully."""
-        from ticket_master.colors import colorize, error, success
+        from colors import colorize, error, success
 
         # Test colorization with empty strings
         result = colorize("")
@@ -34,7 +34,7 @@ class TestEdgeCases:
 
     def test_none_value_handling(self):
         """Test that modules handle None values gracefully."""
-        from ticket_master.colors import colorize
+        from colors import colorize
 
         # Test with None (should be converted to string)
         try:
@@ -47,7 +47,7 @@ class TestEdgeCases:
 
     def test_unicode_handling(self):
         """Test Unicode string handling across modules."""
-        from ticket_master.colors import colorize, error, success
+        from colors import colorize, error, success
 
         unicode_text = "🌈 Testing Unicode: 测试 Ñiño ⚡"
 
@@ -62,7 +62,7 @@ class TestEdgeCases:
 
     def test_very_long_strings(self):
         """Test handling of very long strings."""
-        from ticket_master.colors import colorize, success
+        from colors import colorize, success
 
         long_string = "x" * 10000
 
@@ -73,7 +73,7 @@ class TestEdgeCases:
 
     def test_multiline_strings(self):
         """Test handling of multiline strings."""
-        from ticket_master.colors import info, warning
+        from colors import info, warning
 
         multiline = "line1\nline2\nline3\n"
 
@@ -87,7 +87,7 @@ class TestEdgeCases:
 
     def test_special_characters(self):
         """Test handling of special characters."""
-        from ticket_master.colors import dim, highlight
+        from colors import dim, highlight
 
         special_chars = "!@#$%^&*()[]{}|;':\",./<>?`~"
 
@@ -108,7 +108,7 @@ class TestErrorConditions:
         if hasattr(mock_stdout, "isatty"):
             delattr(mock_stdout, "isatty")
 
-        from ticket_master.colors import supports_color
+        from colors import supports_color
 
         # Should not crash and should return False
         result = supports_color()
@@ -117,7 +117,7 @@ class TestErrorConditions:
     @patch.dict(os.environ, {"TERM": ""})
     def test_empty_term_environment(self):
         """Test color support with empty TERM environment variable."""
-        from ticket_master.colors import supports_color
+        from colors import supports_color
 
         # Should handle empty TERM gracefully
         with patch("sys.stdout") as mock_stdout:
@@ -128,7 +128,7 @@ class TestErrorConditions:
 
     def test_progress_bar_edge_values(self):
         """Test progress bar with edge case values."""
-        from ticket_master.colors import progress_bar
+        from colors import progress_bar
 
         # Test with zero width
         result = progress_bar(1, 2, width=0)
@@ -149,7 +149,7 @@ class TestErrorConditions:
 
     def test_color_constants_immutability(self):
         """Test that color constants exist and are strings."""
-        from ticket_master.colors import Colors
+        from colors import Colors
 
         # Test that all color constants are strings
         assert isinstance(Colors.RED, str)
@@ -164,7 +164,7 @@ class TestErrorConditions:
 
     def test_global_color_variables(self):
         """Test global color variables are properly defined."""
-        from ticket_master.colors import BLUE, BOLD, GREEN, RED, RESET
+        from colors import BLUE, BOLD, GREEN, RED, RESET
 
         # Test that global variables exist and are strings
         assert isinstance(RED, str)
@@ -174,7 +174,7 @@ class TestErrorConditions:
         assert isinstance(RESET, str)
 
         # Test that they match class constants
-        from ticket_master.colors import Colors
+        from colors import Colors
 
         assert RED == Colors.RED
         assert GREEN == Colors.GREEN
@@ -188,7 +188,7 @@ class TestModuleStructure:
 
     def test_colors_module_has_required_exports(self):
         """Test that colors module exports all required functions."""
-        import ticket_master.colors as colors
+        import colors as colors
 
         required_functions = [
             "colorize",
@@ -214,7 +214,7 @@ class TestModuleStructure:
 
     def test_colors_module_has_required_constants(self):
         """Test that colors module exports all required constants."""
-        import ticket_master.colors as colors
+        import colors as colors
 
         required_constants = [
             "RED",
@@ -251,7 +251,7 @@ class TestFunctionDefaults:
 
     def test_colorize_defaults(self):
         """Test colorize function with default parameters."""
-        from ticket_master.colors import colorize, enable_colors
+        from colors import colorize, enable_colors
 
         enable_colors(True)
 
@@ -270,7 +270,7 @@ class TestFunctionDefaults:
 
     def test_formatting_function_defaults(self):
         """Test formatting functions with default parameters."""
-        from ticket_master.colors import (error, header, highlight, info,
+        from colors import (error, header, highlight, info,
                                           success, warning)
 
         # Test that all functions work with just text
@@ -285,7 +285,7 @@ class TestFunctionDefaults:
 
     def test_progress_bar_defaults(self):
         """Test progress_bar function with default parameters."""
-        from ticket_master.colors import progress_bar
+        from colors import progress_bar
 
         # Test with minimum required parameters
         result = progress_bar(5, 10)
@@ -297,7 +297,7 @@ class TestFunctionDefaults:
 
     def test_header_color_default(self):
         """Test header function color default."""
-        from ticket_master.colors import Colors, enable_colors, header
+        from colors import Colors, enable_colors, header
 
         enable_colors(True)
 
@@ -308,7 +308,7 @@ class TestFunctionDefaults:
 
     def test_highlight_color_default(self):
         """Test highlight function color default."""
-        from ticket_master.colors import Colors, enable_colors, highlight
+        from colors import Colors, enable_colors, highlight
 
         enable_colors(True)
 

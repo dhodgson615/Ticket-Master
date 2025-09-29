@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.repository import Repository, RepositoryError
+from repository import Repository, RepositoryError
 
 
 class TestRepository:
@@ -189,7 +189,7 @@ class TestRepositoryErrorHandling:
         assert isinstance(error, Exception)
         assert str(error) == "test error"
 
-    @patch("ticket_master.repository.Repo")
+    @patch(".repository.Repo")
     def test_init_with_git_exception(self, mock_repo):
         """Test Repository initialization when Git operations fail."""
         mock_repo.side_effect = Exception("Git error")
@@ -233,7 +233,7 @@ class TestRepositoryErrorHandling:
         with pytest.raises(RepositoryError):
             repo.get_commit_history(branch="nonexistent-branch")
 
-    @patch("ticket_master.repository.subprocess.run")
+    @patch(".repository.subprocess.run")
     def test_is_ignored_with_subprocess_error(
         self, mock_run, temp_git_repo_for_error_tests
     ):

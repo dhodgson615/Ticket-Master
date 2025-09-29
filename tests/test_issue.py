@@ -12,8 +12,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.issue import GitHubAuthError, Issue, IssueError
-from ticket_master.issue import test_github_connection as connection_test
+from issue import GitHubAuthError, Issue, IssueError
+from issue import test_github_connection as connection_test
 
 
 class TestIssue:
@@ -168,7 +168,7 @@ Implement a theme switcher with light/dark options.
 class TestIssueGitHubIntegration:
     """Test Issue class GitHub integration functionality."""
 
-    @patch("ticket_master.issue.Github")  # Use the actual import path
+    @patch(".issue.Github")  # Use the actual import path
     def test_create_issue_success(self, mock_github_class):
         """Test successful issue creation on GitHub."""
         # Setup mocks
@@ -198,7 +198,7 @@ class TestIssueGitHubIntegration:
         assert result.number == 123
         assert "github.com" in result.html_url
 
-    @patch("ticket_master.issue.Github")
+    @patch(".issue.Github")
     def test_create_issue_with_template_and_assignees(self, mock_github_class):
         """Test issue creation with template and assignees."""
         mock_github = Mock()
@@ -233,7 +233,7 @@ class TestIssueGitHubIntegration:
             milestone=issue.milestone,
         )
 
-    @patch("ticket_master.issue.Github")
+    @patch(".issue.Github")
     def test_batch_issue_creation_with_rate_limiting(self, mock_github_class):
         """Test batch creation of multiple issues with rate limiting considerations."""
         mock_github = Mock()
@@ -300,7 +300,7 @@ class TestIssueGitHubIntegration:
 class TestIssueErrorHandling:
     """Test Issue class error handling scenarios."""
 
-    @patch("ticket_master.issue.Github")
+    @patch(".issue.Github")
     def test_github_authentication_error(self, mock_github_class):
         """Test handling of GitHub authentication errors."""
         from github import BadCredentialsException
@@ -314,7 +314,7 @@ class TestIssueErrorHandling:
         with pytest.raises(BadCredentialsException):
             mock_github.get_user()
 
-    @patch("ticket_master.issue.Github")
+    @patch(".issue.Github")
     def test_repository_not_found_error(self, mock_github_class):
         """Test handling when repository is not found."""
         from github import UnknownObjectException
@@ -328,7 +328,7 @@ class TestIssueErrorHandling:
         with pytest.raises(UnknownObjectException):
             mock_github.get_repo("nonexistent/repo")
 
-    @patch("ticket_master.issue.Github")
+    @patch(".issue.Github")
     def test_permission_denied_error(self, mock_github_class):
         """Test handling when user lacks permission to create issues."""
         from github import GithubException
@@ -344,7 +344,7 @@ class TestIssueErrorHandling:
         with pytest.raises(GithubException):
             mock_repo.create_issue(title="Test", body="Test")
 
-    @patch("ticket_master.issue.Github")
+    @patch(".issue.Github")
     def test_network_error_handling(self, mock_github_class):
         """Test handling of network connectivity issues."""
         import requests
@@ -537,7 +537,7 @@ class TestIssueGitHubIntegration:
     """Test GitHub integration functionality."""
 
     @patch.dict(os.environ, {"GITHUB_TOKEN": "test_token"})
-    @patch("ticket_master.auth.Github")
+    @patch(".auth.Github")
     def test_create_github_client_with_env_token(self, mock_github_class):
         """Test creating GitHub client with environment token."""
         mock_github = MagicMock()
@@ -552,7 +552,7 @@ class TestIssueGitHubIntegration:
         mock_github_class.assert_called_once()
         mock_github.get_user.assert_called_once()
 
-    @patch("ticket_master.auth.Github")
+    @patch(".auth.Github")
     def test_create_github_client_with_explicit_token(self, mock_github_class):
         """Test creating GitHub client with explicit token."""
         mock_github = MagicMock()
@@ -574,7 +574,7 @@ class TestIssueGitHubIntegration:
 
             assert "GitHub token not provided" in str(exc_info.value)
 
-    @patch("ticket_master.auth.Github")
+    @patch(".auth.Github")
     def test_create_github_client_bad_credentials(self, mock_github_class):
         """Test creating GitHub client with bad credentials."""
         from github.GithubException import BadCredentialsException
@@ -590,7 +590,7 @@ class TestIssueGitHubIntegration:
 
         assert "Invalid GitHub credentials" in str(exc_info.value)
 
-    @patch("ticket_master.issue.Issue.create_github_client")
+    @patch(".issue.Issue.create_github_client")
     def test_create_on_github_success(self, mock_create_client):
         """Test successful issue creation on GitHub."""
         # Setup mocks
@@ -627,7 +627,7 @@ class TestIssueGitHubIntegration:
         mock_github.get_repo.assert_called_once_with("test/repo")
         mock_repo.create_issue.assert_called_once()
 
-    @patch("ticket_master.issue.Issue.create_github_client")
+    @patch(".issue.Issue.create_github_client")
     def test_create_on_github_with_labels(self, mock_create_client):
         """Test issue creation with labels."""
         # Setup mocks
@@ -682,7 +682,7 @@ class TestIssueErrorHandling:
 class TestGitHubConnection:
     """Test GitHub connection testing functionality."""
 
-    @patch("ticket_master.auth.Authentication.test_connection")
+    @patch(".auth.Authentication.test_connection")
     def test_test_github_connection_success(self, mock_test_connection):
         """Test successful GitHub connection test."""
         mock_test_connection.return_value = {
@@ -709,7 +709,7 @@ class TestGitHubConnection:
         assert result["user"]["login"] == "test_user"
         assert result["rate_limit"]["core"]["remaining"] == 4999
 
-    @patch("ticket_master.auth.Authentication.test_connection")
+    @patch(".auth.Authentication.test_connection")
     def test_test_github_connection_failure(self, mock_test_connection):
         """Test failed GitHub connection test."""
         mock_test_connection.return_value = {

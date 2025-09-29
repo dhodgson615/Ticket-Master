@@ -22,8 +22,15 @@ except ImportError:
         [sys.executable, "-m", "pip", "install", "GitPython>=3.1.40"]
     )
 
-from .database import DatabaseError, UserDatabase
-from .repository import Repository, RepositoryError
+try:
+    from database import DatabaseError as DatabaseError, UserDatabase as UserDatabase
+except ImportError:
+    from database import DatabaseError as DatabaseError, UserDatabase as UserDatabase
+
+try:
+    from repository import Repository as Repository, RepositoryError as RepositoryError
+except ImportError:
+    from repository import Repository as Repository, RepositoryError as RepositoryError
 
 
 class DataScraperError(Exception):

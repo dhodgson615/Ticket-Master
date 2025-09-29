@@ -18,10 +18,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master.branch import Branch, BranchError
-from ticket_master.commit import Commit, CommitError
-from ticket_master.pull_request import PullRequest, PullRequestError
-from ticket_master.repository import Repository, RepositoryError
+from branch import Branch, BranchError
+from commit import Commit, CommitError
+from pull_request import PullRequest, PullRequestError
+from repository import Repository, RepositoryError
 
 
 class TestCommit:

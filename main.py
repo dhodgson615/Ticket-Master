@@ -28,13 +28,38 @@ except ImportError:
     )
     import yaml
 
-from ticket_master import Issue, Repository, __version__
-from ticket_master.colors import (Colors, dim, error, header, highlight, info,
-                                  print_colored, success, warning)
-from ticket_master.github_utils import GitHubCloneError, GitHubUtils
-from ticket_master.issue import GitHubAuthError, IssueError
-from ticket_master.llm import LLM, LLMError
-from ticket_master.repository import RepositoryError
+# Import with fallback installation - core modules
+try:
+    from __init__ import Issue as Issue, Repository as Repository, __version__ as __version__
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "gitpython"])
+    from __init__ import Issue as Issue, Repository as Repository, __version__ as __version__
+
+try:
+    from colors import Colors as Colors, dim as dim, error as error, header as header, highlight as highlight, info as info, print_colored as print_colored, success as success, warning as warning
+except ImportError:
+    from colors import Colors as Colors, dim as dim, error as error, header as header, highlight as highlight, info as info, print_colored as print_colored, success as success, warning as warning
+
+try:
+    from github_utils import GitHubCloneError as GitHubCloneError, GitHubUtils as GitHubUtils
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    from github_utils import GitHubCloneError as GitHubCloneError, GitHubUtils as GitHubUtils
+
+try:
+    from issue import GitHubAuthError as GitHubAuthError, IssueError as IssueError
+except ImportError:
+    from issue import GitHubAuthError as GitHubAuthError, IssueError as IssueError
+
+try:
+    from llm import LLM as LLM, LLMError as LLMError
+except ImportError:
+    from llm import LLM as LLM, LLMError as LLMError
+
+try:
+    from repository import RepositoryError as RepositoryError
+except ImportError:
+    from repository import RepositoryError as RepositoryError
 
 
 def setup_logging(level: str = "INFO") -> None:
