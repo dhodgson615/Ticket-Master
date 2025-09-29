@@ -8,19 +8,23 @@ to dedicated files following the pattern: file.py -> test_file.py
 
 import json
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-from src.ticket_master.data_scraper import DataScraper, DataScraperError
-from src.ticket_master.database import (Database, DatabaseError,
-                                        ServerDatabase, UserDatabase)
-from src.ticket_master.llm import (LLM, HuggingFaceBackend, LLMError,
-                                   LLMProvider, OllamaBackend)
-from src.ticket_master.pipe import Pipe, PipeError, PipelineStep, PipeStage
-from src.ticket_master.prompt import (Prompt, PromptError, PromptTemplate,
-                                      PromptType)
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from data_scraper import DataScraper, DataScraperError
+from database import (Database, DatabaseError,
+                     ServerDatabase, UserDatabase)
+from llm import (LLM, HuggingFaceBackend, LLMError,
+                LLMProvider, OllamaBackend)
+from pipe import Pipe, PipeError, PipelineStep, PipeStage
+from prompt import (Prompt, PromptError, PromptTemplate,
+                   PromptType)
 
 
 class TestUserDatabase(unittest.TestCase):
@@ -305,7 +309,7 @@ class TestLLMBackend(unittest.TestCase):
                 self.assertFalse(backend.is_available())
         else:
             # If client is not available, it should fall back to requests
-            with patch("src.ticket_master.llm.requests.get") as mock_get:
+            with patch("llm.requests.get") as mock_get:
                 mock_response = Mock()
                 mock_response.status_code = 200
                 mock_get.return_value = mock_response
@@ -330,7 +334,7 @@ class TestLLMBackend(unittest.TestCase):
         self.assertEqual(backend.max_length, 500)
         self.assertEqual(backend.temperature, 0.8)
 
-    @patch("src.ticket_master.llm.HuggingFaceBackend._load_model")
+    @patch("llm.HuggingFaceBackend._load_model")
     def test_huggingface_is_available(self, mock_load_model):
         """Test HuggingFace availability check."""
         backend = HuggingFaceBackend({"model": "test-model"})
@@ -347,7 +351,7 @@ class TestLLMBackend(unittest.TestCase):
         ):
             self.assertFalse(backend.is_available())
 
-    @patch("src.ticket_master.llm.HuggingFaceBackend._load_model")
+    @patch("llm.HuggingFaceBackend._load_model")
     def test_huggingface_generate(self, mock_load_model):
         """Test HuggingFace text generation."""
         backend = HuggingFaceBackend({"model": "test-model"})

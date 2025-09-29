@@ -5,10 +5,15 @@ This module provides comprehensive tests for prompt functionality
 including template rendering, validation, and container management.
 """
 
+import sys
 import unittest
+from pathlib import Path
 
-from src.ticket_master.prompt import (Prompt, PromptError, PromptTemplate,
-                                      PromptType)
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from prompt import (Prompt, PromptError, PromptTemplate,
+                   PromptType)
 
 
 class TestPromptTemplate(unittest.TestCase):

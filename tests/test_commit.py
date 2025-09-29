@@ -5,10 +5,15 @@ This module provides comprehensive tests for commit functionality
 including commit operations, merge detection, and representation.
 """
 
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import Mock
 
-from src.ticket_master.commit import Commit, CommitError
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from commit import Commit, CommitError
 
 
 class TestCommit(unittest.TestCase):

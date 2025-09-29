@@ -5,11 +5,16 @@ This module provides comprehensive tests for pull request functionality
 including PR operations, metadata handling, and representation.
 """
 
+import sys
 import unittest
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import Mock
 
-from src.ticket_master.pull_request import PullRequest, PullRequestError
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from pull_request import PullRequest, PullRequestError
 
 
 class TestPullRequest(unittest.TestCase):

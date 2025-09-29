@@ -6,12 +6,16 @@ including connection management, data storage, and error handling.
 """
 
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from src.ticket_master.database import (Database, DatabaseError,
-                                        ServerDatabase, UserDatabase)
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from database import (Database, DatabaseError,
+                     ServerDatabase, UserDatabase)
 
 
 class TestUserDatabase(unittest.TestCase):
