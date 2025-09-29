@@ -9,7 +9,27 @@ based on the contents of a Git repository
 
 ## Installation
 
-### Quick Setup (Recommended)
+### Quickstart Script (Recommended)
+
+1. Clone the repository:
+```bash
+git clone https://github.com/dhodgson615/Ticket-Master.git
+cd Ticket-Master
+```
+
+2. Run the quickstart script:
+```bash
+./quickstart.sh
+```
+
+The quickstart script will automatically:
+- Install all Python dependencies
+- Create the configuration file
+- Help you set up your GitHub token
+- Validate the installation
+- Show you the next steps
+
+### Quick Setup (Alternative)
 
 1. Clone the repository:
 ```bash
