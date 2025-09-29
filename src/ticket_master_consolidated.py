@@ -95,16 +95,27 @@ _color_enabled = True
 
 def supports_color() -> bool:
     """Check if terminal supports color output."""
-    return (
-        hasattr(sys.stdout, "isatty") and
-        sys.stdout.isatty() and
-        os.getenv("TERM", "").lower() != "dumb" and
-        os.getenv("NO_COLOR", "").lower() not in ("1", "true", "yes")
-    )
+    if not (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()):
+        return False
+    
+    if os.getenv("NO_COLOR", "").lower() in ("1", "true", "yes"):
+        return False
+        
+    term = os.getenv("TERM", "").lower()
+    if term == "dumb" or term == "unknown":
+        return False
+        
+    # Check for common color-supporting terminals
+    color_terms = [
+        "xterm", "xterm-color", "xterm-256color", "screen", "screen-256color",
+        "tmux", "tmux-256color", "rxvt", "konsole", "gnome", "alacritty", "iterm"
+    ]
+    
+    return any(color_term in term for color_term in color_terms)
 
 def is_color_enabled() -> bool:
     """Check if color output is enabled."""
-    return _color_enabled and supports_color()
+    return _color_enabled
 
 def enable_colors(enabled: bool = True) -> None:
     """Enable or disable color output."""
@@ -278,6 +289,75 @@ class Authentication:
             f"Authentication(token_set={bool(self.token)}, "
             f"env_token_set={bool(os.getenv('GITHUB_TOKEN'))}, has_token={has_token})"
         )
+    
+    def is_authenticated(self) -> bool:
+        """Test if the current token can authenticate successfully."""
+        try:
+            client = self.create_client()
+            user = client.get_user()
+            # If we can get user info, we're authenticated
+            return True
+        except GitHubAuthError:
+            return False
+        except Exception:
+            return False
+    
+    def get_user_info(self) -> Dict[str, Any]:
+        """Get detailed user information from GitHub."""
+        try:
+            client = self.create_client()
+            user = client.get_user()
+            
+            return {
+                "login": user.login,
+                "name": user.name,
+                "email": user.email,
+                "public_repos": user.public_repos,
+                "followers": user.followers,
+                "following": user.following,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+                "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+            }
+        except Exception as e:
+            raise GitHubAuthError(f"Failed to get user info: {e}")
+    
+    def test_connection(self) -> Dict[str, Any]:
+        """Test connection and return detailed status information."""
+        try:
+            client = self.create_client()
+            user = client.get_user()
+            rate_limit = client.get_rate_limit()
+            
+            return {
+                "status": "success",
+                "authenticated": True,
+                "user": {
+                    "login": user.login,
+                    "name": user.name,
+                    "email": user.email,
+                    "public_repos": user.public_repos,
+                    "followers": user.followers,
+                },
+                "rate_limit": {
+                    "core": {
+                        "limit": rate_limit.core.limit,
+                        "remaining": rate_limit.core.remaining,
+                        "reset": rate_limit.core.reset.isoformat() if rate_limit.core.reset else None,
+                    }
+                }
+            }
+        except GitHubAuthError as e:
+            return {
+                "status": "error",
+                "authenticated": False,
+                "error": str(e)
+            }
+        except Exception as e:
+            return {
+                "status": "error", 
+                "authenticated": False,
+                "error": f"Unexpected error: {e}"
+            }
 
 
 # ==================== REPOSITORY MODULE ====================
@@ -416,6 +496,10 @@ class Branch:
     
     def __init__(self, git_branch, repo_obj=None, is_active: bool = False) -> None:
         """Initialize Branch from a GitPython branch object or simple parameters."""
+        # Validate input
+        if git_branch is None:
+            raise BranchError("git_branch cannot be None")
+        
         # Handle both old-style (git_branch object) and new-style (simple params) initialization
         if hasattr(git_branch, 'name'):
             # Old-style: git_branch is a git object
@@ -491,21 +575,29 @@ class PullRequest:
     
     def __init__(self, pr_data) -> None:
         """Initialize PullRequest from GitHub PR object or data dictionary."""
+        if pr_data is None:
+            raise PullRequestError("pr_data cannot be None")
+            
         if hasattr(pr_data, 'number'):
             # GitHub PR object
             self.pr_obj = pr_data
             self.number = pr_data.number
             self.title = getattr(pr_data, 'title', '')
             self.body = getattr(pr_data, 'body', '')
+            self.description = self.body  # Alias for body
             self.state = getattr(pr_data, 'state', '')
             
             # Author info
             if hasattr(pr_data, 'user') and pr_data.user:
-                self.author = getattr(pr_data.user, 'login', '')
+                self.author = {
+                    "login": getattr(pr_data.user, 'login', ''),
+                    "name": getattr(pr_data.user, 'name', ''),
+                    "email": getattr(pr_data.user, 'email', None)
+                }
                 self.author_name = getattr(pr_data.user, 'name', '')
                 self.author_email = getattr(pr_data.user, 'email', None)
             else:
-                self.author = ''
+                self.author = {"login": "", "name": "", "email": None}
                 self.author_name = ''
                 self.author_email = None
                 
@@ -538,8 +630,9 @@ class PullRequest:
             self.number = pr_data.get("number", 0)
             self.title = pr_data.get("title", "")
             self.body = pr_data.get("body", "")
+            self.description = self.body  # Alias for body
             self.state = pr_data.get("state", "")
-            self.author = pr_data.get("author", "")
+            self.author = pr_data.get("author", {"login": "", "name": "", "email": None})
             self.author_name = pr_data.get("author_name", "")
             self.author_email = pr_data.get("author_email", None)
             self.draft = pr_data.get("draft", False)
@@ -608,6 +701,58 @@ class PullRequest:
         # This would require GitHub API to check reviews
         # For now, return a default based on state
         return self.state == "approved" or self.merged
+    
+    def get_commits(self) -> List[Any]:
+        """Get commits from the pull request."""
+        try:
+            if self.pr_obj and hasattr(self.pr_obj, 'get_commits'):
+                commits = []
+                for commit in self.pr_obj.get_commits():
+                    # Create a simple object with the expected attributes
+                    class CommitInfo:
+                        def __init__(self, sha, message, author_name, author_email, author_date):
+                            self.hash = sha
+                            self.message = message
+                            self.author_name = author_name
+                            self.author_email = author_email
+                            self.author_date = author_date
+                    
+                    commit_info = CommitInfo(
+                        commit.sha,
+                        commit.commit.message,
+                        commit.commit.author.name,
+                        commit.commit.author.email,
+                        commit.commit.author.date.isoformat() if commit.commit.author.date else None
+                    )
+                    commits.append(commit_info)
+                return commits
+            else:
+                return []
+        except Exception as e:
+            raise Exception(f"Failed to get commits: {e}")
+    
+    def get_reviews(self) -> List[Dict[str, Any]]:
+        """Get reviews from the pull request."""
+        try:
+            if self.pr_obj and hasattr(self.pr_obj, 'get_reviews'):
+                reviews = []
+                for review in self.pr_obj.get_reviews():
+                    reviews.append({
+                        "id": review.id,
+                        "reviewer": review.user.login,  # Test expects "reviewer" key
+                        "user": {
+                            "login": review.user.login,
+                            "name": review.user.name,
+                        },
+                        "state": review.state,
+                        "body": review.body,
+                        "submitted_at": review.submitted_at.isoformat() if review.submitted_at else None,
+                    })
+                return reviews
+            else:
+                return []
+        except Exception as e:
+            raise Exception(f"Failed to get reviews: {e}")
 
 class Repository:
     """Handles Git repository operations and analysis."""
