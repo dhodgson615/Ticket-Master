@@ -129,14 +129,18 @@ class TestSupportsColor:
 
     @patch("sys.stdout")
     @patch.dict(os.environ, {"NO_COLOR": "1", "TERM": "xterm-256color"})
-    def test_supports_color_no_color_env(self, mock_stdout):
+    def test_supports_color_no_color_env(
+        self, mock_stdout
+    ):  # TODO: make test pass
         """Test that NO_COLOR environment variable disables colors."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is False
 
     @patch("sys.stdout")
     @patch.dict(os.environ, {"FORCE_COLOR": "1", "TERM": "dumb"})
-    def test_supports_color_force_color_env(self, mock_stdout):
+    def test_supports_color_force_color_env(
+        self, mock_stdout
+    ):  # TODO: make test pass
         """Test that FORCE_COLOR environment variable enables colors."""
         mock_stdout.isatty.return_value = True
         assert supports_color() is True
@@ -448,7 +452,7 @@ class TestEdgeCases:
         expected = f"{Colors.GREEN}测试 🌈 Ñiño{Colors.RESET}"
         assert result == expected
 
-    def test_progress_bar_edge_cases(self):
+    def test_progress_bar_edge_cases(self):  # TODO: make test pass
         """Test progress bar with edge cases."""
         enable_colors(True)
 

@@ -164,7 +164,7 @@ class TestGenerateIssuesRoute:
     @patch("app.Repository")
     def test_generate_issues_private_repo_no_token(
         self, mock_repository, mock_load_config, mock_github_utils
-    ):
+    ):  # TODO: this test fails
         """Test generate_issues with private repository but no token."""
         mock_load_config.return_value = {
             "github": {"token": None},
@@ -191,7 +191,7 @@ class TestGenerateIssuesRoute:
     @patch("app.Repository")
     def test_generate_issues_nonexistent_local_path(
         self, mock_repository, mock_load_config, mock_github_utils
-    ):
+    ):  # TODO: make this test pass
         """Test generate_issues with nonexistent local path."""
         mock_load_config.return_value = {
             "github": {"token": "test_token"},
@@ -226,7 +226,7 @@ class TestGenerateIssuesRoute:
         mock_repository,
         mock_load_config,
         mock_github_utils,
-    ):
+    ):  # TODO: make this test pass
         """Test generate_issues with valid local path."""
         # Setup mocks
         mock_exists.return_value = True
@@ -271,7 +271,7 @@ class TestGenerateIssuesRoute:
     @patch("app.load_config")
     def test_generate_issues_clone_failure(
         self, mock_load_config, mock_github_utils
-    ):
+    ):  # TODO: make this test pass
         """Test generate_issues when repository cloning fails."""
         mock_load_config.return_value = {
             "github": {"token": "test_token"},
@@ -299,7 +299,7 @@ class TestGenerateIssuesRoute:
     @patch("app.Repository")
     def test_generate_issues_repository_error(
         self, mock_repository, mock_load_config, mock_github_utils
-    ):
+    ):  # TODO: make this test pass
         """Test generate_issues when repository analysis fails."""
         mock_load_config.return_value = {
             "github": {"token": "test_token"},
@@ -332,7 +332,7 @@ class TestGenerateIssuesRoute:
         mock_repository,
         mock_load_config,
         mock_github_utils,
-    ):
+    ):  # TODO: make this test pass
         """Test successful issue generation for public repository."""
         # Setup mocks
         mock_load_config.return_value = {
@@ -375,7 +375,7 @@ class TestGenerateIssuesRoute:
                 assert response.status_code == 200
                 mock_render.assert_called_once()
 
-    def test_generate_issues_dry_run_flag(self):
+    def test_generate_issues_dry_run_flag(self):  # TODO: make this test pass
         """Test that dry_run flag is properly processed."""
         with app.app.test_client() as client:
             with patch("app.GitHubUtils") as mock_github_utils:
@@ -393,7 +393,9 @@ class TestGenerateIssuesRoute:
                     )
                     assert response.status_code == 200
 
-    def test_generate_issues_max_issues_default(self):
+    def test_generate_issues_max_issues_default(
+        self,
+    ):  # TODO: make this test pass
         """Test that max_issues defaults to 5 when not provided."""
         with app.app.test_client() as client:
             with patch("app.GitHubUtils") as mock_github_utils:
@@ -411,7 +413,9 @@ class TestGenerateIssuesRoute:
 
                     assert response.status_code == 200
 
-    def test_generate_issues_invalid_max_issues(self):
+    def test_generate_issues_invalid_max_issues(
+        self,
+    ):  # TODO: make this test pass
         """Test that invalid max_issues defaults to 5."""
         with app.app.test_client() as client:
             with patch("app.GitHubUtils") as mock_github_utils:

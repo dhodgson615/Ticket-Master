@@ -107,12 +107,14 @@ class TestCommit:
         assert (
             commit_dict["hash"] == "abcdef1234567890abcdef1234567890abcdef12"
         )
+
         assert commit_dict["short_hash"] == "abcdef12"
         assert commit_dict["author"]["name"] == "Test Author"
         assert (
             commit_dict["message"]
             == "Test commit message\n\nDetailed description"
         )
+
         assert commit_dict["files_changed"] == 2
         assert commit_dict["insertions"] == 10
         assert commit_dict["deletions"] == 5
@@ -135,7 +137,6 @@ class TestCommit:
         """Test commit equality comparison."""
         commit1 = Commit(mock_git_commit)
         commit2 = Commit(mock_git_commit)
-
         assert commit1 == commit2
 
         # Different commit
@@ -149,13 +150,14 @@ class TestCommit:
         mock_git_commit2.summary = "Different message"
         mock_git_commit2.committed_date = 1640995200
         mock_git_commit2.parents = []
+
         mock_git_commit2.stats.total = {
             "insertions": 0,
             "deletions": 0,
             "files": 0,
         }
-        mock_git_commit2.stats.files = {}
 
+        mock_git_commit2.stats.files = {}
         commit3 = Commit(mock_git_commit2)
         assert commit1 != commit3
 
@@ -182,7 +184,6 @@ class TestBranch:
         mock_commit.parents = []
         mock_commit.stats.total = {"insertions": 5, "deletions": 2, "files": 1}
         mock_commit.stats.files = {"branch_file.py": {}}
-
         mock_branch.commit = mock_commit
 
         return mock_branch
@@ -192,6 +193,7 @@ class TestBranch:
         """Create a mock GitPython RemoteReference object."""
         mock_branch = Mock()
         mock_branch.name = "origin/main"
+
         mock_branch.__class__.__name__ = (
             "RemoteReference"  # For remote detection
         )
@@ -209,7 +211,6 @@ class TestBranch:
         mock_commit.parents = []
         mock_commit.stats.total = {"insertions": 3, "deletions": 1, "files": 1}
         mock_commit.stats.files = {"remote_file.py": {}}
-
         mock_branch.commit = mock_commit
 
         return mock_branch
@@ -217,7 +218,6 @@ class TestBranch:
     def test_init_local_branch(self, mock_git_branch):
         """Test Branch initialization with local branch."""
         branch = Branch(mock_git_branch, is_active=True)
-
         assert branch.name == "feature/test-branch"
         assert branch.is_active is True
         assert branch.is_remote is False
@@ -228,7 +228,6 @@ class TestBranch:
     def test_init_remote_branch(self, mock_remote_branch):
         """Test Branch initialization with remote branch."""
         branch = Branch(mock_remote_branch, is_active=False)
-
         assert branch.name == "origin/main"
         assert branch.is_active is False
         assert branch.is_remote is True
@@ -244,7 +243,6 @@ class TestBranch:
         """Test getting last activity date."""
         branch = Branch(mock_git_branch, is_active=False)
         last_activity = branch.get_last_activity()
-
         assert last_activity is not None
         assert isinstance(last_activity, datetime)
 
@@ -252,7 +250,6 @@ class TestBranch:
         """Test converting branch to dictionary."""
         branch = Branch(mock_git_branch, is_active=True)
         branch_dict = branch.to_dict()
-
         assert branch_dict["name"] == "feature/test-branch"
         assert branch_dict["is_active"] is True
         assert branch_dict["is_remote"] is False
@@ -281,6 +278,7 @@ class TestBranch:
     def test_equality(self, mock_git_branch):
         """Test branch equality comparison."""
         branch1 = Branch(mock_git_branch, is_active=True)
+
         branch2 = Branch(
             mock_git_branch, is_active=False
         )  # Different active status
@@ -301,13 +299,14 @@ class TestBranch:
         mock_git_branch2.commit.summary = "Message"
         mock_git_branch2.commit.committed_date = 1640995200
         mock_git_branch2.commit.parents = []
+
         mock_git_branch2.commit.stats.total = {
             "insertions": 0,
             "deletions": 0,
             "files": 0,
         }
-        mock_git_branch2.commit.stats.files = {}
 
+        mock_git_branch2.commit.stats.files = {}
         branch3 = Branch(mock_git_branch2, is_active=False)
         assert branch1 != branch3
 

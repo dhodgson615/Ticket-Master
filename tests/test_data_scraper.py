@@ -212,30 +212,31 @@ class TestDataScraper(unittest.TestCase):
     def test_analyze_activity_patterns(self):
         """Test activity pattern analysis."""
         # Mock the git operations to avoid repository-specific issues
-        with (
-            patch.object(
-                self.scraper, "_analyze_commit_frequency"
-            ) as mock_freq,
-            patch.object(self.scraper, "_analyze_time_patterns") as mock_time,
-            patch.object(
-                self.scraper, "_analyze_file_hotspots"
-            ) as mock_hotspots,
-            patch.object(
-                self.scraper, "_analyze_contributor_activity"
-            ) as mock_activity,
-        ):
+        with patch.object(
+            self.scraper, "_analyze_commit_frequency"
+        ) as mock_freq:
+            with patch.object(
+                self.scraper, "_analyze_time_patterns"
+            ) as mock_time:
+                with patch.object(
+                    self.scraper, "_analyze_file_hotspots"
+                ) as mock_hotspots:
+                    with patch.object(
+                        self.scraper, "_analyze_contributor_activity"
+                    ) as mock_activity:
+                        mock_freq.return_value = {"frequency": "data"}
+                        mock_time.return_value = {"time": "patterns"}
+                        mock_hotspots.return_value = {"hotspots": "data"}
 
-            mock_freq.return_value = {"frequency": "data"}
-            mock_time.return_value = {"time": "patterns"}
-            mock_hotspots.return_value = {"hotspots": "data"}
-            mock_activity.return_value = {"contributor": "activity"}
+                        mock_activity.return_value = {
+                            "contributor": "activity"
+                        }
 
-            patterns = self.scraper.analyze_activity_patterns()
-
-            self.assertIn("commit_frequency", patterns)
-            self.assertIn("time_patterns", patterns)
-            self.assertIn("file_hotspots", patterns)
-            self.assertIn("contributor_activity", patterns)
+                        patterns = self.scraper.analyze_activity_patterns()
+                        self.assertIn("commit_frequency", patterns)
+                        self.assertIn("time_patterns", patterns)
+                        self.assertIn("file_hotspots", patterns)
+                        self.assertIn("contributor_activity", patterns)
 
 
 class TestDataScraperCaching(unittest.TestCase):
@@ -283,7 +284,9 @@ class TestDataScraperCaching(unittest.TestCase):
         scraper._store_in_cache("test_key", {"test": "data"})
 
 
-class TestDataScraperPrivateMethods(unittest.TestCase):
+class TestDataScraperPrivateMethods(
+    unittest.TestCase
+):  # TODO: fix test cases for 3 failing tests
     """Test private helper methods."""
 
     def setUp(self):
