@@ -151,7 +151,7 @@ class Authentication:
             github_client.get_user()
             return True
 
-        except Exception:
+        except Exception:  # TODO: Narrow exception type
             return False
 
     def get_user_info(self, token: Optional[str] = None) -> Dict[str, Any]:
