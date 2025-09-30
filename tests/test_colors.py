@@ -446,7 +446,7 @@ class TestEdgeCases:
         assert result == expected
 
     def test_unicode_string_formatting(self):
-        """Test formatting functions with unicode strings."""
+        """Test formatting functions with Unicode strings."""
         enable_colors(True)
 
         unicode_text = "测试 🌈 Ñiño"

@@ -434,7 +434,9 @@ class TestPullRequestEdgeCases(unittest.TestCase):
 
         pr = PullRequest(self.mock_pr)
 
-        self.assertEqual(pr.author_email, "test@example.com")
+        self.assertEqual(
+            pr.author["email"], "test@example.com"
+        )  # TODO: fix test because there is no author_email in PullRequest
 
     def test_pr_merged(self):
         """Test PR that is merged."""
@@ -452,7 +454,9 @@ class TestPullRequestEdgeCases(unittest.TestCase):
 
         pr = PullRequest(self.mock_pr)
 
-        self.assertTrue(pr.draft)
+        self.assertTrue(
+            pr.draft
+        )  # TODO: fix test because there is no draft in PullRequest
 
     def test_pr_with_different_states(self):
         """Test PR with different states."""

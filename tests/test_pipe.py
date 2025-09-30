@@ -340,28 +340,24 @@ class TestPipe(unittest.TestCase):
         )
 
         validation = pipe.validate_pipeline()
-        self.assertFalse(validation["is_valid"])
+        self.assertFalse(validation["is_valid"])  # FIXME: should be True
         self.assertIn("Missing INPUT stage", validation["issues"])
 
     def test_validate_pipeline_missing_output_stage(self):
         """Test validation when OUTPUT stage is missing."""
         pipe = Pipe("test_pipeline", self.mock_input_llm, self.mock_output_llm)
         template = PromptTemplate("test", PromptType.ISSUE_GENERATION, "Test")
-
         pipe.add_step("step1", self.mock_input_llm, template, PipeStage.INPUT)
-
         validation = pipe.validate_pipeline()
-        self.assertFalse(validation["is_valid"])
+        self.assertFalse(validation["is_valid"])  # FIXME: should be True
         self.assertIn("Missing OUTPUT stage", validation["issues"])
 
     def test_get_step_names(self):
         """Test getting step names."""
         pipe = Pipe("test_pipeline", self.mock_input_llm, self.mock_output_llm)
         template = PromptTemplate("test", PromptType.ISSUE_GENERATION, "Test")
-
         pipe.add_step("step1", self.mock_input_llm, template)
         pipe.add_step("step2", self.mock_output_llm, template)
-
         names = pipe.get_step_names()
         self.assertEqual(names, ["step1", "step2"])
 
@@ -373,13 +369,13 @@ class TestPipe(unittest.TestCase):
         pipe.add_step(
             "input_step", self.mock_input_llm, template, PipeStage.INPUT
         )
+
         pipe.add_step(
             "output_step", self.mock_output_llm, template, PipeStage.OUTPUT
         )
 
         input_steps = pipe.get_steps_by_stage(PipeStage.INPUT)
         output_steps = pipe.get_steps_by_stage(PipeStage.OUTPUT)
-
         self.assertEqual(len(input_steps), 1)
         self.assertEqual(len(output_steps), 1)
         self.assertEqual(input_steps[0].name, "input_step")
@@ -402,21 +398,16 @@ class TestPipe(unittest.TestCase):
     def test_remove_step_nonexistent(self):
         """Test removing a non-existent step."""
         pipe = Pipe("test_pipeline", self.mock_input_llm, self.mock_output_llm)
-
         result = pipe.remove_step("nonexistent")
-
         self.assertFalse(result)
 
     def test_clear_steps(self):
         """Test clearing all steps."""
         pipe = Pipe("test_pipeline", self.mock_input_llm, self.mock_output_llm)
         template = PromptTemplate("test", PromptType.ISSUE_GENERATION, "Test")
-
         pipe.add_step("step1", self.mock_input_llm, template)
         pipe.add_step("step2", self.mock_output_llm, template)
-
         pipe.clear_steps()
-
         self.assertEqual(len(pipe.steps), 0)
 
     def test_to_dict(self):
@@ -427,12 +418,10 @@ class TestPipe(unittest.TestCase):
             self.mock_output_llm,
             description="Test description",
         )
+
         template = PromptTemplate("test", PromptType.ISSUE_GENERATION, "Test")
-
         pipe.add_step("step1", self.mock_input_llm, template, PipeStage.INPUT)
-
         result = pipe.to_dict()
-
         self.assertEqual(result["name"], "test_pipeline")
         self.assertEqual(result["description"], "Test description")
         self.assertEqual(len(result["steps"]), 1)
@@ -443,16 +432,13 @@ class TestPipe(unittest.TestCase):
         """Test __len__ method."""
         pipe = Pipe("test_pipeline", self.mock_input_llm, self.mock_output_llm)
         template = PromptTemplate("test", PromptType.ISSUE_GENERATION, "Test")
-
         self.assertEqual(len(pipe), 0)
-
         pipe.add_step("step1", self.mock_input_llm, template)
         self.assertEqual(len(pipe), 1)
 
     def test_str_method(self):
         """Test __str__ method."""
         pipe = Pipe("test_pipeline", self.mock_input_llm, self.mock_output_llm)
-
         str_repr = str(pipe)
         self.assertIn("test_pipeline", str_repr)
         self.assertIn("0 steps", str_repr)
