@@ -32,7 +32,9 @@ class TestConsolidated(unittest.TestCase):
         import ticket_master_consolidated
 
         self.assertTrue(hasattr(ticket_master_consolidated, "Authentication"))
-        self.assertTrue(hasattr(ticket_master_consolidated, "AuthenticationError"))
+        self.assertTrue(
+            hasattr(ticket_master_consolidated, "AuthenticationError")
+        )
         self.assertTrue(hasattr(ticket_master_consolidated, "GitHubAuthError"))
 
     def test_import_branch(self):

@@ -5,9 +5,7 @@ This module provides comprehensive tests for data scraper functionality
 including repository analysis, file structure scanning, and content analysis.
 """
 
-import os
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
@@ -15,7 +13,7 @@ from unittest.mock import MagicMock, mock_open, patch
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master_consolidated import DataScraper, DataScraperError
+from src.ticket_master_consolidated import DataScraper, DataScraperError
 
 
 class TestDataScraper(unittest.TestCase):
@@ -122,8 +120,6 @@ class TestDataScraper(unittest.TestCase):
                 self.scraper, "analyze_activity_patterns"
             ) as mock_activity,
         ):
-
-            # Setup mock returns
             mock_repo_info.return_value = {"repo": "info"}
             mock_git.return_value = {"git": "history"}
             mock_files.return_value = {"files": "structure"}

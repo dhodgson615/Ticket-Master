@@ -10,6 +10,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import yaml
+
 import main
 
 
@@ -68,7 +70,6 @@ class TestLoadConfig(unittest.TestCase):
                 "github": {"default_labels": ["test"]},
                 "issue_generation": {"max_issues": 10},
             }
-            import yaml
 
             yaml.dump(test_config, f)
             config_path = f.name

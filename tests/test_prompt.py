@@ -9,10 +9,12 @@ import sys
 import unittest
 from pathlib import Path
 
-# Add src directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+from src.ticket_master_consolidated import (Prompt, PromptError,
+                                            PromptTemplate, PromptType)
 
-from ticket_master_consolidated import Prompt, PromptError, PromptTemplate, PromptType
+# TODO: fix this hack to allow src imports
+# sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
 
 
 class TestPromptTemplate(unittest.TestCase):
@@ -38,7 +40,6 @@ class TestPromptTemplate(unittest.TestCase):
         template = PromptTemplate(
             name="test_template",
             prompt_type="issue_generation",
-            base_template="Test template",
         )
 
         self.assertEqual(template.prompt_type, PromptType.ISSUE_GENERATION)
@@ -48,7 +49,6 @@ class TestPromptTemplate(unittest.TestCase):
         template = PromptTemplate(
             name="test_template",
             prompt_type=PromptType.ISSUE_GENERATION,
-            base_template="Generate {num_issues} issues for {repo_name}",
         )
 
         variables = {"num_issues": 3, "repo_name": "test-repo"}

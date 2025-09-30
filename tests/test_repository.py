@@ -8,13 +8,13 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master_consolidated import Repository, RepositoryError
+from src.ticket_master_consolidated import Repository, RepositoryError
 
 
 class TestRepository:

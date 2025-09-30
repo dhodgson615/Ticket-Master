@@ -11,17 +11,12 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
-
-# Add src directory to path for imports
+# TODO: remove this hack once src is a package
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master_consolidated import DataScraper
-from ticket_master_consolidated import GitHubUtils
-from ticket_master_consolidated import Issue
-from ticket_master_consolidated import Repository, RepositoryError
+from src.ticket_master_consolidated import DataScraper, GitHubUtils, Repository
 
 
 class TestLargeRepositoryPerformance(unittest.TestCase):
@@ -238,7 +233,6 @@ class TestBulkOperationsPerformance(unittest.TestCase):
     def test_parallel_processing_simulation(self):
         """Test simulation of parallel processing for performance."""
         import concurrent.futures
-        import threading
 
         def process_item(item):
             """Simulate processing an item."""

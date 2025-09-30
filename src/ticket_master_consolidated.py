@@ -8,7 +8,6 @@ This file contains all the consolidated source code in a single file
 to simplify import dependencies.
 """
 
-# Standard library imports
 import json
 import logging
 import os
@@ -16,21 +15,39 @@ import sqlite3
 import subprocess
 import sys
 import time
-import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-# Third-party imports
-import yaml
-import git
-from git import InvalidGitRepositoryError, Repo
-from github import Auth, Github
-from github.GithubException import BadCredentialsException, GithubException, RateLimitExceededException
-import requests
 import ollama
+import requests
+from git import InvalidGitRepositoryError, Repo
+from github import Auth
+from github.GithubException import BadCredentialsException
+
+try:
+    from github import Github
+    from github.GithubException import (GithubException,
+                                        RateLimitExceededException,
+                                        UnknownObjectException)
+except ImportError:
+    import subprocess
+    import sys
+
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyGithub"])
+    from github import Github
+    from github.GithubException import (GithubException,
+                                        RateLimitExceededException,
+                                        UnknownObjectException)
+
+try:
+    from ticket_master_consolidated.authentication import (Authentication,
+                                                           AuthenticationError,
+                                                           GitHubAuthError)
+except ImportError:
+    pass  # Will define Authentication class later in this file
 
 # Version information
 __version__ = "0.1.0"
@@ -38,11 +55,9 @@ __author__ = "Ticket-Master Contributors"
 __description__ = "AI-powered GitHub issue generator"
 
 
-# ==================== COLORS MODULE ====================
-
 class Colors:
     """Global color constants using ANSI escape codes."""
-    
+
     # Text colors
     RED = "\033[91m"
     GREEN = "\033[92m"
@@ -52,7 +67,7 @@ class Colors:
     CYAN = "\033[96m"
     WHITE = "\033[97m"
     GRAY = "\033[90m"
-    
+
     # Background colors
     BG_RED = "\033[101m"
     BG_GREEN = "\033[102m"
@@ -60,7 +75,7 @@ class Colors:
     BG_BLUE = "\033[104m"
     BG_MAGENTA = "\033[105m"
     BG_CYAN = "\033[106m"
-    
+
     # Text styles
     BOLD = "\033[1m"
     DIM = "\033[2m"
@@ -69,10 +84,11 @@ class Colors:
     BLINK = "\033[5m"
     REVERSE = "\033[7m"
     STRIKETHROUGH = "\033[9m"
-    
+
     # Reset
     RESET = "\033[0m"
     END = "\033[0m"  # Alias for RESET
+
 
 # Export individual color constants to maintain compatibility
 RED = Colors.RED
@@ -93,47 +109,63 @@ END = Colors.END
 # Global flag to control color output
 _color_enabled = True
 
+
 def supports_color() -> bool:
     """Check if terminal supports color output."""
     if not (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()):
         return False
-    
+
     if os.getenv("NO_COLOR", "").lower() in ("1", "true", "yes"):
         return False
-        
+
     term = os.getenv("TERM", "").lower()
     if term == "dumb" or term == "unknown":
         return False
-        
+
     # Check for common color-supporting terminals
     color_terms = [
-        "xterm", "xterm-color", "xterm-256color", "screen", "screen-256color",
-        "tmux", "tmux-256color", "rxvt", "konsole", "gnome", "alacritty", "iterm"
+        "xterm",
+        "xterm-color",
+        "xterm-256color",
+        "screen",
+        "screen-256color",
+        "tmux",
+        "tmux-256color",
+        "rxvt",
+        "konsole",
+        "gnome",
+        "alacritty",
+        "iterm",
     ]
-    
+
     return any(color_term in term for color_term in color_terms)
+
 
 def is_color_enabled() -> bool:
     """Check if color output is enabled."""
     return _color_enabled
+
 
 def enable_colors(enabled: bool = True) -> None:
     """Enable or disable color output."""
     global _color_enabled
     _color_enabled = enabled
 
+
 def colorize(text: str, *color_codes: str) -> str:
     """Apply color codes to text."""
     if not is_color_enabled():
         return text
-    
+
     color_prefix = "".join(color_codes)
     return f"{color_prefix}{text}{Colors.RESET}"
+
 
 def print_colored(text: str, *color_codes: str, **kwargs: Any) -> None:
     """Print colored text to stdout."""
     colored_text = colorize(text, *color_codes)
     print(colored_text, **kwargs)
+
 
 # Convenience functions for common color combinations
 def success(text: str, bold: bool = False) -> str:
@@ -143,12 +175,14 @@ def success(text: str, bold: bool = False) -> str:
         colors.append(Colors.BOLD)
     return colorize(text, *colors)
 
+
 def error(text: str, bold: bool = True) -> str:
     """Format error message in red."""
     colors = [Colors.RED]
     if bold:
         colors.append(Colors.BOLD)
     return colorize(text, *colors)
+
 
 def warning(text: str, bold: bool = False) -> str:
     """Format warning message in yellow."""
@@ -157,6 +191,7 @@ def warning(text: str, bold: bool = False) -> str:
         colors.append(Colors.BOLD)
     return colorize(text, *colors)
 
+
 def info(text: str, bold: bool = False) -> str:
     """Format info message in blue."""
     colors = [Colors.BLUE]
@@ -164,92 +199,105 @@ def info(text: str, bold: bool = False) -> str:
         colors.append(Colors.BOLD)
     return colorize(text, *colors)
 
+
 def header(text: str) -> str:
     """Format header in cyan and bold."""
     return colorize(text, Colors.CYAN, Colors.BOLD)
+
 
 def highlight(text: str) -> str:
     """Format highlighted text in white and bold."""
     return colorize(text, Colors.WHITE, Colors.BOLD)
 
+
 def dim(text: str) -> str:
     """Format dimmed text."""
     return colorize(text, Colors.DIM)
 
-def progress_bar(current: int, total: int, width: int = 50, 
-                 prefix: str = "", suffix: str = "") -> str:
+
+def progress_bar(
+    current: int,
+    total: int,
+    width: int = 50,
+    prefix: str = "",
+    suffix: str = "",
+) -> str:
     """Create a colored progress bar."""
     if total == 0:
         percentage = 100
     else:
         percentage = min(100, (current * 100) // total)
-    
+
     filled_width = (width * percentage) // 100
-    bar = '█' * filled_width + '░' * (width - filled_width)
-    
-    bar_colored = colorize(bar[:filled_width], Colors.GREEN) + colorize(bar[filled_width:], Colors.GRAY)
-    
+    bar = "█" * filled_width + "░" * (width - filled_width)
+
+    bar_colored = colorize(bar[:filled_width], Colors.GREEN) + colorize(
+        bar[filled_width:], Colors.GRAY
+    )
+
     return f"{prefix} {bar_colored} {percentage}% {suffix}"
 
 
-# ==================== AUTHENTICATION MODULE ====================
-
 class AuthenticationError(Exception):
     """Custom exception for authentication-related errors."""
+
     pass
+
 
 class GitHubAuthError(AuthenticationError):
     """Exception for GitHub authentication errors."""
+
     pass
+
 
 class Authentication:
     """Handles GitHub authentication and client creation."""
-    
+
     def __init__(self, token: Optional[str] = None) -> None:
         """Initialize Authentication with optional token."""
         self.token = token
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
     def get_token(self) -> str:
         """Get GitHub token from instance or environment variable."""
         token = self.token or os.getenv("GITHUB_TOKEN")
-        
+
         if not token:
             raise GitHubAuthError(
                 "GitHub token not provided. Set GITHUB_TOKEN environment variable "
                 "or pass token parameter."
             )
-        
+
         return token
-    
+
     def create_client(self, token: Optional[str] = None) -> Github:
         """Create authenticated GitHub client."""
         auth_token = token or self.get_token()
-        
+
         try:
             auth = Auth.Token(auth_token)
             github_client = Github(auth=auth)
-            
+
             # Test authentication by getting user info
             user = github_client.get_user()
             self.logger.info(f"Authenticated as GitHub user: {user.login}")
-            
+
             return github_client
-            
+
         except BadCredentialsException as e:
             raise GitHubAuthError(f"Invalid GitHub credentials: {e}")
         except Exception as e:
             raise GitHubAuthError(f"Failed to create GitHub client: {e}")
-    
+
     def validate_token(self, token: Optional[str] = None) -> Dict[str, Any]:
         """Validate GitHub token and return user information."""
         try:
             client = self.create_client(token)
             user = client.get_user()
-            
+
             # Get rate limit information
             rate_limit = client.get_rate_limit()
-            
+
             return {
                 "valid": True,
                 "user": {
@@ -271,12 +319,12 @@ class Authentication:
                     },
                 },
             }
-            
+
         except GitHubAuthError as e:
             return {"valid": False, "error": str(e)}
         except Exception as e:
             return {"valid": False, "error": f"Unexpected error: {e}"}
-    
+
     def __str__(self) -> str:
         """String representation of the Authentication instance."""
         has_token = bool(self.token or os.getenv("GITHUB_TOKEN"))
@@ -289,7 +337,7 @@ class Authentication:
             f"Authentication(token_set={bool(self.token)}, "
             f"env_token_set={bool(os.getenv('GITHUB_TOKEN'))}, has_token={has_token})"
         )
-    
+
     def is_authenticated(self) -> bool:
         """Test if the current token can authenticate successfully."""
         try:
@@ -301,13 +349,13 @@ class Authentication:
             return False
         except Exception:
             return False
-    
+
     def get_user_info(self) -> Dict[str, Any]:
         """Get detailed user information from GitHub."""
         try:
             client = self.create_client()
             user = client.get_user()
-            
+
             return {
                 "login": user.login,
                 "name": user.name,
@@ -315,19 +363,23 @@ class Authentication:
                 "public_repos": user.public_repos,
                 "followers": user.followers,
                 "following": user.following,
-                "created_at": user.created_at.isoformat() if user.created_at else None,
-                "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+                "created_at": (
+                    user.created_at.isoformat() if user.created_at else None
+                ),
+                "updated_at": (
+                    user.updated_at.isoformat() if user.updated_at else None
+                ),
             }
         except Exception as e:
             raise GitHubAuthError(f"Failed to get user info: {e}")
-    
+
     def test_connection(self) -> Dict[str, Any]:
         """Test connection and return detailed status information."""
         try:
             client = self.create_client()
             user = client.get_user()
             rate_limit = client.get_rate_limit()
-            
+
             return {
                 "status": "success",
                 "authenticated": True,
@@ -342,77 +394,86 @@ class Authentication:
                     "core": {
                         "limit": rate_limit.core.limit,
                         "remaining": rate_limit.core.remaining,
-                        "reset": rate_limit.core.reset.isoformat() if rate_limit.core.reset else None,
+                        "reset": (
+                            rate_limit.core.reset.isoformat()
+                            if rate_limit.core.reset
+                            else None
+                        ),
                     }
-                }
+                },
             }
         except GitHubAuthError as e:
+            return {"status": "error", "authenticated": False, "error": str(e)}
+        except Exception as e:
             return {
                 "status": "error",
                 "authenticated": False,
-                "error": str(e)
-            }
-        except Exception as e:
-            return {
-                "status": "error", 
-                "authenticated": False,
-                "error": f"Unexpected error: {e}"
+                "error": f"Unexpected error: {e}",
             }
 
-
-# ==================== REPOSITORY MODULE ====================
 
 class RepositoryError(Exception):
     """Custom exception for repository-related errors."""
+
     pass
+
 
 class CommitError(Exception):
     """Custom exception for commit-related errors."""
+
     pass
+
 
 class Commit:
     """Represents a Git commit with associated metadata."""
-    
+
     def __init__(self, commit_data) -> None:
         """Initialize Commit from git commit object or commit data dictionary."""
-        if hasattr(commit_data, 'hexsha'):
+        if hasattr(commit_data, "hexsha"):
             # Git commit object
             self.git_commit = commit_data
             self.hash = commit_data.hexsha
             self.short_hash = commit_data.hexsha[:8]
-            
+
             # Author info
             self.author = {
-                "name": getattr(commit_data.author, 'name', 'Unknown'),
-                "email": getattr(commit_data.author, 'email', 'unknown@example.com')
+                "name": getattr(commit_data.author, "name", "Unknown"),
+                "email": getattr(
+                    commit_data.author, "email", "unknown@example.com"
+                ),
             }
-            
+
             # Committer info
             self.committer = {
-                "name": getattr(commit_data.committer, 'name', 'Unknown'), 
-                "email": getattr(commit_data.committer, 'email', 'unknown@example.com')
+                "name": getattr(commit_data.committer, "name", "Unknown"),
+                "email": getattr(
+                    commit_data.committer, "email", "unknown@example.com"
+                ),
             }
-            
-            self.message = getattr(commit_data, 'message', '')
-            self.summary = getattr(commit_data, 'summary', self.message.split('\n')[0])
-            
+
+            self.message = getattr(commit_data, "message", "")
+            self.summary = getattr(
+                commit_data, "summary", self.message.split("\n")[0]
+            )
+
             # Date handling
-            if hasattr(commit_data, 'committed_datetime'):
+            if hasattr(commit_data, "committed_datetime"):
                 self.date = commit_data.committed_datetime
-            elif hasattr(commit_data, 'committed_date'):
+            elif hasattr(commit_data, "committed_date"):
                 from datetime import datetime
+
                 self.date = datetime.fromtimestamp(commit_data.committed_date)
             else:
                 self.date = datetime.now()
-            
+
             # Stats
             try:
-                if hasattr(commit_data, 'stats'):
+                if hasattr(commit_data, "stats"):
                     stats = commit_data.stats
-                    if hasattr(stats, 'total'):
-                        self.insertions = stats.total.get('insertions', 0)
-                        self.deletions = stats.total.get('deletions', 0)
-                        self.files_changed = len(getattr(stats, 'files', {}))
+                    if hasattr(stats, "total"):
+                        self.insertions = stats.total.get("insertions", 0)
+                        self.deletions = stats.total.get("deletions", 0)
+                        self.files_changed = len(getattr(stats, "files", {}))
                     else:
                         self.insertions = 0
                         self.deletions = 0
@@ -425,7 +486,7 @@ class Commit:
                 self.insertions = 0
                 self.deletions = 0
                 self.files_changed = 0
-                
+
         else:
             # Dictionary data (legacy compatibility)
             self.git_commit = None
@@ -439,19 +500,19 @@ class Commit:
             self.files_changed = commit_data.get("files_changed", 0)
             self.insertions = commit_data.get("insertions", 0)
             self.deletions = commit_data.get("deletions", 0)
-    
+
     def is_merge_commit(self) -> bool:
         """Check if this is a merge commit."""
-        if self.git_commit and hasattr(self.git_commit, 'parents'):
+        if self.git_commit and hasattr(self.git_commit, "parents"):
             return len(self.git_commit.parents) > 1
         return "merge" in self.message.lower()
-    
+
     def get_parents(self) -> List[str]:
         """Get parent commit hashes."""
-        if self.git_commit and hasattr(self.git_commit, 'parents'):
+        if self.git_commit and hasattr(self.git_commit, "parents"):
             return [parent.hexsha for parent in self.git_commit.parents]
         return []
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert commit to dictionary representation."""
         return {
@@ -466,62 +527,71 @@ class Commit:
             "insertions": self.insertions,
             "deletions": self.deletions,
         }
-    
+
     def __str__(self) -> str:
         """String representation of commit."""
         return f"{self.short_hash}: {self.summary}"
 
     def __repr__(self) -> str:
         """Detailed string representation of commit."""
-        date_str = self.date.strftime('%Y-%m-%d %H:%M:%S') if self.date else 'Unknown'
+        date_str = (
+            self.date.strftime("%Y-%m-%d %H:%M:%S") if self.date else "Unknown"
+        )
         return (
             f"Commit(hash='{self.short_hash}', "
             f"author='{self.author.get('name', 'Unknown')}', "
             f"date='{date_str}', "
             f"files_changed={self.files_changed})"
         )
-    
+
     def __eq__(self, other) -> bool:
         """Check equality with another commit."""
         if not isinstance(other, Commit):
             return False
         return self.hash == other.hash
 
+
 class BranchError(Exception):
     """Custom exception for branch-related errors."""
+
     pass
+
 
 class Branch:
     """Represents a Git branch with associated metadata."""
-    
-    def __init__(self, git_branch, repo_obj=None, is_active: bool = False) -> None:
+
+    def __init__(
+        self, git_branch, repo_obj=None, is_active: bool = False
+    ) -> None:
         """Initialize Branch from a GitPython branch object or simple parameters."""
         # Validate input
         if git_branch is None:
             raise BranchError("git_branch cannot be None")
-        
+
         # Handle both old-style (git_branch object) and new-style (simple params) initialization
-        if hasattr(git_branch, 'name'):
+        if hasattr(git_branch, "name"):
             # Old-style: git_branch is a git object
             self.git_branch = git_branch
             self.repo_obj = repo_obj
             self.name = git_branch.name
             self.is_active = is_active
-            
+
             # Check if it's a remote branch
             class_name = getattr(git_branch.__class__, "__name__", "")
-            self.is_remote = "RemoteReference" in class_name or "/" in self.name
-            
+            self.is_remote = (
+                "RemoteReference" in class_name or "/" in self.name
+            )
+
             # Extract remote information for remote branches
             if self.is_remote:
                 parts = self.name.split("/", 1)
                 self.remote_name = parts[0] if len(parts) > 1 else "origin"
             else:
                 self.remote_name = None
-                
+
             # Get head commit if available
             try:
-                if hasattr(git_branch, 'commit'):
+                if hasattr(git_branch, "commit"):
                     self.head_commit = git_branch.commit
                 else:
                     self.head_commit = None
@@ -530,13 +600,15 @@ class Branch:
         else:
             # New-style: simple parameters (for backward compatibility)
             self.name = str(git_branch)  # git_branch is actually the name
-            self.is_active = repo_obj if isinstance(repo_obj, bool) else is_active
+            self.is_active = (
+                repo_obj if isinstance(repo_obj, bool) else is_active
+            )
             self.is_remote = False
             self.remote_name = None
             self.head_commit = None
             self.git_branch = None
             self.repo_obj = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert branch to dictionary representation."""
         return {
@@ -544,13 +616,17 @@ class Branch:
             "is_active": self.is_active,
             "is_remote": self.is_remote,
             "remote_name": self.remote_name,
-            "head_commit": self.head_commit.hexsha if self.head_commit else None,
+            "head_commit": (
+                self.head_commit.hexsha if self.head_commit else None
+            ),
         }
-    
+
     def __str__(self) -> str:
         """String representation of the branch."""
         prefix = "* " if self.is_active else "  "
-        remote_info = f" (remote: {self.remote_name})" if self.is_remote else ""
+        remote_info = (
+            f" (remote: {self.remote_name})" if self.is_remote else ""
+        )
         return f"{prefix}{self.name}{remote_info}"
 
     def __repr__(self) -> str:
@@ -559,71 +635,74 @@ class Branch:
             f"Branch(name='{self.name}', is_active={self.is_active}, "
             f"is_remote={self.is_remote}, remote_name='{self.remote_name}')"
         )
-    
+
     def __eq__(self, other) -> bool:
         """Check equality with another branch."""
         if not isinstance(other, Branch):
             return False
         return self.name == other.name and self.is_remote == other.is_remote
 
+
 class PullRequestError(Exception):
     """Custom exception for pull request-related errors."""
+
     pass
+
 
 class PullRequest:
     """Represents a GitHub pull request with associated metadata."""
-    
+
     def __init__(self, pr_data) -> None:
         """Initialize PullRequest from GitHub PR object or data dictionary."""
         if pr_data is None:
             raise PullRequestError("pr_data cannot be None")
-            
-        if hasattr(pr_data, 'number'):
+
+        if hasattr(pr_data, "number"):
             # GitHub PR object
             self.pr_obj = pr_data
             self.number = pr_data.number
-            self.title = getattr(pr_data, 'title', '')
-            self.body = getattr(pr_data, 'body', '')
+            self.title = getattr(pr_data, "title", "")
+            self.body = getattr(pr_data, "body", "")
             self.description = self.body  # Alias for body
-            self.state = getattr(pr_data, 'state', '')
-            
+            self.state = getattr(pr_data, "state", "")
+
             # Author info
-            if hasattr(pr_data, 'user') and pr_data.user:
+            if hasattr(pr_data, "user") and pr_data.user:
                 self.author = {
-                    "login": getattr(pr_data.user, 'login', ''),
-                    "name": getattr(pr_data.user, 'name', ''),
-                    "email": getattr(pr_data.user, 'email', None)
+                    "login": getattr(pr_data.user, "login", ""),
+                    "name": getattr(pr_data.user, "name", ""),
+                    "email": getattr(pr_data.user, "email", None),
                 }
-                self.author_name = getattr(pr_data.user, 'name', '')
-                self.author_email = getattr(pr_data.user, 'email', None)
+                self.author_name = getattr(pr_data.user, "name", "")
+                self.author_email = getattr(pr_data.user, "email", None)
             else:
                 self.author = {"login": "", "name": "", "email": None}
-                self.author_name = ''
+                self.author_name = ""
                 self.author_email = None
-                
+
             # Additional properties
-            self.draft = getattr(pr_data, 'draft', False)
-            self.commits = getattr(pr_data, 'commits', 0)
-            self.changed_files = getattr(pr_data, 'changed_files', 0)
-            self.additions = getattr(pr_data, 'additions', 0)
-            self.deletions = getattr(pr_data, 'deletions', 0)
-            self.created_at = getattr(pr_data, 'created_at', datetime.now())
-            self.updated_at = getattr(pr_data, 'updated_at', datetime.now())
-            self.merged_at = getattr(pr_data, 'merged_at', None)
-            self.merged = getattr(pr_data, 'merged', False)
-            self.mergeable = getattr(pr_data, 'mergeable', None)
-            
+            self.draft = getattr(pr_data, "draft", False)
+            self.commits = getattr(pr_data, "commits", 0)
+            self.changed_files = getattr(pr_data, "changed_files", 0)
+            self.additions = getattr(pr_data, "additions", 0)
+            self.deletions = getattr(pr_data, "deletions", 0)
+            self.created_at = getattr(pr_data, "created_at", datetime.now())
+            self.updated_at = getattr(pr_data, "updated_at", datetime.now())
+            self.merged_at = getattr(pr_data, "merged_at", None)
+            self.merged = getattr(pr_data, "merged", False)
+            self.mergeable = getattr(pr_data, "mergeable", None)
+
             # Branch info
-            if hasattr(pr_data, 'head') and pr_data.head:
-                self.head_ref = getattr(pr_data.head, 'ref', '')
+            if hasattr(pr_data, "head") and pr_data.head:
+                self.head_ref = getattr(pr_data.head, "ref", "")
             else:
-                self.head_ref = ''
-                
-            if hasattr(pr_data, 'base') and pr_data.base:
-                self.base_ref = getattr(pr_data.base, 'ref', '')
+                self.head_ref = ""
+
+            if hasattr(pr_data, "base") and pr_data.base:
+                self.base_ref = getattr(pr_data.base, "ref", "")
             else:
-                self.base_ref = ''
-                
+                self.base_ref = ""
+
         else:
             # Dictionary data (legacy compatibility)
             self.pr_obj = None
@@ -632,7 +711,9 @@ class PullRequest:
             self.body = pr_data.get("body", "")
             self.description = self.body  # Alias for body
             self.state = pr_data.get("state", "")
-            self.author = pr_data.get("author", {"login": "", "name": "", "email": None})
+            self.author = pr_data.get(
+                "author", {"login": "", "name": "", "email": None}
+            )
             self.author_name = pr_data.get("author_name", "")
             self.author_email = pr_data.get("author_email", None)
             self.draft = pr_data.get("draft", False)
@@ -647,7 +728,7 @@ class PullRequest:
             self.mergeable = pr_data.get("mergeable", None)
             self.head_ref = pr_data.get("head_ref", "")
             self.base_ref = pr_data.get("base_ref", "")
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert pull request to dictionary representation."""
         return {
@@ -664,9 +745,15 @@ class PullRequest:
             "changed_files": self.changed_files,
             "additions": self.additions,
             "deletions": self.deletions,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "merged_at": self.merged_at.isoformat() if self.merged_at else None,
+            "created_at": (
+                self.created_at.isoformat() if self.created_at else None
+            ),
+            "updated_at": (
+                self.updated_at.isoformat() if self.updated_at else None
+            ),
+            "merged_at": (
+                self.merged_at.isoformat() if self.merged_at else None
+            ),
             "merged": self.merged,
             "mergeable": self.mergeable,
             "head_ref": self.head_ref,
@@ -674,7 +761,7 @@ class PullRequest:
             "source_branch": self.head_ref,  # Alias for head_ref
             "target_branch": self.base_ref,  # Alias for base_ref
         }
-    
+
     def __str__(self) -> str:
         """String representation of pull request."""
         return f"#{self.number}: {self.title}"
@@ -685,44 +772,55 @@ class PullRequest:
             f"PullRequest(number={self.number}, title='{self.title}', "
             f"state='{self.state}', author='{self.author}')"
         )
-    
+
     def __eq__(self, other) -> bool:
         """Check equality with another pull request."""
         if not isinstance(other, PullRequest):
             return False
         return self.number == other.number
-    
+
     def is_mergeable(self) -> Optional[bool]:
         """Check if pull request is mergeable."""
         return self.mergeable
-    
+
     def is_approved(self) -> bool:
         """Check if pull request is approved."""
         # This would require GitHub API to check reviews
         # For now, return a default based on state
         return self.state == "approved" or self.merged
-    
+
     def get_commits(self) -> List[Any]:
         """Get commits from the pull request."""
         try:
-            if self.pr_obj and hasattr(self.pr_obj, 'get_commits'):
+            if self.pr_obj and hasattr(self.pr_obj, "get_commits"):
                 commits = []
                 for commit in self.pr_obj.get_commits():
                     # Create a simple object with the expected attributes
                     class CommitInfo:
-                        def __init__(self, sha, message, author_name, author_email, author_date):
+                        def __init__(
+                            self,
+                            sha,
+                            message,
+                            author_name,
+                            author_email,
+                            author_date,
+                        ):
                             self.hash = sha
                             self.message = message
                             self.author_name = author_name
                             self.author_email = author_email
                             self.author_date = author_date
-                    
+
                     commit_info = CommitInfo(
                         commit.sha,
                         commit.commit.message,
                         commit.commit.author.name,
                         commit.commit.author.email,
-                        commit.commit.author.date.isoformat() if commit.commit.author.date else None
+                        (
+                            commit.commit.author.date.isoformat()
+                            if commit.commit.author.date
+                            else None
+                        ),
                     )
                     commits.append(commit_info)
                 return commits
@@ -730,48 +828,59 @@ class PullRequest:
                 return []
         except Exception as e:
             raise Exception(f"Failed to get commits: {e}")
-    
+
     def get_reviews(self) -> List[Dict[str, Any]]:
         """Get reviews from the pull request."""
         try:
-            if self.pr_obj and hasattr(self.pr_obj, 'get_reviews'):
+            if self.pr_obj and hasattr(self.pr_obj, "get_reviews"):
                 reviews = []
                 for review in self.pr_obj.get_reviews():
-                    reviews.append({
-                        "id": review.id,
-                        "reviewer": review.user.login,  # Test expects "reviewer" key
-                        "user": {
-                            "login": review.user.login,
-                            "name": review.user.name,
-                        },
-                        "state": review.state,
-                        "body": review.body,
-                        "submitted_at": review.submitted_at.isoformat() if review.submitted_at else None,
-                    })
+                    reviews.append(
+                        {
+                            "id": review.id,
+                            "reviewer": review.user.login,  # Test expects "reviewer" key
+                            "user": {
+                                "login": review.user.login,
+                                "name": review.user.name,
+                            },
+                            "state": review.state,
+                            "body": review.body,
+                            "submitted_at": (
+                                review.submitted_at.isoformat()
+                                if review.submitted_at
+                                else None
+                            ),
+                        }
+                    )
                 return reviews
             else:
                 return []
         except Exception as e:
             raise Exception(f"Failed to get reviews: {e}")
 
+
 class Repository:
     """Handles Git repository operations and analysis."""
-    
+
     def __init__(self, path: str) -> None:
         """Initialize the Repository with a given path."""
         self.path = Path(path).resolve()
         self.logger = logging.getLogger(self.__class__.__name__)
-        
+
         try:
             self.repo = Repo(str(self.path))
         except InvalidGitRepositoryError as e:
-            raise RepositoryError(f"Invalid Git repository at {self.path}: {e}")
+            raise RepositoryError(
+                f"Invalid Git repository at {self.path}: {e}"
+            )
         except Exception as e:
             raise RepositoryError(f"Failed to initialize repository: {e}")
-        
+
         self.logger.info(f"Initialized repository at {self.path}")
-    
-    def get_commit_history(self, max_count: int = 50, branch: str = "HEAD") -> List[Dict[str, Any]]:
+
+    def get_commit_history(
+        self, max_count: int = 50, branch: str = "HEAD"
+    ) -> List[Dict[str, Any]]:
         """Get commit history from the repository."""
         try:
             commits = []
@@ -795,19 +904,19 @@ class Repository:
                     "deletions": commit.stats.total["deletions"],
                 }
                 commits.append(commit_info)
-            
+
             self.logger.info(f"Retrieved {len(commits)} commits from {branch}")
             return commits
-            
+
         except Exception as e:
             raise RepositoryError(f"Failed to get commit history: {e}")
-    
+
     def get_repository_info(self) -> Dict[str, Any]:
         """Get basic repository information."""
         try:
             active_branch = self.repo.active_branch.name
             remotes = [remote.name for remote in self.repo.remotes]
-            
+
             # Try to get repository name from remote URL
             repo_name = self.path.name
             if remotes:
@@ -820,19 +929,23 @@ class Repository:
                         repo_name = remote_url.split("/")[-1]
                 except Exception:
                     pass
-            
+
             return {
                 "name": repo_name,
                 "path": str(self.path),
                 "active_branch": active_branch,
                 "remotes": remotes,
                 "is_bare": self.repo.bare,
-                "head_commit": self.repo.head.commit.hexsha[:8] if not self.repo.bare else None,
+                "head_commit": (
+                    self.repo.head.commit.hexsha[:8]
+                    if not self.repo.bare
+                    else None
+                ),
             }
-            
+
         except Exception as e:
             raise RepositoryError(f"Failed to get repository info: {e}")
-    
+
     def get_file_changes(self, max_commits: int = 50) -> Dict[str, Any]:
         """Analyze file changes across recent commits."""
         try:
@@ -840,17 +953,19 @@ class Repository:
             new_files = []
             deleted_files = []
             renamed_files = []
-            
-            commits = list(self.repo.iter_commits("HEAD", max_count=max_commits))
-            
+
+            commits = list(
+                self.repo.iter_commits("HEAD", max_count=max_commits)
+            )
+
             for commit in commits:
                 # For the first commit, all files are new
                 if not commit.parents:
                     continue
-                
+
                 parent = commit.parents[0]
                 diffs = parent.diff(commit)
-                
+
                 for diff in diffs:
                     if diff.change_type == "A":  # Added
                         if diff.b_path:
@@ -869,28 +984,46 @@ class Repository:
                                     "insertions": 0,
                                     "deletions": 0,
                                 }
-                            
+
                             file_stats[diff.b_path]["changes"] += 1
-                            
+
                             # Try to get line statistics
                             try:
-                                if hasattr(diff, 'a_blob') and hasattr(diff, 'b_blob'):
+                                if hasattr(diff, "a_blob") and hasattr(
+                                    diff, "b_blob"
+                                ):
                                     if diff.a_blob and diff.b_blob:
                                         # Simple line count difference
-                                        a_lines = len(diff.a_blob.data_stream.read().decode('utf-8', errors='ignore').splitlines())
-                                        b_lines = len(diff.b_blob.data_stream.read().decode('utf-8', errors='ignore').splitlines())
-                                        
+                                        a_lines = len(
+                                            diff.a_blob.data_stream.read()
+                                            .decode("utf-8", errors="ignore")
+                                            .splitlines()
+                                        )
+                                        b_lines = len(
+                                            diff.b_blob.data_stream.read()
+                                            .decode("utf-8", errors="ignore")
+                                            .splitlines()
+                                        )
+
                                         if b_lines > a_lines:
-                                            file_stats[diff.b_path]["insertions"] += b_lines - a_lines
+                                            file_stats[diff.b_path][
+                                                "insertions"
+                                            ] += (b_lines - a_lines)
                                         else:
-                                            file_stats[diff.b_path]["deletions"] += a_lines - b_lines
+                                            file_stats[diff.b_path][
+                                                "deletions"
+                                            ] += (a_lines - b_lines)
                             except Exception:
                                 pass
-            
+
             # Calculate summary statistics
-            total_insertions = sum(stats["insertions"] for stats in file_stats.values())
-            total_deletions = sum(stats["deletions"] for stats in file_stats.values())
-            
+            total_insertions = sum(
+                stats["insertions"] for stats in file_stats.values()
+            )
+            total_deletions = sum(
+                stats["deletions"] for stats in file_stats.values()
+            )
+
             return {
                 "modified_files": file_stats,
                 "new_files": list(set(new_files)),
@@ -902,38 +1035,41 @@ class Repository:
                     "total_deletions": total_deletions,
                 },
             }
-            
+
         except Exception as e:
             raise RepositoryError(f"Failed to analyze file changes: {e}")
-    
+
     def get_file_content(self, file_path: str) -> Optional[str]:
         """Get content of a file from the repository."""
         try:
             full_path = self.path / file_path
             if full_path.exists() and full_path.is_file():
-                return full_path.read_text(encoding='utf-8', errors='ignore')
+                return full_path.read_text(encoding="utf-8", errors="ignore")
             return None
         except Exception as e:
             self.logger.error(f"Failed to read file {file_path}: {e}")
             return None
-    
+
     def is_ignored(self, file_path: str) -> bool:
         """Check if a file is ignored by .gitignore."""
         try:
             # Use git check-ignore command to check if file is ignored
             import subprocess
+
             result = subprocess.run(
-                ['git', 'check-ignore', file_path],
+                ["git", "check-ignore", file_path],
                 cwd=str(self.path),
                 capture_output=True,
-                text=True
+                text=True,
             )
             # git check-ignore returns 0 if file is ignored, 1 if not
             return result.returncode == 0
         except Exception as e:
-            self.logger.debug(f"Failed to check if {file_path} is ignored: {e}")
+            self.logger.debug(
+                f"Failed to check if {file_path} is ignored: {e}"
+            )
             return False
-    
+
     def __str__(self) -> str:
         """String representation of the repository."""
         try:
@@ -952,200 +1088,555 @@ class Repository:
             return f"Repository(path='{self.path}', status='invalid')"
 
 
-# ==================== ISSUE MODULE ====================
-
 class IssueError(Exception):
-    """Custom exception for issue-related errors."""
+    """Base exception class for Issue-related errors."""
+
     pass
 
+
+class GitHubAuthError(IssueError):
+    """Exception raised for GitHub authentication errors."""
+
+    pass
+
+
 class Issue:
-    """Handles GitHub issue creation and management."""
-    
-    def __init__(self, title: str, description: str, labels: Optional[List[str]] = None,
-                 assignees: Optional[List[str]] = None, milestone: Optional[str] = None) -> None:
-        """Initialize the Issue with title and description."""
-        if not title or not title.strip():
+    """
+    Class representing a GitHub issue.
+
+    This class provides functionality to create, validate, and submit issues
+    to GitHub repositories.
+
+    Attributes:
+        title (str): Issue title
+        description (str): Issue description
+        labels (List[str]): List of labels to apply to the issue
+        assignees (List[str]): List of GitHub usernames to assign the issue to
+        milestone (Optional[str]): Milestone to associate with the issue
+    """
+
+    def __init__(
+        self,
+        title: str,
+        description: str,
+        labels: Optional[List[str]] = None,
+        assignees: Optional[List[str]] = None,
+        milestone: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize an Issue object.
+
+        Args:
+            title: Title of the issue
+            description: Detailed description of the issue
+            labels: List of labels to apply to the issue
+            assignees: List of GitHub usernames to assign the issue to
+            milestone: Milestone to associate with the issue
+
+        Raises:
+            ValueError: If title or description is empty or invalid
+        """
+        # Validate required fields
+        if not title or title.strip() == "":
             raise ValueError("Issue title cannot be empty")
-        
-        if not description or not description.strip():
+        if not description or description.strip() == "":
             raise ValueError("Issue description cannot be empty")
-        
-        self.title = title.strip()
-        self.description = description.strip()
+
+        # Validate labels and assignees types
+        if labels is not None and not isinstance(labels, list):
+            raise ValueError("Issue labels must be a list")
+        if assignees is not None and not isinstance(assignees, list):
+            raise ValueError("Issue assignees must be a list")
+
+        # Truncate title if too long (GitHub limit is 256 characters)
+        if len(title) > 256:
+            self.title = title[:253] + "..."
+        else:
+            self.title = title
+
+        self.description = description
         self.labels = labels or []
         self.assignees = assignees or []
         self.milestone = milestone
-        self.logger = logging.getLogger(self.__class__.__name__)
-        
-        # Validate title length (GitHub limit is 256 characters)
-        if len(self.title) > 256:
-            self.logger.warning(f"Title length ({len(self.title)}) exceeds GitHub limit (256)")
-    
-    @staticmethod
-    def create_github_client(token: str) -> Github:
-        """Create authenticated GitHub client."""
-        try:
-            auth = Authentication()
-            return auth.create_client(token)
-        except GitHubAuthError as e:
-            raise GitHubAuthError(f"GitHub authentication failed: {e}")
-    
-    def validate_content(self) -> List[str]:
-        """Validate issue content and return list of warnings."""
-        warnings = []
-        
-        # Check title length
-        if len(self.title) > 256:
-            warnings.append(f"Title is too long ({len(self.title)}/256 characters)")
-        
-        if len(self.title) < 10:
-            warnings.append("Title is very short (recommended minimum 10 characters)")
-        
-        # Check description length
-        if len(self.description) < 20:
-            warnings.append("Description is very short (recommended minimum 20 characters)")
-        
-        if len(self.description) > 65536:
-            warnings.append(f"Description is very long ({len(self.description)}/65536 characters)")
-        
-        # Check for empty labels
-        if not self.labels:
-            warnings.append("No labels specified")
-        
-        return warnings
-    
-    def create_on_github(self, repository: str, token: str) -> Dict[str, Any]:
-        """Create issue on GitHub repository."""
-        try:
-            github_client = self.create_github_client(token)
-            repo = github_client.get_repo(repository)
-            
-            # Create the issue
-            issue = repo.create_issue(
-                title=self.title,
-                body=self.description,
-                labels=self.labels,
-                assignees=self.assignees,
-            )
-            
-            self.logger.info(f"Created issue #{issue.number}: {self.title}")
-            
-            return {
-                "number": issue.number,
-                "title": issue.title,
-                "url": issue.html_url,
-                "state": issue.state,
-                "created_at": issue.created_at,
-            }
-            
-        except Exception as e:
-            raise IssueError(f"Failed to create GitHub issue: {e}")
-    
-    def format_for_display(self) -> str:
-        """Format issue for console display."""
-        formatted = f"Title: {self.title}\n"
-        formatted += f"Description: {self.description[:100]}...\n" if len(self.description) > 100 else f"Description: {self.description}\n"
-        if self.labels:
-            formatted += f"Labels: {', '.join(self.labels)}\n"
-        if self.assignees:
-            formatted += f"Assignees: {', '.join(self.assignees)}\n"
-        return formatted
-    
-    def __str__(self) -> str:
-        """Return string representation of the issue."""
-        return f"Issue: {self.title}"
-    
-    def __repr__(self) -> str:
-        """Return detailed string representation of the issue."""
-        return f"Issue(title='{self.title}', labels={self.labels}, assignees={self.assignees})"
 
-def test_github_connection(token: str) -> Dict[str, Any]:
-    """Test GitHub connection and return status information."""
-    try:
-        auth = Authentication()
-        result = auth.validate_token(token)
-        
-        if result["valid"]:
-            return {
-                "authenticated": True,
-                "user": result["user"],
-                "rate_limit": result["rate_limit"],
-                "error": None,
-            }
-        else:
-            return {
-                "authenticated": False,
-                "user": None,
-                "rate_limit": None,
-                "error": result["error"],
-            }
-            
-    except Exception as e:
+    def __str__(self) -> str:
+        """Return string representation of the Issue."""
+        return f"Issue(title={self.title[:20]}{'...' if len(self.title) > 20 else ''}, labels={len(self.labels)})"
+
+    def __repr__(self) -> str:
+        """Return detailed representation of the Issue."""
+        return (
+            f"Issue(title='{self.title}', description_length={len(self.description)}, "
+            f"labels={self.labels}, assignees={self.assignees}, milestone='{self.milestone}')"
+        )
+
+    def validate_content(self) -> List[str]:
+        """
+        Validate issue content and return warning messages.
+
+        Returns:
+            List of warning messages for potential issues
+        """
+        warnings = []
+
+        # Check description length
+        if len(self.description) < 10:
+            warnings.append(
+                "Description is very short, consider adding more detail"
+            )
+
+        # Check for single sentence descriptions
+        if "." not in self.description and "\n" not in self.description:
+            warnings.append(
+                "Description is a single sentence, consider adding more detail"
+            )
+
+        # Check for placeholder text
+        placeholder_words = ["todo", "fixme", "xxx", "implement", "tbd"]
+        if any(word in self.title.lower() for word in placeholder_words):
+            warnings.append(
+                "Title contains placeholder text that should be replaced"
+            )
+
+        if any(word in self.description.lower() for word in placeholder_words):
+            warnings.append(
+                "Description contains placeholder text that should be replaced"
+            )
+
+        # Check labels
+        for label in self.labels:
+            if not label:
+                warnings.append("Empty label found, consider removing it")
+            elif len(label) > 50:
+                warnings.append(
+                    f"Label '{label[:20]}...' is very long, consider shortening it"
+                )
+
+        return warnings
+
+    def format_for_display(self) -> str:
+        """
+        Format the issue for display, including warnings.
+
+        Returns:
+            Formatted string representation of the issue
+        """
+        warnings = self.validate_content()
+
+        formatted = [
+            f"Title: {self.title}",
+            f"Description:\n{self.description}",
+        ]
+
+        if self.labels:
+            formatted.append(f"Labels: {', '.join(self.labels)}")
+
+        if self.assignees:
+            formatted.append(f"Assignees: {', '.join(self.assignees)}")
+
+        if self.milestone:
+            formatted.append(f"Milestone: {self.milestone}")
+
+        if warnings:
+            formatted.append("Warnings:")
+            for warning in warnings:
+                formatted.append(f"- {warning}")
+
+        return "\n".join(formatted)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert issue to a dictionary representation.
+
+        Returns:
+            Dictionary representation of the issue
+        """
         return {
-            "authenticated": False,
-            "user": None,
-            "rate_limit": None,
-            "error": str(e),
+            "title": self.title,
+            "description": self.description,
+            "labels": self.labels.copy(),
+            "assignees": self.assignees.copy(),
+            "milestone": self.milestone,
+            "validation_warnings": self.validate_content(),
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Issue":
+        """
+        Create an Issue from a dictionary.
 
-# ==================== LLM MODULE ====================
+        Args:
+            data: Dictionary containing issue data
+
+        Returns:
+            Issue instance
+
+        Raises:
+            ValueError: If required fields are missing
+        """
+        required_fields = ["title", "description"]
+        for field in required_fields:
+            if field not in data:
+                raise ValueError(f"Missing required field: {field}")
+
+        return cls(
+            title=data["title"],
+            description=data["description"],
+            labels=data.get("labels", []),
+            assignees=data.get("assignees", []),
+            milestone=data.get("milestone"),
+        )
+
+    @staticmethod
+    def create_github_client(token: Optional[str] = None) -> Github:
+        """
+        Create a GitHub client using the provided or environment token.
+
+        Args:
+            token: GitHub API token, or None to use environment variable
+
+        Returns:
+            GitHub client instance
+
+        Raises:
+            GitHubAuthError: If authentication fails or token is not provided
+        """
+        # Use provided token or try to get from environment
+        if token is None:
+            token = os.environ.get("GITHUB_TOKEN")
+
+        if not token:
+            raise GitHubAuthError("GitHub token not provided")
+
+        try:
+            auth = Authentication(token)
+            client = auth.create_client()
+            return client
+        except Exception as e:
+            raise GitHubAuthError(f"Failed to create GitHub client: {str(e)}")
+
+    def create_on_github(
+        self, repo_name: str, token: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Create this issue on GitHub.
+
+        Args:
+            repo_name: Repository name in 'owner/repo' format
+            token: GitHub API token, or None to use environment variable
+
+        Returns:
+            Dictionary with information about the created issue
+
+        Raises:
+            IssueError: If issue creation fails
+        """
+        try:
+            client = self.create_github_client(token)
+            repo = client.get_repo(repo_name)
+
+            # Get valid labels
+            valid_labels = []
+            repo_labels = {label.name for label in repo.get_labels()}
+            for label in self.labels:
+                if label in repo_labels:
+                    valid_labels.append(label)
+
+            # Get milestone if specified
+            milestone_obj = None
+            if self.milestone:
+                try:
+                    milestones = repo.get_milestones()
+                    for m in milestones:
+                        if m.title == self.milestone:
+                            milestone_obj = m
+                            break
+                except Exception as e:
+                    # Just log and continue without milestone
+                    print(
+                        f"Warning: Could not find milestone '{self.milestone}': {str(e)}"
+                    )
+
+            # Create issue with available parameters
+            create_args = {
+                "title": self.title,
+                "body": self.description,
+            }
+
+            if valid_labels:
+                create_args["labels"] = valid_labels
+
+            if self.assignees:
+                create_args["assignees"] = self.assignees
+
+            if milestone_obj:
+                create_args["milestone"] = milestone_obj
+
+            # Create issue
+            gh_issue = repo.create_issue(**create_args)
+
+            # Return issue details
+            result = {
+                "number": gh_issue.number,
+                "id": gh_issue.id,
+                "title": gh_issue.title,
+                "url": gh_issue.html_url,
+                "api_url": gh_issue.url,
+                "state": gh_issue.state,
+                "created_at": gh_issue.created_at.isoformat(),
+                "labels": [label.name for label in gh_issue.get_labels()],
+                "assignees": [
+                    assignee.login for assignee in gh_issue.assignees
+                ],
+            }
+
+            return result
+
+        except RateLimitExceededException as e:
+            raise IssueError(f"GitHub API rate limit exceeded: {str(e)}")
+        except GithubException as e:
+            raise IssueError(f"GitHub API error: {str(e)}")
+        except Exception as e:
+            raise IssueError(f"Failed to create issue: {str(e)}")
+
+    @classmethod
+    def create_bulk_issues(
+        cls,
+        issues: List["Issue"],
+        repo_name: str,
+        token: Optional[str] = None,
+        rate_limit_delay: float = 1.0,
+        batch_size: int = 10,
+        stop_on_error: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Create multiple issues on GitHub with rate limiting.
+
+        Args:
+            issues: List of Issue objects to create
+            repo_name: Repository name in 'owner/repo' format
+            token: GitHub API token, or None to use environment variable
+            rate_limit_delay: Delay between requests in seconds
+            batch_size: Number of issues to create before pausing
+            stop_on_error: Whether to stop on first error
+
+        Returns:
+            Dictionary with results of bulk creation
+        """
+        results = {
+            "success": True,
+            "total_issues": len(issues),
+            "created_issues": [],
+            "failed_issues": [],
+            "errors": [],
+            "created_count": 0,
+            "failed_count": 0,
+            "rate_limit_delay": rate_limit_delay,
+            "batch_size": batch_size,
+        }
+
+        if not issues:
+            return results
+
+        for i, issue in enumerate(issues):
+            try:
+                created = issue.create_on_github(repo_name, token)
+                results["created_issues"].append(created)
+                results["created_count"] += 1
+
+                # Add delay between requests to avoid rate limiting
+                if i < len(issues) - 1:
+                    time.sleep(rate_limit_delay)
+
+                # Add extra pause after each batch
+                if (i + 1) % batch_size == 0 and i < len(issues) - 1:
+                    time.sleep(rate_limit_delay * 2)
+
+            except Exception as e:
+                error_msg = str(e)
+                results["failed_issues"].append(
+                    {"title": issue.title, "error": error_msg}
+                )
+                results["errors"].append(error_msg)
+                results["failed_count"] += 1
+
+                if stop_on_error:
+                    results["success"] = False
+                    break
+
+        # Calculate success rate and overall success
+        if results["failed_count"] > 0:
+            results["success"] = False
+            results["success_rate"] = (
+                results["created_count"] / results["total_issues"]
+            )
+        else:
+            results["success_rate"] = 1.0
+
+        return results
+
+    @classmethod
+    def create_issues_with_templates(
+        cls,
+        repo_name: str,
+        templates: List[Dict[str, Any]],
+        token: Optional[str] = None,
+        default_labels: Optional[List[str]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Create issues from template dictionaries.
+
+        Args:
+            repo_name: Repository name in 'owner/repo' format
+            templates: List of dictionaries with issue templates
+            token: GitHub API token, or None to use environment variable
+            default_labels: Default labels to apply to all issues
+            **kwargs: Additional arguments for create_bulk_issues
+
+        Returns:
+            Dictionary with results of bulk creation
+        """
+        results = {
+            "success": True,
+            "total_issues": len(templates),
+            "created_issues": [],
+            "template_errors": [],
+        }
+
+        if not templates:
+            return results
+
+        issues = []
+
+        for template in templates:
+            try:
+                # Merge default labels with template labels
+                if default_labels:
+                    template_labels = template.get("labels", [])
+                    if isinstance(template_labels, list):
+                        template["labels"] = template_labels + [
+                            label
+                            for label in default_labels
+                            if label not in template_labels
+                        ]
+                    else:
+                        template["labels"] = default_labels
+
+                # Create issue from template
+                issue = cls.from_dict(template)
+                issues.append(issue)
+
+            except Exception as e:
+                results["template_errors"].append(
+                    {"template": template, "error": str(e)}
+                )
+                results["success"] = False
+
+        if issues:
+            bulk_results = cls.create_bulk_issues(
+                issues, repo_name, token, **kwargs
+            )
+
+            # Merge results
+            results.update(
+                {
+                    "success": bulk_results["success"],
+                    "created_issues": bulk_results["created_issues"],
+                    "failed_issues": bulk_results.get("failed_issues", []),
+                    "errors": bulk_results.get("errors", []),
+                    "created_count": bulk_results.get("created_count", 0),
+                    "failed_count": bulk_results.get("failed_count", 0),
+                }
+            )
+
+        return results
+
+
+def test_github_connection(token: str) -> Dict[str, Any]:
+    """
+    Test GitHub connection using the provided token.
+
+    Args:
+        token: GitHub API token to test
+
+    Returns:
+        Dictionary with authentication status and user information
+    """
+    try:
+        auth = Authentication(token)
+        return auth.test_connection()
+    except Exception as e:
+        return {"authenticated": False, "error": str(e)}
+
 
 class LLMError(Exception):
     """Custom exception for LLM-related errors."""
+
     pass
+
 
 class LLMProviderError(Exception):
     """Custom exception for LLM provider-related errors."""
+
     pass
+
 
 class LLMProvider(Enum):
     """Supported LLM providers."""
+
     OLLAMA = "ollama"
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
+    MOCK = "mock"
+
 
 class LLMBackend(ABC):
     """Abstract base class for LLM backends."""
-    
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize the backend with configuration."""
+        self.config = config
+
     @abstractmethod
     def is_available(self) -> bool:
         """Check if the LLM backend is available."""
         pass
-    
+
     @abstractmethod
-    def generate(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
+    def generate(self, prompt: str, **kwargs: Any) -> Any:
         """Generate response from the LLM."""
         pass
-    
+
     @abstractmethod
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the current model."""
         pass
 
+
 class OllamaBackend(LLMBackend):
     """Ollama LLM backend implementation."""
-    
+
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize Ollama backend with configuration."""
-        self.config = config
+        super().__init__(config)
         self.host = config.get("host", "localhost")
         self.port = config.get("port", 11434)
         self.model = config.get("model", "llama3.2")
+        self.base_url = f"http://{self.host}:{self.port}"
         self.logger = logging.getLogger(self.__class__.__name__)
-        
-        # Try to create client
+
         try:
-            self.client = ollama.Client(host=f"http://{self.host}:{self.port}")
+            self.client = ollama.Client(host=self.base_url)
         except Exception as e:
             self.logger.warning(f"Failed to create Ollama client: {e}")
             self.client = None
-    
+
     def is_available(self) -> bool:
         """Check if Ollama is available."""
         if not self.client:
             return False
-        
+
         try:
             # Try to list models to test connection
             self.client.list()
@@ -1153,12 +1644,12 @@ class OllamaBackend(LLMBackend):
         except Exception as e:
             self.logger.debug(f"Ollama not available: {e}")
             return False
-    
+
     def generate(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         """Generate response using Ollama."""
         if not self.is_available():
             raise LLMError("Ollama backend is not available")
-        
+
         try:
             response = self.client.generate(
                 model=self.model,
@@ -1167,34 +1658,37 @@ class OllamaBackend(LLMBackend):
                 options={
                     "temperature": kwargs.get("temperature", 0.7),
                     "num_predict": kwargs.get("max_tokens", 2000),
-                }
+                },
             )
-            
+
             return {
                 "response": response.get("response", ""),
                 "model": self.model,
                 "done": response.get("done", True),
             }
-            
+
         except Exception as e:
             raise LLMError(f"Failed to generate response with Ollama: {e}")
-    
+
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the current model."""
         if not self.is_available():
             return {"name": self.model, "status": "unavailable"}
-        
+
         try:
             models = self.client.list()
-            model_names = [model.get("name", "") for model in models.get("models", [])]
-            
+            model_names = [
+                model.get("name", "") for model in models.get("models", [])
+            ]
+
             if self.model in model_names:
                 return {"name": self.model, "status": "available"}
             else:
                 return {"name": self.model, "status": "not_found"}
-                
+
         except Exception as e:
             return {"name": self.model, "status": "error", "error": str(e)}
+
 
 class MockBackend(LLMBackend):
     """Mock LLM backend for testing and demonstration purposes."""
@@ -1218,6 +1712,7 @@ class MockBackend(LLMBackend):
         """Get mock model information."""
         return {"name": self.model, "provider": "mock", "status": "available"}
 
+
 class HuggingFaceBackend(LLMBackend):
     """HuggingFace Transformers LLM backend implementation."""
 
@@ -1237,7 +1732,12 @@ class HuggingFaceBackend(LLMBackend):
 
     def get_model_info(self) -> Dict[str, Any]:
         """Get HuggingFace model information."""
-        return {"name": self.model_name, "provider": "huggingface", "status": "not_implemented"}
+        return {
+            "name": self.model_name,
+            "provider": "huggingface",
+            "status": "not_implemented",
+        }
+
 
 class OpenAIBackend(LLMBackend):
     """OpenAI LLM backend implementation."""
@@ -1258,57 +1758,70 @@ class OpenAIBackend(LLMBackend):
 
     def get_model_info(self) -> Dict[str, Any]:
         """Get OpenAI model information."""
-        return {"name": self.model, "provider": "openai", "status": "not_implemented"}
+        return {
+            "name": self.model,
+            "provider": "openai",
+            "status": "not_implemented",
+        }
+
 
 class LLM:
     """Main LLM interface that manages different backends."""
-    
+
     def __init__(self, provider: str, config: Dict[str, Any]) -> None:
         """Initialize LLM with specified provider and configuration."""
         self.provider = provider
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
-        
+
         # Create appropriate backend
         if provider == "ollama":
             self.backend = OllamaBackend(config)
         else:
             raise LLMError(f"Unsupported LLM provider: {provider}")
-    
+
     def is_available(self) -> bool:
         """Check if the LLM is available."""
         return self.backend.is_available()
-    
+
     def generate(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
         """Generate response using the configured LLM."""
         return self.backend.generate(prompt, **kwargs)
 
 
-# ==================== PROMPT MODULE ====================
-
 class PromptError(Exception):
     """Custom exception for prompt-related errors."""
+
     pass
+
 
 class PromptType(Enum):
     """Types of prompts supported by the system."""
+
     ISSUE_GENERATION = "issue_generation"
     CODE_ANALYSIS = "code_analysis"
     DOCUMENTATION = "documentation"
     TESTING = "testing"
 
+
 class PromptTemplate:
     """Template for generating prompts with variable substitution."""
-    
-    def __init__(self, name: str, prompt_type: PromptType, 
-                 template: str, variables: List[str]) -> None:
+
+    def __init__(
+        self,
+        name: str,
+        prompt_type: PromptType,
+        template: str,
+        variables: List[str],
+    ) -> None:
         """Initialize prompt template."""
+        self.base_template = None  # TODO: make this work with test cases
         self.name = name
         self.prompt_type = prompt_type
         self.template = template
         self.variables = variables
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
     def render(self, provider: str, **kwargs: Any) -> str:
         """Render the template with provided variables."""
         try:
@@ -1316,37 +1829,38 @@ class PromptTemplate:
             missing_vars = [var for var in self.variables if var not in kwargs]
             if missing_vars:
                 raise ValueError(f"Missing required variables: {missing_vars}")
-            
+
             # Format the template
             rendered = self.template.format(**kwargs)
-            
+
             # Add provider-specific formatting if needed
             if provider == "ollama":
                 # Ollama typically works well with structured prompts
                 rendered = f"System: You are a helpful assistant that generates GitHub issues.\n\n{rendered}"
-            
+
             return rendered
-            
+
         except Exception as e:
             raise ValueError(f"Failed to render template {self.name}: {e}")
 
+
 class Prompt:
     """Manages prompt templates and generation."""
-    
+
     def __init__(self) -> None:
         """Initialize the Prompt manager."""
         self.templates: Dict[str, PromptTemplate] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
     def add_template(self, template: PromptTemplate) -> None:
         """Add a template to the manager."""
         self.templates[template.name] = template
         self.logger.debug(f"Added template: {template.name}")
-    
+
     def get_template(self, name: str) -> Optional[PromptTemplate]:
         """Get a template by name."""
         return self.templates.get(name)
-    
+
     def create_builtin_templates(self) -> None:
         """Create built-in templates."""
         # Basic issue generation template
@@ -1393,30 +1907,50 @@ Focus on issues that would genuinely improve the project, such as:
 - Feature additions based on recent activity
 """,
             variables=[
-                "repo_path", "commit_count", "modified_files_count", 
-                "new_files_count", "num_issues", "recent_changes", 
-                "file_changes_summary"
-            ]
+                "repo_path",
+                "commit_count",
+                "modified_files_count",
+                "new_files_count",
+                "num_issues",
+                "recent_changes",
+                "file_changes_summary",
+            ],
         )
-        
+
         self.add_template(issue_template)
         self.logger.info("Created built-in templates")
 
 
-# ==================== DATA SCRAPER MODULE ====================
-
 class DataScraperError(Exception):
     """Custom exception for data scraper-related errors."""
+
     pass
 
+
 class DataScraper:
-    """Scrapes and analyzes repository data for issue generation."""
-    
-    def __init__(self, repository: Repository) -> None:
-        """Initialize DataScraper with a repository."""
-        self.repository = repository
+    """Scrapes repository data for analysis."""
+
+    def __init__(self, repo_path: Any, use_cache: bool = False) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+        self.repo_path = Path(repo_path).resolve()
+        self.use_cache = use_cache
+        self.cache_db: Optional[Any] = None
+
+        try:
+            self.repository = Repository(self.repo_path)
+        except Exception as e:
+            self.logger.error("Invalid repository: %s", e)
+            raise DataScraperError(f"Invalid repository: {e}")
+
+        if self.use_cache:
+            try:
+                self.cache_db = UserDatabase()
+                self.cache_db.create_tables()
+            except Exception as db_err:
+                self.logger.warning("Cache DB error: %s", db_err)
+                self.use_cache = False
+                self.cache_db = None
+
     def scrape_file_patterns(self, max_files: int = 100) -> Dict[str, Any]:
         """Analyze file patterns in the repository."""
         try:
@@ -1428,19 +1962,49 @@ class DataScraper:
                 "test_files": [],
                 "other_files": [],
             }
-            
+
             # Define file extensions for categorization
-            source_extensions = {'.py', '.js', '.ts', '.java', '.cpp', '.c', '.h', '.cs', '.rb', '.go', '.rs', '.php'}
-            config_extensions = {'.json', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf'}
-            doc_extensions = {'.md', '.rst', '.txt', '.adoc', '.tex'}
-            test_patterns = {'test_', '_test', '.test.', 'spec_', '_spec', '.spec.'}
-            
+            source_extensions = {
+                ".py",
+                ".js",
+                ".ts",
+                ".java",
+                ".cpp",
+                ".c",
+                ".h",
+                ".cs",
+                ".rb",
+                ".go",
+                ".rs",
+                ".php",
+            }
+            config_extensions = {
+                ".json",
+                ".yaml",
+                ".yml",
+                ".toml",
+                ".ini",
+                ".cfg",
+                ".conf",
+            }
+            doc_extensions = {".md", ".rst", ".txt", ".adoc", ".tex"}
+            test_patterns = {
+                "test_",
+                "_test",
+                ".test.",
+                "spec_",
+                "_spec",
+                ".spec.",
+            }
+
             file_count = 0
-            for file_path in repo_path.rglob('*'):
+            for file_path in repo_path.rglob("*"):
                 if file_count >= max_files:
                     break
-                
-                if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):
+
+                if file_path.is_file() and not any(
+                    part.startswith(".") for part in file_path.parts
+                ):
                     file_count += 1
                     relative_path = file_path.relative_to(repo_path)
                     file_info = {
@@ -1448,9 +2012,12 @@ class DataScraper:
                         "size": file_path.stat().st_size,
                         "extension": file_path.suffix.lower(),
                     }
-                    
+
                     # Categorize file
-                    if any(pattern in file_path.name.lower() for pattern in test_patterns):
+                    if any(
+                        pattern in file_path.name.lower()
+                        for pattern in test_patterns
+                    ):
                         patterns["test_files"].append(file_info)
                     elif file_path.suffix.lower() in source_extensions:
                         patterns["source_files"].append(file_info)
@@ -1460,154 +2027,171 @@ class DataScraper:
                         patterns["documentation_files"].append(file_info)
                     else:
                         patterns["other_files"].append(file_info)
-            
+
             self.logger.info(f"Analyzed {file_count} files")
             return patterns
-            
+
         except Exception as e:
             raise Exception(f"Failed to scrape file patterns: {e}")
 
+    def scrape_all(self, max_commits):
+        pass  # TODO: Implement full repository scraping
 
-# ==================== GITHUB UTILS MODULE ====================
 
 class GitHubCloneError(Exception):
     """Exception for GitHub cloning errors."""
+
     pass
+
 
 class GitHubUtils:
     """Utility class for GitHub operations."""
-    
+
     def __init__(self) -> None:
         """Initialize GitHubUtils."""
         self.logger = logging.getLogger(self.__class__.__name__)
         self.temp_directories: List[Path] = []
-    
+
     def parse_github_url(self, url_or_repo: str) -> str:
         """Parse GitHub URL or repository string to extract owner/repo format."""
         # Remove common prefixes and suffixes
         cleaned = url_or_repo.strip()
-        
+
         if cleaned.startswith("https://github.com/"):
             cleaned = cleaned[19:]  # Remove "https://github.com/"
         elif cleaned.startswith("http://github.com/"):
             cleaned = cleaned[18:]  # Remove "http://github.com/"
         elif cleaned.startswith("git@github.com:"):
             cleaned = cleaned[15:]  # Remove "git@github.com:"
-        
+
         if cleaned.endswith(".git"):
             cleaned = cleaned[:-4]  # Remove ".git"
-        
+
         # Validate format
         parts = cleaned.split("/")
         if len(parts) != 2:
-            raise ValueError(f"Invalid GitHub repository format: {url_or_repo}. Expected format: 'owner/repo'")
-        
+            raise ValueError(
+                f"Invalid GitHub repository format: {url_or_repo}. Expected format: 'owner/repo'"
+            )
+
         owner, repo = parts
         if not owner or not repo:
-            raise ValueError(f"Invalid GitHub repository format: {url_or_repo}. Both owner and repo must be non-empty")
-        
+            raise ValueError(
+                f"Invalid GitHub repository format: {url_or_repo}. Both owner and repo must be non-empty"
+            )
+
         return f"{owner}/{repo}"
-    
+
     def is_public_repository(self, repo: str) -> bool:
         """Check if a GitHub repository is public."""
         try:
             url = f"https://api.github.com/repos/{repo}"
             response = requests.get(url, timeout=10)
-            
+
             if response.status_code == 200:
                 data = response.json()
                 return not data.get("private", True)
             elif response.status_code == 404:
                 return False  # Repository not found or private
             else:
-                self.logger.warning(f"Unexpected response checking repository visibility: {response.status_code}")
+                self.logger.warning(
+                    f"Unexpected response checking repository visibility: {response.status_code}"
+                )
                 return False
-                
+
         except Exception as e:
             self.logger.warning(f"Failed to check repository visibility: {e}")
             return False
-    
-    def clone_repository(self, repo: str, token: Optional[str] = None, 
-                        target_dir: Optional[str] = None) -> str:
+
+    def clone_repository(
+        self,
+        repo: str,
+        token: Optional[str] = None,
+        target_dir: Optional[str] = None,
+    ) -> str:
         """Clone a GitHub repository to a temporary directory."""
         try:
-            import tempfile
             import shutil
-            
+            import tempfile
+
             # Create target directory
             if target_dir:
                 temp_dir = Path(target_dir)
                 temp_dir.mkdir(parents=True, exist_ok=True)
             else:
                 temp_dir = Path(tempfile.mkdtemp(prefix="ticket-master-"))
-            
+
             self.temp_directories.append(temp_dir)
-            
+
             # Construct clone URL
             if token:
                 clone_url = f"https://{token}@github.com/{repo}.git"
             else:
                 clone_url = f"https://github.com/{repo}.git"
-            
+
             # Clone the repository
             repo_name = repo.split("/")[1]
             repo_path = temp_dir / repo_name
-            
+
             self.logger.info(f"Cloning {repo} to {repo_path}")
-            
+
             # Use git command directly for better error handling
             import subprocess
+
             result = subprocess.run(
                 ["git", "clone", "--depth", "50", clone_url, str(repo_path)],
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minutes timeout
+                timeout=300,  # 5 minutes timeout
             )
-            
+
             if result.returncode != 0:
                 raise GitHubCloneError(f"Git clone failed: {result.stderr}")
-            
+
             self.logger.info(f"Successfully cloned {repo}")
             return str(repo_path)
-            
+
         except subprocess.TimeoutExpired:
             raise GitHubCloneError("Clone operation timed out")
         except Exception as e:
             raise GitHubCloneError(f"Failed to clone repository {repo}: {e}")
-    
+
     def cleanup_temp_directories(self) -> None:
         """Clean up temporary directories created during cloning."""
         import shutil
-        
+
         for temp_dir in self.temp_directories:
             try:
                 if temp_dir.exists():
                     shutil.rmtree(temp_dir)
-                    self.logger.debug(f"Cleaned up temporary directory: {temp_dir}")
+                    self.logger.debug(
+                        f"Cleaned up temporary directory: {temp_dir}"
+                    )
             except Exception as e:
                 self.logger.warning(f"Failed to clean up {temp_dir}: {e}")
-        
+
         self.temp_directories.clear()
 
 
-# ==================== DATABASE MODULE ====================
-
 class DatabaseError(Exception):
     """Custom exception for database-related errors."""
+
     pass
+
 
 class Database:
     """Base database class for Ticket-Master."""
-    
+
     def __init__(self, db_path: str) -> None:
         """Initialize database connection."""
         from pathlib import Path
+
         self.db_path = Path(db_path)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.connection = None
         self._connected = False
         self._init_database()
-    
+
     def _init_database(self) -> None:
         """Initialize database connection and create tables."""
         try:
@@ -1616,49 +2200,52 @@ class Database:
             self.logger.info(f"Database initialized at {self.db_path}")
         except Exception as e:
             raise Exception(f"Failed to initialize database: {e}")
-    
+
     def connect(self) -> None:
         """Connect to the database."""
         if not self._connected:
             self.connection = sqlite3.connect(str(self.db_path))
             self.connection.row_factory = sqlite3.Row
             self._connected = True
-    
+
     def disconnect(self) -> None:
         """Disconnect from the database."""
         if self.connection:
             self.connection.close()
             self.connection = None
             self._connected = False
-    
+
     def is_connected(self) -> bool:
         """Check if database is connected."""
         return self._connected and self.connection is not None
-    
+
     def _create_tables(self) -> None:
         """Create database tables."""
         pass  # To be implemented by subclasses
-    
+
     def close(self) -> None:
         """Close database connection."""
         self.disconnect()
 
+
 class UserDatabase(Database):
     """Database for user-related data."""
-    
+
     def __init__(self, db_path: Optional[str] = None) -> None:
         """Initialize user database with optional custom path."""
         if db_path is None:
             from pathlib import Path
+
             db_path = Path.home() / ".ticket_master" / "user_data.db"
             # Create directory if it doesn't exist
             db_path.parent.mkdir(parents=True, exist_ok=True)
         super().__init__(str(db_path))
-    
+
     def _create_tables(self) -> None:
         """Create user tables."""
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
@@ -1666,51 +2253,67 @@ class UserDatabase(Database):
                 github_token TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
         self.connection.commit()
+
 
 class ServerDatabase(Database):
     """Database for server configuration and state."""
-    
+
     def _create_tables(self) -> None:
         """Create server tables."""
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS server_config (
                 key TEXT PRIMARY KEY,
                 value TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
         self.connection.commit()
 
 
-# ==================== PIPELINE MODULE ====================
-
 class PipeError(Exception):
     """Custom exception for pipeline-related errors."""
+
     pass
+
 
 class PipeExecutionError(PipeError):
     """Custom exception for pipeline execution errors."""
+
     pass
+
 
 class PipeValidationError(PipeError):
     """Custom exception for pipeline validation errors."""
+
     pass
+
 
 class PipeStage(Enum):
     """Pipeline execution stages."""
+
+    INTERMEDIATE = "intermediate"
     ANALYSIS = "analysis"
     GENERATION = "generation"
     VALIDATION = "validation"
     CREATION = "creation"
 
+
 class PipelineStep:
     """Represents a single step in the pipeline."""
-    
-    def __init__(self, name: str, stage: PipeStage, 
-                 function: Any, dependencies: List[str] = None) -> None:
+
+    def __init__(
+        self,
+        name: str,
+        stage: PipeStage,
+        function: Any,
+        dependencies: List[str] = None,
+    ) -> None:
         """Initialize pipeline step."""
         self.name = name
         self.stage = stage
@@ -1720,37 +2323,38 @@ class PipelineStep:
         self.result = None
         self.error = None
 
+
 class Pipe:
     """Pipeline for orchestrating the issue generation process."""
-    
+
     def __init__(self) -> None:
         """Initialize the pipeline."""
         self.steps: Dict[str, PipelineStep] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
     def add_step(self, step: PipelineStep) -> None:
         """Add a step to the pipeline."""
         self.steps[step.name] = step
         self.logger.debug(f"Added pipeline step: {step.name}")
-    
+
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute the pipeline."""
         results = {}
-        
+
         # Execute steps in dependency order
         executed = set()
-        
+
         def execute_step(step_name: str) -> None:
             if step_name in executed:
                 return
-            
+
             step = self.steps[step_name]
-            
+
             # Execute dependencies first
             for dep in step.dependencies:
                 if dep not in executed:
                     execute_step(dep)
-            
+
             try:
                 self.logger.info(f"Executing pipeline step: {step_name}")
                 step.result = step.function(context, results)
@@ -1758,62 +2362,63 @@ class Pipe:
                 results[step_name] = step.result
                 executed.add(step_name)
                 self.logger.info(f"Completed pipeline step: {step_name}")
-                
+
             except Exception as e:
                 step.error = str(e)
                 self.logger.error(f"Pipeline step {step_name} failed: {e}")
                 raise
-        
+
         # Execute all steps
         for step_name in self.steps:
             execute_step(step_name)
-        
+
         return results
 
 
-# ==================== OLLAMA TOOLS MODULE ====================
-
 class OllamaToolsError(Exception):
     """Custom exception for Ollama tools-related errors."""
+
     pass
+
 
 class OllamaPromptValidator:
     """Validates prompts for Ollama-specific requirements."""
-    
+
     def __init__(self) -> None:
         """Initialize the validator."""
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
     def validate_prompt(self, prompt: str) -> Dict[str, Any]:
         """Validate a prompt for Ollama."""
         issues = []
         warnings = []
-        
+
         # Check prompt length
         if len(prompt) > 32000:
             issues.append("Prompt is too long for Ollama (>32k characters)")
         elif len(prompt) > 16000:
             warnings.append("Prompt is quite long, may impact performance")
-        
+
         # Check for proper structure
         if not prompt.strip():
             issues.append("Prompt is empty")
-        
+
         return {
             "valid": len(issues) == 0,
             "issues": issues,
             "warnings": warnings,
         }
 
+
 class OllamaPromptProcessor:
     """Processes prompts and generates responses using Ollama."""
-    
+
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize the processor."""
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
         self.validator = OllamaPromptValidator()
-        
+
         # Initialize Ollama client
         try:
             host = config.get("host", "localhost")
@@ -1823,22 +2428,23 @@ class OllamaPromptProcessor:
         except Exception as e:
             self.logger.error(f"Failed to initialize Ollama client: {e}")
             self.client = None
-    
-    def generate_issues_from_analysis(self, analysis: Dict[str, Any], 
-                                    max_issues: int = 5) -> List[Dict[str, Any]]:
+
+    def generate_issues_from_analysis(
+        self, analysis: Dict[str, Any], max_issues: int = 5
+    ) -> List[Dict[str, Any]]:
         """Generate issues from repository analysis using Ollama."""
         if not self.client:
             raise Exception("Ollama client not available")
-        
+
         try:
             # Create prompt from analysis
             prompt = self._create_issue_prompt(analysis, max_issues)
-            
+
             # Validate prompt
             validation = self.validator.validate_prompt(prompt)
             if not validation["valid"]:
                 raise Exception(f"Invalid prompt: {validation['issues']}")
-            
+
             # Generate response
             response = self.client.generate(
                 model=self.model,
@@ -1847,24 +2453,26 @@ class OllamaPromptProcessor:
                 options={
                     "temperature": self.config.get("temperature", 0.7),
                     "num_predict": 2000,
-                }
+                },
             )
-            
+
             # Parse response
             issues = self._parse_issues_response(response.get("response", ""))
-            
+
             self.logger.info(f"Generated {len(issues)} issues using Ollama")
             return issues
-            
+
         except Exception as e:
             raise Exception(f"Failed to generate issues with Ollama: {e}")
-    
-    def _create_issue_prompt(self, analysis: Dict[str, Any], max_issues: int) -> str:
+
+    def _create_issue_prompt(
+        self, analysis: Dict[str, Any], max_issues: int
+    ) -> str:
         """Create a prompt for issue generation."""
         repo_info = analysis.get("repository_info", {})
         summary = analysis.get("analysis_summary", {})
         commits = analysis.get("commits", [])
-        
+
         prompt = f"""
 You are a helpful assistant that generates practical GitHub issues based on repository analysis.
 
@@ -1876,10 +2484,10 @@ Total changes: +{summary.get('total_insertions', 0)}/-{summary.get('total_deleti
 
 Recent commit messages:
 """
-        
+
         for commit in commits[:5]:
             prompt += f"- {commit.get('short_hash', '')}: {commit.get('summary', '')}\n"
-        
+
         prompt += f"""
 Generate {max_issues} practical GitHub issues that would improve this project.
 
@@ -1894,46 +2502,53 @@ Return ONLY a JSON array with this exact structure:
 
 Focus on realistic improvements like code quality, documentation, testing, or bug fixes.
 """
-        
+
         return prompt
-    
+
     def _parse_issues_response(self, response: str) -> List[Dict[str, Any]]:
         """Parse the Ollama response to extract issues."""
         try:
             # Clean the response
             cleaned = response.strip()
-            
+
             # Remove markdown formatting if present
             if cleaned.startswith("```json"):
                 cleaned = cleaned[7:]
             if cleaned.endswith("```"):
                 cleaned = cleaned[:-3]
-            
+
             cleaned = cleaned.strip()
-            
+
             # Parse JSON
             issues = json.loads(cleaned)
-            
+
             # Ensure it's a list
             if not isinstance(issues, list):
                 issues = [issues] if issues else []
-            
+
             # Validate and clean each issue
             valid_issues = []
             for issue in issues:
-                if isinstance(issue, dict) and "title" in issue and "description" in issue:
-                    valid_issues.append({
-                        "title": str(issue["title"]).strip(),
-                        "description": str(issue["description"]).strip(),
-                        "labels": issue.get("labels", ["automated"]),
-                        "assignees": issue.get("assignees", []),
-                    })
-            
+                if (
+                    isinstance(issue, dict)
+                    and "title" in issue
+                    and "description" in issue
+                ):
+                    valid_issues.append(
+                        {
+                            "title": str(issue["title"]).strip(),
+                            "description": str(issue["description"]).strip(),
+                            "labels": issue.get("labels", ["automated"]),
+                            "assignees": issue.get("assignees", []),
+                        }
+                    )
+
             return valid_issues
-            
+
         except Exception as e:
             self.logger.error(f"Failed to parse Ollama response: {e}")
             return []
+
 
 def create_ollama_processor(config: Dict[str, Any]) -> OllamaPromptProcessor:
     """Create and return an Ollama prompt processor."""
@@ -1942,16 +2557,78 @@ def create_ollama_processor(config: Dict[str, Any]) -> OllamaPromptProcessor:
 
 # Export list for the consolidated module
 __all__ = [
-    "Repository", "Issue", "Authentication", "AuthenticationError", "GitHubAuthError",
-    "Commit", "Branch", "PullRequest", "Database", "UserDatabase", "ServerDatabase",
-    "LLM", "LLMProvider", "LLMBackend", "OllamaPromptProcessor", "OllamaPromptValidator",
-    "create_ollama_processor", "Prompt", "PromptTemplate", "PromptType", "Pipe",
-    "PipelineStep", "PipeStage", "DataScraper", "GitHubUtils", "GitHubCloneError",
-    "__version__", "__author__", "__description__", "test_github_connection",
-    # Color functions
-    "colorize", "success", "error", "warning", "info", "header", "highlight", "dim", 
-    "progress_bar", "print_colored", "supports_color", "enable_colors", "is_color_enabled",
-    # Color constants  
-    "RED", "GREEN", "YELLOW", "BLUE", "MAGENTA", "CYAN", "WHITE", "GRAY", "BOLD", 
-    "DIM", "ITALIC", "UNDERLINE", "RESET", "END", "Colors", "RepositoryError", "IssueError", "LLMError"
+    "Repository",
+    "Issue",
+    "Authentication",
+    "AuthenticationError",
+    "GitHubAuthError",
+    "Commit",
+    "Branch",
+    "PullRequest",
+    "Database",
+    "UserDatabase",
+    "ServerDatabase",
+    "LLM",
+    "LLMProvider",
+    "LLMBackend",
+    "OllamaPromptProcessor",
+    "OllamaPromptValidator",
+    "create_ollama_processor",
+    "Prompt",
+    "PromptTemplate",
+    "PromptType",
+    "Pipe",
+    "PipelineStep",
+    "PipeStage",
+    "DataScraper",
+    "GitHubUtils",
+    "GitHubCloneError",
+    "__version__",
+    "__author__",
+    "__description__",
+    "test_github_connection",
+    "colorize",
+    "success",
+    "error",
+    "warning",
+    "info",
+    "header",
+    "highlight",
+    "dim",
+    "progress_bar",
+    "print_colored",
+    "supports_color",
+    "enable_colors",
+    "is_color_enabled",
+    "RED",
+    "GREEN",
+    "YELLOW",
+    "BLUE",
+    "MAGENTA",
+    "CYAN",
+    "WHITE",
+    "GRAY",
+    "BOLD",
+    "DIM",
+    "ITALIC",
+    "UNDERLINE",
+    "RESET",
+    "END",
+    "Colors",
+    "RepositoryError",
+    "IssueError",
+    "LLMError",
+    "LLMProviderError",
+    "PromptError",
+    "DataScraperError",
+    "DatabaseError",
+    "PipeError",
+    "PipeExecutionError",
+    "PipeValidationError",
+    "OllamaToolsError",
+    "OllamaBackend",
+    "MockBackend",
+    "HuggingFaceBackend",
+    "PullRequestError",
+    "BranchError",
 ]

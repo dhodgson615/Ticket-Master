@@ -13,7 +13,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from ticket_master_consolidated import GitHubAuthError, Issue, IssueError
-from ticket_master_consolidated import test_github_connection as connection_test
+from ticket_master_consolidated import \
+    test_github_connection as connection_test
 
 
 class TestIssue:
@@ -1330,8 +1331,9 @@ class TestImportEdgeCases:
         # These are already covered by the fact that tests run successfully
         # But we can verify the module imports work
 
-        from ticket_master_consolidated import (GitHubAuthError, Issue, IssueError,
-                           test_github_connection)
+        from ticket_master_consolidated import (GitHubAuthError, Issue,
+                                                IssueError,
+                                                test_github_connection)
 
         assert Issue is not None
         assert IssueError is not None
@@ -1341,7 +1343,8 @@ class TestImportEdgeCases:
     @patch("ticket_master_consolidated.Authentication")
     def test_auth_error_re_raising(self, mock_auth_class):
         """Test that Authentication errors are properly re-raised."""
-        from ticket_master_consolidated import GitHubAuthError as AuthGitHubAuthError
+        from ticket_master_consolidated import \
+            GitHubAuthError as AuthGitHubAuthError
 
         mock_auth = MagicMock()
         mock_auth.create_client.side_effect = AuthGitHubAuthError(

@@ -16,17 +16,19 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Import with fallback installation - Flask
 try:
-    from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
+    from flask import (Flask, flash, jsonify, redirect, render_template,
+                       request, url_for)
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
-    from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
+    from flask import (Flask, flash, jsonify, redirect, render_template,
+                       request, url_for)
 
 # Simple imports from consolidated module and main
-from ticket_master_consolidated import (
-    Repository, __version__, header, info, success, GitHubCloneError, GitHubUtils,
-    GitHubAuthError, Issue, RepositoryError
-)
 from main import generate_sample_issues, load_config
+from ticket_master_consolidated import (GitHubAuthError, GitHubCloneError,
+                                        GitHubUtils, Issue, Repository,
+                                        RepositoryError, __version__, header,
+                                        info, success)
 
 app = Flask(__name__)
 app.secret_key = os.getenv(

@@ -8,11 +8,10 @@ from repository analysis to issue generation.
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
-from main import (analyze_repository, create_issues_on_github,
-                  generate_issues_with_llm, generate_sample_issues,
-                  load_config)
+from main import (create_issues_on_github, generate_issues_with_llm,
+                  generate_sample_issues, load_config)
+from src.ticket_master_consolidated import Issue
 
 
 class TestEndToEndIntegration(unittest.TestCase):
@@ -216,7 +215,6 @@ issue_generation:
 
     def test_dry_run_issue_processing(self):
         """Test dry run issue processing workflow."""
-        from ticket_master import Issue
 
         # Create test issues
         issues = [

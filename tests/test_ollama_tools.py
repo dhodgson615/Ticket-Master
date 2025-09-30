@@ -12,9 +12,10 @@ from unittest.mock import MagicMock, Mock, patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from ticket_master_consolidated import (OllamaPromptProcessor, OllamaPromptValidator,
-                          OllamaToolsError, create_ollama_processor)
-from ticket_master_consolidated import PromptTemplate, PromptType
+from ticket_master_consolidated import (OllamaPromptProcessor,
+                                        OllamaPromptValidator,
+                                        OllamaToolsError, PromptTemplate,
+                                        PromptType, create_ollama_processor)
 
 
 class TestOllamaPromptProcessor(unittest.TestCase):

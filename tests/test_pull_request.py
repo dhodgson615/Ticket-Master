@@ -5,16 +5,11 @@ This module provides comprehensive tests for pull request functionality
 including PR operations, metadata handling, and representation.
 """
 
-import sys
 import unittest
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import Mock
 
-# Add src directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from ticket_master_consolidated import PullRequest, PullRequestError
+from src.ticket_master_consolidated import PullRequest, PullRequestError
 
 
 class TestPullRequest(unittest.TestCase):
@@ -217,8 +212,7 @@ class TestPullRequest(unittest.TestCase):
         self.mock_pr.get_files.return_value = [mock_file1, mock_file2]
 
         pr = PullRequest(self.mock_pr)
-        files = pr.get_changed_files()
-
+        files = pr.changed_files
         self.assertEqual(len(files), 2)
         self.assertEqual(files[0]["filename"], "file1.py")
         self.assertEqual(files[0]["status"], "modified")
@@ -244,7 +238,6 @@ class TestPullRequest(unittest.TestCase):
         mock_review1.state = "APPROVED"
         mock_review1.body = "Looks good!"
         mock_review1.submitted_at = datetime(2023, 1, 2, 10, 0, 0)
-
         mock_review2 = Mock()
         mock_review2.id = 2
         mock_review2.user.login = "reviewer2"

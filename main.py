@@ -29,11 +29,12 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Simple imports from consolidated module
-from ticket_master_consolidated import (
-    Issue, Repository, __version__, Colors, dim, error, header, highlight, 
-    info, print_colored, success, warning, GitHubCloneError, GitHubUtils,
-    GitHubAuthError, IssueError, LLM, LLMError, RepositoryError
-)
+from ticket_master_consolidated import (LLM, Colors, GitHubAuthError,
+                                        GitHubCloneError, GitHubUtils, Issue,
+                                        IssueError, LLMError, Repository,
+                                        RepositoryError, __version__, dim,
+                                        error, header, highlight, info,
+                                        print_colored, success, warning)
 
 
 def setup_logging(level: str = "INFO") -> None:
