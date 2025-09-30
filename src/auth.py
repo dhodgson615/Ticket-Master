@@ -89,11 +89,8 @@ class Authentication:
         try:
             auth = Auth.Token(auth_token)
             github_client = Github(auth=auth)
-
-            # Test authentication by getting user info
             user = github_client.get_user()
             self.logger.info(f"Authenticated as GitHub user: {user.login}")
-
             return github_client
 
         except BadCredentialsException as e:
@@ -127,12 +124,12 @@ class Authentication:
                 },
                 "rate_limit": {
                     "core": {
-                        "limit": rate_limit.core.limit,
-                        "remaining": rate_limit.core.remaining,
-                        "reset": rate_limit.core.reset.isoformat(),
+                        "limit": rate_limit.core.limit,  # TODO: resolve no attribute "core"
+                        "remaining": rate_limit.core.remaining,  # TODO: resolve no attribute "core"
+                        "reset": rate_limit.core.reset.isoformat(),  # TODO: resolve no attribute "core"
                     }
                 },
-            }
+            }  # TODO: convert dict to custom data class
 
         except Exception as e:
             return {"authenticated": False, "error": str(e)}
@@ -182,7 +179,7 @@ class Authentication:
             "updated_at": (
                 user.updated_at.isoformat() if user.updated_at else None
             ),
-        }
+        }  # TODO: convert dict to custom data class
 
     def __str__(self) -> str:
         """String representation of the Authentication instance."""

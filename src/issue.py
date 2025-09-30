@@ -496,7 +496,7 @@ class Issue:
         default_labels: Optional[List[str]] = None,
         default_assignees: Optional[List[str]] = None,
         token: Optional[str] = None,
-        **bulk_options,
+        **bulk_options: Any,
     ) -> Dict[str, Any]:
         """Create issues from template data with bulk processing.
 

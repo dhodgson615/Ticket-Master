@@ -152,3 +152,6 @@ __all__ = [
 # LLM-related code to services/llm.py, etc.
 # Also consider adding __init__.py files to make them proper packages.
 # This will also help in writing targeted unit tests for each module.
+
+# TODO: refactor so that mypy and pylint checks can be run without errors
+# This will help in maintaining code quality and catching potential issues early.

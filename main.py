@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Main entry point for Ticket-Master.
-
-This script provides a command-line interface for generating GitHub issues
-using AI analysis of Git repository contents.
-"""
-
 import argparse
 import json
 import logging

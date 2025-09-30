@@ -1,11 +1,4 @@
-#!/usr/bin/env python3
-"""
-Flask web interface for Ticket-Master.
-
-This provides a web-based interface for generating GitHub issues
-using AI analysis of Git repository contents.
-"""
-
+import logging
 import os
 import subprocess
 import sys
@@ -14,71 +7,30 @@ from pathlib import Path
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+# Setup logging
+logger = logging.getLogger("TicketMasterApp")
+logging.basicConfig(level=logging.INFO)
+
 # Import with fallback installation - Flask
 try:
-    from flask import Flask as Flask
-    from flask import flash as flash
-    from flask import jsonify as jsonify
-    from flask import redirect as redirect
-    from flask import render_template as render_template
-    from flask import request as request
-    from flask import url_for as url_for
+    from flask import (Flask, flash, jsonify, redirect, render_template,
+                       request, url_for)
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
-    from flask import Flask as Flask
-    from flask import flash as flash
-    from flask import jsonify as jsonify
-    from flask import redirect as redirect
-    from flask import render_template as render_template
-    from flask import request as request
-    from flask import url_for as url_for
+    from flask import (Flask, flash, jsonify, redirect, render_template,
+                       request, url_for)
 
-# Import the main CLI functions to reuse logic
+# Import core modules from src
 try:
-    from main import generate_sample_issues as generate_sample_issues
-    from main import load_config as load_config
-except ImportError:
-    from main import generate_sample_issues as generate_sample_issues
-    from main import load_config as load_config
-
-try:
-    from __init__ import Repository as Repository
-    from __init__ import __version__ as __version__
-except ImportError:
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "gitpython"]
-    )
-    from __init__ import Repository as Repository
-    from __init__ import __version__ as __version__
-
-try:
-    from colors import header as header
-    from colors import info as info
-    from colors import success as success
-except ImportError:
-    from colors import header as header
-    from colors import info as info
-    from colors import success as success
-
-try:
-    from github_utils import GitHubCloneError as GitHubCloneError
-    from github_utils import GitHubUtils as GitHubUtils
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    from github_utils import GitHubCloneError as GitHubCloneError
-    from github_utils import GitHubUtils as GitHubUtils
-
-try:
-    from issue import GitHubAuthError as GitHubAuthError
-    from issue import Issue as Issue
-except ImportError:
-    from issue import GitHubAuthError as GitHubAuthError
-    from issue import Issue as Issue
-
-try:
-    from repository import RepositoryError as RepositoryError
-except ImportError:
-    from repository import RepositoryError as RepositoryError
+    from colors import header, info, success
+    from github_utils import GitHubCloneError, GitHubUtils
+    from issue import GitHubAuthError, Issue
+    from main import analyze_repository, generate_sample_issues, load_config
+    from repository import Repository, RepositoryError
+    from src import __version__
+except ImportError as e:
+    logger.error(f"Failed to import core modules: {e}")
+    raise
 
 app = Flask(__name__)
 app.secret_key = os.getenv(
@@ -87,48 +39,49 @@ app.secret_key = os.getenv(
 
 
 @app.route("/")
-def index():
-    """Home page with repository input form."""
+def index() -> str:
+    """Home page with repository input form.
+
+    Returns:
+        str: Rendered HTML for the index page.
+    """
     return render_template("index.html", version=__version__)
 
 
 @app.route("/generate", methods=["POST"])
 def generate_issues():
-    """Generate issues for the specified repository."""
+    """Generate issues for the specified repository.
+
+    Returns:
+        Response: Flask response object with results or redirect.
+    """
     github_utils = None
     try:
-        # Get form data
         github_repo_input = request.form.get("github_repo", "").strip()
         repository_path = request.form.get("repository_path", "").strip()
         max_issues = request.form.get("max_issues", type=int) or 5
         dry_run = "dry_run" in request.form
 
-        # Validate GitHub repository input (required)
         if not github_repo_input:
             flash("GitHub repository name is required", "error")
             return redirect(url_for("index"))
 
-        # Initialize GitHub utilities
         github_utils = GitHubUtils()
         repo_path = None
         temp_repo_path = None
 
-        # Parse and validate GitHub repository format
         try:
             github_repo = github_utils.parse_github_url(github_repo_input)
         except ValueError as e:
             flash(str(e), "error")
             return redirect(url_for("index"))
 
-        # Check if repository is public
         is_public = github_utils.is_public_repository(github_repo)
 
-        # Load configuration
         config = load_config()
-        config["issue_generation"]["max_issues"] = max_issues
+        config.setdefault("issue_generation", {})["max_issues"] = max_issues
 
-        # Handle authentication requirements
-        github_token = config["github"]["token"]
+        github_token = config.get("github", {}).get("token")
         if not is_public and not github_token:
             flash(
                 f"Repository {github_repo} appears to be private but no GitHub token found. "
@@ -137,9 +90,7 @@ def generate_issues():
             )
             return redirect(url_for("index"))
 
-        # Handle repository path - either use provided local path or clone
         if repository_path:
-            # Use provided local path
             if not os.path.exists(repository_path):
                 flash(
                     f"Local repository path does not exist: {repository_path}",
@@ -149,7 +100,6 @@ def generate_issues():
             repo_path = repository_path
             flash(f"Using local repository at: {repository_path}", "info")
         else:
-            # Clone repository to temporary location
             try:
                 temp_repo_path = github_utils.clone_repository(
                     github_repo, token=github_token if not is_public else None
@@ -163,21 +113,12 @@ def generate_issues():
                 flash(f"Failed to clone repository: {e}", "error")
                 return redirect(url_for("index"))
 
-        # Initialize repository for analysis
         repo = Repository(repo_path)
-
-        # Get repository analysis (use the same analysis function as CLI)
-        from main import analyze_repository
-
         analysis = analyze_repository(repo_path, config)
-
-        # Generate sample issues (reusing CLI logic)
         issues = generate_sample_issues(analysis, config)
 
-        # Create GitHub issues (if not dry run)
         results = []
         if not dry_run:
-            # Only validate token for issue creation if needed
             if not github_token:
                 flash(
                     "GitHub token is required for creating issues. Set GITHUB_TOKEN environment variable.",
@@ -222,7 +163,6 @@ def generate_issues():
                 flash(f"GitHub authentication error: {e}", "error")
                 return redirect(url_for("index"))
         else:
-            # Dry run - just show what would be created
             for issue in issues[:max_issues]:
                 results.append(
                     {
@@ -249,25 +189,29 @@ def generate_issues():
         )
 
     except (RepositoryError, GitHubCloneError) as e:
+        logger.error(f"Repository error: {e}")
         flash(f"Repository error: {e}", "error")
         return redirect(url_for("index"))
     except Exception as e:
+        logger.error(f"Unexpected error: {e}")
         flash(f"Unexpected error: {e}", "error")
         return redirect(url_for("index"))
     finally:
-        # Cleanup temporary directories
         if github_utils:
             github_utils.cleanup_temp_directories()
 
 
 @app.route("/health")
-def health_check():
-    """Health check endpoint."""
+def health_check() -> "Response":
+    """Health check endpoint.
+
+    Returns:
+        Response: JSON response with health status and version.
+    """
     return jsonify({"status": "healthy", "version": __version__})
 
 
 if __name__ == "__main__":
-    # Get configuration from environment
     debug = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "yes")
     host = os.getenv("FLASK_HOST", "127.0.0.1")
     port = int(os.getenv("FLASK_PORT", "5000"))

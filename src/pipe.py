@@ -291,16 +291,20 @@ class Pipe:
 
             if stage == PipeStage.INPUT:
                 llm = self.input_llm
+
             elif stage == PipeStage.OUTPUT:
                 llm = self.output_llm
+
             elif stage == PipeStage.VALIDATION and self.intermediate_llm:
                 llm = self.intermediate_llm
+
             else:
                 llm = self.intermediate_llm or self.input_llm
 
         step = PipelineStep(
             name, llm, prompt_template, stage, validator, metadata
         )
+
         self.steps.append(step)
 
         self.logger.info(f"Added step '{name}' at stage {stage}")
@@ -357,12 +361,14 @@ class Pipe:
                 step_result = step.execute(
                     current_variables, self.prompt_manager, **llm_kwargs
                 )
+
                 pipeline_result["steps"].append(step_result)
 
                 # Update variables with step output
                 if step_result["success"]:
                     # Add step output to variables for next step
                     step_output_key = f"{step.name}_output"
+
                     current_variables[step_output_key] = step_result[
                         "response"
                     ]
@@ -385,6 +391,7 @@ class Pipe:
 
                             if stop_on_error:
                                 raise PipeExecutionError(error_msg)
+
                             else:
                                 pipeline_result["errors"].append(error_msg)
 
@@ -408,7 +415,9 @@ class Pipe:
 
         # Update final results
         pipeline_result["variables"] = current_variables
-        pipeline_result["execution_time"] = time.time() - start_time
+        pipeline_result["execution_time"] = (
+            time.time() - start_time
+        )  # TODO: fix type
         pipeline_result["end_time"] = datetime.now().isoformat()
 
         # Pipeline succeeds if no errors or if we're not stopping on errors
@@ -419,11 +428,14 @@ class Pipe:
 
         if pipeline_result["success"]:
             self.logger.info(
-                f"Pipeline '{self.name}' completed successfully in {pipeline_result['execution_time']:.2f}s"
+                f"Pipeline '{self.name}' completed successfully in "
+                f"{pipeline_result['execution_time']:.2f}s"
             )
+
         else:
             self.logger.error(
-                f"Pipeline '{self.name}' failed with {len(pipeline_result['errors'])} errors"
+                f"Pipeline '{self.name}' failed with "
+                f"{len(pipeline_result['errors'])} errors"
             )
 
         return pipeline_result
@@ -469,6 +481,7 @@ class Pipe:
 
         # Check LLM availability
         llms_to_check = [self.input_llm, self.output_llm]
+
         if self.intermediate_llm:
             llms_to_check.append(self.intermediate_llm)
 
@@ -517,6 +530,7 @@ class Pipe:
                 del self.steps[i]
                 self.logger.info(f"Removed step '{name}' from pipeline")
                 return True
+
         return False
 
     def clear_steps(self) -> None:

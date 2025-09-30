@@ -238,32 +238,46 @@ def dim(text: str) -> str:
 def progress_bar(
     completed: int, total: int, width: int = 40, color: str = Colors.GREEN
 ) -> str:
-    """
-    Create a colored progress bar.
+    """Create a colored progress bar.
 
     Args:
-        completed: Number of completed items
-        total: Total number of items
-        width: Width of the progress bar in characters
-        color: Color for the completed portion
+        completed (int): Number of completed items.
+        total (int): Total number of items.
+        width (int): Width of the progress bar in characters.
+        color (str): Color for the completed portion.
 
     Returns:
-        Formatted progress bar
+        str: Formatted progress bar.
+
+    Raises:
+        ValueError: If width is less than 1.
+
+    Example:
+        >>> progress_bar(5, 10, width=10)
+        '[\033[92m█████\033[0m░░░░░] 50.0%'
     """
+    if width < 1:
+        raise ValueError("Progress bar width must be at least 1")
+
     if total == 0:
         return f"[{' ' * width}] 0%"
 
-    percent = completed / total
-    filled = int(width * percent)
-    remaining = width - filled
-    bar_filled = colorize("█" * filled, color)
-    bar_empty = "░" * remaining
-    percentage = f"{percent:.1%}"
+    percent: float = completed / total
+
+    if width == 1:
+        filled: int = 1 if percent >= 1.0 else 0
+
+    else:
+        filled: int = min(int(width * percent), width)
+
+    remaining: int = width - filled
+    bar_filled: str = colorize("█" * filled, color) if filled > 0 else ""
+    bar_empty: str = "░" * remaining
+    percentage: str = f"{percent:.1%}"
 
     return f"[{bar_filled}{bar_empty}] {percentage}"
 
 
-# Utility function for printing colored messages
 def print_colored(
     text: Any, color: str = "", style: str = "", **kwargs
 ) -> None:

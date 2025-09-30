@@ -32,7 +32,8 @@ class Branch:
     """Represents a Git branch with associated metadata and operations.
 
     This class provides an object-oriented interface to Git branches,
-    encapsulating branch information and providing methods for analysis.
+    encapsulating branch information and providing methods for
+    analysis.
 
     Attributes:
         name: Branch name
@@ -50,8 +51,10 @@ class Branch:
         """Initialize Branch from a GitPython branch object.
 
         Args:
-            git_branch: GitPython Head or RemoteReference object to wrap
-            repo_obj: GitPython Repository object for additional operations
+            git_branch: GitPython Head or RemoteReference object to
+                wrap
+            repo_obj: GitPython Repository object for additional
+                operations
             is_active: Whether this is the currently active branch
 
         Raises:
@@ -65,13 +68,12 @@ class Branch:
         self.git_branch = git_branch
         self.repo_obj = repo_obj
         self.logger = logging.getLogger(self.__class__.__name__)
-
-        # Extract basic branch information
         self.name = git_branch.name
         self.is_active = is_active
 
         # Check if it's a remote branch by checking class name or if name contains "/"
         class_name = getattr(git_branch.__class__, "__name__", "")
+
         self.is_remote = "RemoteReference" in class_name or (
             "/" in self.name and not self.name.startswith("feature/")
         )
@@ -109,6 +111,7 @@ class Branch:
         """
         try:
             commits = []
+
             for git_commit in self.git_branch.commit.iter_items(
                 max_count=max_count, skip=0
             ):
@@ -197,7 +200,8 @@ class Branch:
 
         except Exception as e:
             raise BranchError(
-                f"Failed to check merge status for {self.name} into {target_branch.name}: {e}"
+                f"Failed to check merge status for {self.name} into "
+                f"{target_branch.name}: {e}"
             )
 
     def get_tracking_branch(self) -> Optional["Branch"]:
