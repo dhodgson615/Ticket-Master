@@ -1,21 +1,18 @@
 import logging
 import os
-import subprocess
-import sys
 from typing import Any, Dict, Optional
 
-# Import with fallback installation
-# TODO: Consider using a more robust dependency management approach
-# such as poetry or pipenv for better handling of dependencies.
 try:
     from github import Auth, Github
     from github.GithubException import BadCredentialsException
 
 except ImportError:
+    import subprocess
+    import sys
+
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "PyGithub>=1.59.1"]
     )
-
     from github import Auth, Github
     from github.GithubException import BadCredentialsException
 
@@ -62,13 +59,10 @@ class Authentication:
             GitHubAuthError: If no token is available
         """
         token = self.token or os.getenv("GITHUB_TOKEN")
-
         if not token:
             raise GitHubAuthError(
-                "GitHub token not provided. Set GITHUB_TOKEN environment variable "
-                "or pass token parameter."
+                "GitHub token not provided. Set GITHUB_TOKEN environment variable or pass token parameter."
             )
-
         return token
 
     def create_client(self, token: Optional[str] = None) -> Github:
@@ -83,19 +77,15 @@ class Authentication:
         Raises:
             GitHubAuthError: If authentication fails or token is missing
         """
-        # Use provided token, instance token, or environment variable
         auth_token = token or self.get_token()
-
         try:
             auth = Auth.Token(auth_token)
             github_client = Github(auth=auth)
             user = github_client.get_user()
             self.logger.info(f"Authenticated as GitHub user: {user.login}")
             return github_client
-
         except BadCredentialsException as e:
             raise GitHubAuthError(f"Invalid GitHub credentials: {e}")
-
         except Exception as e:
             raise GitHubAuthError(f"Failed to authenticate with GitHub: {e}")
 
@@ -112,7 +102,6 @@ class Authentication:
             github_client = self.create_client(token)
             user = github_client.get_user()
             rate_limit = github_client.get_rate_limit()
-
             return {
                 "authenticated": True,
                 "user": {
@@ -124,13 +113,14 @@ class Authentication:
                 },
                 "rate_limit": {
                     "core": {
-                        "limit": rate_limit.core.limit,  # TODO: resolve no attribute "core"
-                        "remaining": rate_limit.core.remaining,  # TODO: resolve no attribute "core"
-                        "reset": rate_limit.core.reset.isoformat(),  # TODO: resolve no attribute "core"
+                        "limit": getattr(rate_limit.core, "limit", None),
+                        "remaining": getattr(
+                            rate_limit.core, "remaining", None
+                        ),
+                        "reset": getattr(rate_limit.core, "reset", None),
                     }
                 },
-            }  # TODO: convert dict to custom data class
-
+            }
         except Exception as e:
             return {"authenticated": False, "error": str(e)}
 
@@ -147,8 +137,7 @@ class Authentication:
             github_client = self.create_client(token)
             github_client.get_user()
             return True
-
-        except Exception:  # TODO: Narrow exception type
+        except Exception:
             return False
 
     def get_user_info(self, token: Optional[str] = None) -> Dict[str, Any]:
@@ -165,7 +154,6 @@ class Authentication:
         """
         github_client = self.create_client(token)
         user = github_client.get_user()
-
         return {
             "login": user.login,
             "name": user.name,
@@ -179,7 +167,7 @@ class Authentication:
             "updated_at": (
                 user.updated_at.isoformat() if user.updated_at else None
             ),
-        }  # TODO: convert dict to custom data class
+        }
 
     def __str__(self) -> str:
         """String representation of the Authentication instance."""
@@ -189,7 +177,6 @@ class Authentication:
     def __repr__(self) -> str:
         """Developer representation of the Authentication instance."""
         has_token = bool(self.token or os.getenv("GITHUB_TOKEN"))
-
         return (
             f"Authentication(token_set={bool(self.token)}, "
             f"env_token_set={bool(os.getenv('GITHUB_TOKEN'))}, has_token={has_token})"

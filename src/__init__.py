@@ -5,111 +5,51 @@ __version__ = "0.1.0"
 __author__ = "Ticket-Master Contributors"
 __description__ = "AI-powered GitHub issue generator"
 
-# Import with fallback installation pattern
-# TODO: Consider using a more robust dependency management approach
-# such as poetry or pipenv for better handling of dependencies.
+# External package imports with fallback installation
 try:
-    from auth import Authentication as Authentication
-    from auth import AuthenticationError as AuthenticationError
-    from auth import GitHubAuthError as GitHubAuthError
+    import requests
 
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    from auth import Authentication as Authentication
-    from auth import AuthenticationError as AuthenticationError
-    from auth import GitHubAuthError as GitHubAuthError
+    import requests
 
 try:
-    from branch import Branch as Branch
-
-except ImportError:
-    from branch import Branch as Branch
-
-try:
-    from commit import Commit as Commit
-
-except ImportError:
-    from commit import Commit as Commit
-
-try:
-    from data_scraper import DataScraper as DataScraper
-
-except ImportError:
-    from data_scraper import DataScraper as DataScraper
-
-try:
-    from database import Database as Database
-    from database import ServerDatabase as ServerDatabase
-    from database import UserDatabase as UserDatabase
+    import sqlite3
 
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "sqlite3"])
-    from database import Database as Database
-    from database import ServerDatabase as ServerDatabase
-    from database import UserDatabase as UserDatabase
+    import sqlite3
 
 try:
-    from issue import Issue as Issue
-
-except ImportError:
-    from issue import Issue as Issue
-
-try:
-    from llm import LLM as LLM
-    from llm import LLMBackend as LLMBackend
-    from llm import LLMProvider as LLMProvider
-
-except ImportError:
-    from llm import LLM as LLM
-    from llm import LLMBackend as LLMBackend
-    from llm import LLMProvider as LLMProvider
-
-try:
-    from ollama_tools import OllamaPromptProcessor as OllamaPromptProcessor
-    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator
-    from ollama_tools import create_ollama_processor as create_ollama_processor
+    import ollama
 
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "ollama"])
-    from ollama_tools import OllamaPromptProcessor as OllamaPromptProcessor
-    from ollama_tools import OllamaPromptValidator as OllamaPromptValidator
-    from ollama_tools import create_ollama_processor as create_ollama_processor
+    import ollama
 
 try:
-    from pipe import Pipe as Pipe
-    from pipe import PipelineStep as PipelineStep
-    from pipe import PipeStage as PipeStage
-
-except ImportError:
-    from pipe import Pipe as Pipe
-    from pipe import PipelineStep as PipelineStep
-    from pipe import PipeStage as PipeStage
-
-try:
-    from prompt import Prompt as Prompt
-    from prompt import PromptTemplate as PromptTemplate
-    from prompt import PromptType as PromptType
-
-except ImportError:
-    from prompt import Prompt as Prompt
-    from prompt import PromptTemplate as PromptTemplate
-    from prompt import PromptType as PromptType
-
-try:
-    from pull_request import PullRequest as PullRequest
-
-except ImportError:
-    from pull_request import PullRequest as PullRequest
-
-try:
-    from repository import Repository as Repository
+    import git
 
 except ImportError:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "gitpython"]
     )
+    import git
 
-    from repository import Repository as Repository
+# Internal module imports
+from auth import Authentication, AuthenticationError, GitHubAuthError
+from branch import Branch
+from commit import Commit
+from data_scraper import DataScraper
+from database import Database, ServerDatabase, UserDatabase
+from issue import Issue
+from llm import LLM, LLMBackend, LLMProvider
+from ollama_tools import (OllamaPromptProcessor, OllamaPromptValidator,
+                          create_ollama_processor)
+from pipe import Pipe, PipelineStep, PipeStage
+from prompt import Prompt, PromptTemplate, PromptType
+from pull_request import PullRequest
+from repository import Repository
 
 __all__ = [
     "Repository",
@@ -138,6 +78,7 @@ __all__ = [
     "DataScraper",
     "__version__",
 ]
+
 
 # Note: The above import-with-fallback-installation pattern is not ideal for
 # production code. It's recommended to manage dependencies using a requirements

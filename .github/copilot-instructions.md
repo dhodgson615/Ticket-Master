@@ -13,18 +13,6 @@ Ticket-Master is an AI-powered tool that generates GitHub issues with descriptio
 - **NEVER** leave TODO comments in production code - convert them to GitHub issues instead
 - **NEVER** commit hardcoded credentials or API keys
 
-### Import Management
-- **ALWAYS** use try-except blocks for package imports with automatic installation fallback:
-```python
-try:
-    import requests
-except ImportError:
-    import subprocess
-    import sys
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    import requests
-```
-
 ### Architecture Principles
 - **ALWAYS** make incremental changes - never break existing functionality
 - **ALWAYS** implement modular design with clear separation of concerns
