@@ -3,6 +3,7 @@
 [![CI Pipeline](https://github.com/dhodgson615/Ticket-Master/actions/workflows/ci.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/dhodgson615/Ticket-Master/actions/workflows/codeql.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/codeql.yml)
 [![Dependency Updates](https://github.com/dhodgson615/Ticket-Master/actions/workflows/dependency-updates.yml/badge.svg)](https://github.com/dhodgson615/Ticket-Master/actions/workflows/dependency-updates.yml)
+[![Code Coverage](https://codecov.io/gh/dhodgson615/Ticket-Master/branch/master/graph/badge.svg)](https://codecov.io/gh/dhodgson615/Ticket-Master)
 
 A project that attempts to use AI to suggest GitHub issues with descriptions
 based on the contents of a Git repository
