@@ -56,7 +56,7 @@ config: ## Copy example configuration file
 		echo "config.yaml already exists. Skipping copy."; \
 	fi
 
-test: ## Run tests with pytest
+test: ## Run tests with pytest, TODO: add coverage for codecov and workflows
 	@echo "Running tests..."
 	$(PYTEST) -v --cov=$(SRC_DIR) --cov-report=term-missing --cov-report=xml
 	@echo "Tests completed!"
