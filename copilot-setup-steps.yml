@@ -20,7 +20,7 @@ repository_layout:
   key_directories:
     - path: "src/"
       description: "Core Python modules and source code"
-      contents:
+      contents:  # TODO: update these to match actual files
         - "__init__.py - Main module imports and exports"
         - "repository.py - Git repository analysis and operations"
         - "issue.py - GitHub issue creation and management"
