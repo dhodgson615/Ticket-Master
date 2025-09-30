@@ -1,10 +1,3 @@
-"""
-Ticket-Master: AI-powered GitHub issue generator
-
-A tool that uses AI to suggest GitHub issues with descriptions
-based on the contents of a Git repository.
-"""
-
 import subprocess
 import sys
 
@@ -13,6 +6,8 @@ __author__ = "Ticket-Master Contributors"
 __description__ = "AI-powered GitHub issue generator"
 
 # Import with fallback installation pattern
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 try:
     from auth import Authentication as Authentication
     from auth import AuthenticationError as AuthenticationError
@@ -143,3 +138,17 @@ __all__ = [
     "DataScraper",
     "__version__",
 ]
+
+# Note: The above import-with-fallback-installation pattern is not ideal for
+# production code. It's recommended to manage dependencies using a requirements
+# file or a dependency management tool like Poetry or Pipenv.
+
+# TODO: refactor to use a proper dependency management tool
+
+# TODO: refactor code into src/, models/, services/, utils/ etc. for better organization
+# and maintainability.
+# This will help in scaling the codebase as more features are added.
+# For example, move GitHub-related code to services/github.py,
+# LLM-related code to services/llm.py, etc.
+# Also consider adding __init__.py files to make them proper packages.
+# This will also help in writing targeted unit tests for each module.

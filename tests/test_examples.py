@@ -1,28 +1,11 @@
-"""
-Test module for examples directory.
-
-This module provides comprehensive tests for the example scripts,
-including ollama_demo.py functionality and error handling.
-
-Args:
-    None
-
-Returns:
-    None
-
-Examples:
-    To run all tests in this module, use:
-
-        pytest tests/test_examples.py
-"""
-
-import os
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add project directories to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

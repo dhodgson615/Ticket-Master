@@ -1,16 +1,11 @@
-"""
-Test module for LLM classes: LLM, LLMBackend, and related components.
-
-This module provides comprehensive tests for LLM functionality
-including provider integration, response validation, and error handling.
-"""
-
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src directory to path for imports
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from llm import (LLM, LLMError, LLMProvider, LLMProviderError, MockBackend,

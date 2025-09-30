@@ -1,6 +1,8 @@
 import logging
 from typing import Any, Dict, List
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 try:
     from github import PullRequest as GitHubPullRequest
 

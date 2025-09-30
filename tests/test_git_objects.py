@@ -1,21 +1,15 @@
-"""
-Tests for Git object classes: Commit, Branch, and PullRequest.
-
-This module provides comprehensive tests for the newly implemented Git object classes
-to ensure they work correctly and integrate properly with the existing codebase.
-"""
-
 import os
 import shutil
-# Add src to path for imports
 import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from branch import Branch, BranchError

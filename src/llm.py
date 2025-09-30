@@ -9,6 +9,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 # Import with fallback installation
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 try:
     import requests
 

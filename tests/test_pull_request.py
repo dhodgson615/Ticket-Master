@@ -1,16 +1,11 @@
-"""
-Test module for pull request class: PullRequest.
-
-This module provides comprehensive tests for pull request functionality
-including PR operations, metadata handling, and representation.
-"""
-
 import sys
 import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

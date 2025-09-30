@@ -1,15 +1,10 @@
-"""
-Ollama integration tools for Ticket-Master.
-
-This module provides high-level Python tools for interfacing between the
-application and the Ollama API using prompt objects.
-"""
-
 import json
 import logging
 import time
 from typing import Any, Dict, List, Optional, Union
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 try:
     import ollama
 except ImportError:

@@ -1,16 +1,11 @@
-"""
-Test module for commit class: Commit.
-
-This module provides comprehensive tests for commit functionality
-including commit operations, merge detection, and representation.
-"""
-
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
 # Add src directory to path for imports
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from commit import Commit, CommitError

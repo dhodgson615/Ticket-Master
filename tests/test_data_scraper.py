@@ -1,17 +1,10 @@
-"""
-Test module for data scraper class: DataScraper.
-
-This module provides comprehensive tests for data scraper functionality
-including repository analysis, file structure scanning, and content analysis.
-"""
-
-import os
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

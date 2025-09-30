@@ -1,23 +1,17 @@
-"""
-Test module for colors utilities.
-
-This module provides comprehensive tests for the colors module functionality
-including ANSI color codes, terminal support detection, and formatting functions.
-"""
-
 import os
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from colors import CYAN  # Global color variables
-from colors import (BLUE, BOLD, DIM, END, GRAY, GREEN, ITALIC, MAGENTA, RED,
-                    RESET, UNDERLINE, WHITE, YELLOW, Colors, colorize, dim,
-                    enable_colors, error, header, highlight, info,
+from colors import (BLUE, BOLD, CYAN, DIM, END, GRAY, GREEN, ITALIC, MAGENTA,
+                    RED, RESET, UNDERLINE, WHITE, YELLOW, Colors, colorize,
+                    dim, enable_colors, error, header, highlight, info,
                     is_color_enabled, print_colored, progress_bar, success,
                     supports_color, warning)
 

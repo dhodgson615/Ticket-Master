@@ -1,15 +1,11 @@
-"""
-Tests for Ollama integration tools.
-"""
-
 import json
-# Add src directory to path for imports
 import sys
 import unittest
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from ollama_tools import (OllamaPromptProcessor, OllamaPromptValidator,

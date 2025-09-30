@@ -1,5 +1,3 @@
-"""GitHub utilities for repository cloning and public repository detection."""
-
 import logging
 import os
 import shutil
@@ -8,6 +6,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 try:
     from git import GitCommandError, Repo
 

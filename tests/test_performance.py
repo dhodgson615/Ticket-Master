@@ -1,20 +1,13 @@
-"""
-Performance tests for Ticket-Master with large repositories and datasets.
-
-This module tests the performance characteristics of the application
-when dealing with large repositories, many commits, and bulk operations.
-"""
-
 import os
 import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
-
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -238,7 +231,6 @@ class TestBulkOperationsPerformance(unittest.TestCase):
     def test_parallel_processing_simulation(self):
         """Test simulation of parallel processing for performance."""
         import concurrent.futures
-        import threading
 
         def process_item(item):
             """Simulate processing an item."""

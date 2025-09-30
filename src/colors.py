@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Color utilities for Ticket-Master CLI.
-
-Provides global color variables and utility functions for creating colorful
-command-line output with automatic fallback for non-color terminals.
-"""
-
 import os
 import sys
 from typing import Any

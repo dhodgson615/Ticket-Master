@@ -1,17 +1,14 @@
-"""
-Tests for the Repository class.
-"""
-
 import os
 import shutil
-# Add src to path for imports
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from repository import Repository, RepositoryError

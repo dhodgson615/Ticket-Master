@@ -1,10 +1,3 @@
-"""
-Authentication module for GitHub API integration.
-
-This module provides the Authentication class for handling GitHub authentication
-with proper token management, validation, and error handling.
-"""
-
 import logging
 import os
 import subprocess
@@ -12,6 +5,8 @@ import sys
 from typing import Any, Dict, Optional
 
 # Import with fallback installation
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 try:
     from github import Auth, Github
     from github.GithubException import BadCredentialsException

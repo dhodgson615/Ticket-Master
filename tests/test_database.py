@@ -1,16 +1,11 @@
-"""
-Test module for database classes: Database, UserDatabase, and ServerDatabase.
-
-This module provides comprehensive tests for database functionality
-including connection management, data storage, and error handling.
-"""
-
 import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

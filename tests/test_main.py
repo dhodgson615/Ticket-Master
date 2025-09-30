@@ -1,10 +1,3 @@
-"""
-Test module for main script functionality.
-
-This module provides comprehensive tests for the main CLI interface
-including argument parsing, configuration loading, and issue generation.
-"""
-
 import tempfile
 import unittest
 from pathlib import Path

@@ -1,15 +1,10 @@
-"""
-Test module for pipe classes: Pipe, PipelineStep, and related components.
-
-This module provides comprehensive tests for pipeline functionality
-including step execution, validation, and stage management.
-"""
-
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

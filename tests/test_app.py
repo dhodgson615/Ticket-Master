@@ -1,17 +1,12 @@
-"""
-Test module for Flask web interface (app.py).
-
-This module provides comprehensive tests for the Flask web application
-including route handlers, form processing, and error handling.
-"""
-
 import os
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src and root directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

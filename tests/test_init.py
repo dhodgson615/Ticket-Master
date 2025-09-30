@@ -1,13 +1,9 @@
-"""
-Test module for __init__.py module.
-
-This module tests the initialization and import behavior.
-"""
-
 import sys
 import unittest
 from pathlib import Path
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

@@ -1,19 +1,12 @@
-"""
-Test module for remaining new classes not yet covered by dedicated test files.
-
-This module provides comprehensive tests for classes that don't yet have
-their own dedicated test files. As the project grows, tests should be moved
-to dedicated files following the pattern: file.py -> test_file.py
-"""
-
-import json
 import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

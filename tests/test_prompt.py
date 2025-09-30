@@ -1,15 +1,10 @@
-"""
-Test module for prompt classes: Prompt, PromptTemplate, and related components.
-
-This module provides comprehensive tests for prompt functionality
-including template rendering, validation, and container management.
-"""
-
 import sys
 import unittest
 from pathlib import Path
 
 # Add src directory to path for imports
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from prompt import Prompt, PromptError, PromptTemplate, PromptType

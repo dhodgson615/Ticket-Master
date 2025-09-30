@@ -1,11 +1,3 @@
-"""
-DataScraper module for repository information extraction and analysis.
-
-This module provides the DataScraper class for comprehensively gathering
-all information from a repository to build detailed Repository objects
-with enhanced metadata, analysis capabilities, and caching support.
-"""
-
 import json
 import logging
 import subprocess
@@ -15,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 try:
     pass
 

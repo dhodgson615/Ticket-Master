@@ -1,15 +1,10 @@
-"""
-Test module for branch class: Branch.
-
-This module provides comprehensive tests for branch functionality
-including branch operations, last activity tracking, and representation.
-"""
-
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

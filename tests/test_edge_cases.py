@@ -1,17 +1,12 @@
-"""
-Test module for edge cases and additional coverage.
-
-This module provides tests for edge cases, error conditions, and
-any remaining untested code paths to maximize test coverage.
-"""
-
 import os
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
+# TODO: Consider using a more robust dependency management approach
+# such as poetry or pipenv for better handling of dependencies.
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

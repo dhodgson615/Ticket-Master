@@ -1,18 +1,9 @@
-"""
-Integration tests for Ticket-Master end-to-end functionality.
-
-This module provides tests that validate the complete workflow
-from repository analysis to issue generation.
-"""
-
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
-from main import (analyze_repository, create_issues_on_github,
-                  generate_issues_with_llm, generate_sample_issues,
-                  load_config)
+from main import (create_issues_on_github, generate_issues_with_llm,
+                  generate_sample_issues, load_config)
 
 
 class TestEndToEndIntegration(unittest.TestCase):
