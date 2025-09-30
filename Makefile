@@ -58,7 +58,7 @@ config: ## Copy example configuration file
 
 test: ## Run tests with pytest
 	@echo "Running tests..."
-	$(PYTEST) -v --cov=$(SRC_DIR) --cov-report=term-missing
+	$(PYTEST) -v --cov=$(SRC_DIR) --cov-report=term-missing --cov-report=xml
 	@echo "Tests completed!"
 
 test-fast: ## Run tests without coverage
